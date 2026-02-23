@@ -1,11 +1,13 @@
 ---
 name: drawio
-description: Standards, visual style guide, and workflows for creating and managing network diagrams using Draw.io.
+description: Visual style guide and workflow for creating Cisco network topology diagrams in Draw.io. Use when generating a topology diagram, creating or updating a topology.drawio file, exporting a PNG, or when any other skill needs to produce or validate a network diagram.
 ---
 
 # Draw.io Diagram Skill
 
-## 1. Locations
+-# Instructions
+
+--# 1. Locations
 
 Store diagrams in the following directories based on their type:
 
@@ -14,7 +16,7 @@ Store diagrams in the following directories based on their type:
 - **Flow Diagrams**: `labs/[chapter]/[lab-folder]/flow-[description].drawio`
   - Use for packet flows, process charts, and logic flows.
 
-## 2. File Formats & Deliverables
+--# 2. File Formats & Deliverables
 
 For every diagram, you must maintain and deliver two files with the **exact same basename**:
 
@@ -25,7 +27,7 @@ For every diagram, you must maintain and deliver two files with the **exact same
     - **Quality**: Lossless.
     - **Automation**: Use `drawio-desktop` CLI or automated scripts when possible.
 
-## 3. Naming Conventions
+--# 3. Naming Conventions
 
 - Use **kebab-case** for all filenames.
 - **Pattern**: `[lab-name]-[diagram-type].extension`
@@ -34,7 +36,7 @@ For every diagram, you must maintain and deliver two files with the **exact same
   - `eigrp-basic-adjacency-topology.png`
   - `packet-flow-vlan-routing.drawio`
 
-## 4. Visual Style Guide
+--# 4. Visual Style Guide
 
 This section defines the canonical visual style for all topology diagrams. Every generated `.drawio` file **must** follow these rules.
 
@@ -287,7 +289,7 @@ tunnel_overlays:
 </mxCell>
 ```
 
-## 5. Workflow
+--# 5. Workflow
 
 ### Creating a New Diagram
 1.  Open Draw.io (Desktop or Web).
@@ -315,3 +317,21 @@ tunnel_overlays:
 3.  Validate against the checklist above.
 4.  Save the `.drawio` file.
 5.  Re-export to `.png`, overwriting the existing image.
+
+-# Common Issues
+
+--# Connection lines are black instead of white
+- **Cause:** Default Draw.io line color was used without applying the style guide.
+- **Solution:** Select all connection lines and apply `strokeColor=#FFFFFF;strokeWidth=2` from Section 4.4. Run `scripts/generate_topo.py` to auto-generate a compliant diagram from `baseline.yaml`.
+
+--# Link visually crosses through an intermediate device
+- **Cause:** Three or more devices share the same X coordinate and a bypass link connects non-adjacent ones.
+- **Solution:** Offset the intermediate device(s) horizontally by at least 100px to create a triangle or staggered layout. See Section 4.8 for the full rule and example.
+
+--# Device label overlaps a connection line
+- **Cause:** Label was placed on the same side as one or more connected links.
+- **Solution:** Apply the Empty Side Rule (Section 4.3.1) — place the label on the side with no connections exiting the icon.
+
+--# generate_topo.py produces incorrect output
+- **Cause:** `baseline.yaml` is missing required fields (`links`, device coordinates, or interface definitions).
+- **Solution:** Verify `baseline.yaml` has complete `core_topology.links` with `source`, `target`, and `subnet` for every link. Check for missing `loopback0` values on devices.
