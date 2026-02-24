@@ -27,12 +27,98 @@ Write a complete workbook with all required sections:
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/`
-5. **Lab Challenge: Core Implementation** — step-by-step objectives for the student
+5. **Lab Challenge: Core Implementation** — objectives for the student (see format below)
 6. **Verification & Analysis** — expected `show` command outputs per objective, with inline `!` comments marking the specific lines or values the student must confirm
-7. **Verification Cheatsheet** — quick-reference commands for the entire lab
+7. **Verification Cheatsheet** — quick-reference commands for the entire lab (see format below)
 8. **Solutions (Spoiler Alert!)** — solution configs for lab objectives only, wrapped in `<details>` blocks
 9. **Troubleshooting Scenarios** — fault injection workflow + symptom-based tickets with `<details>` spoilers
 10. **Lab Completion Checklist** — two groups: Core Implementation and Troubleshooting
+
+**Section 5 — Tasks format (REQUIRED):**
+
+Section 5 contains Tasks, not Objectives. Each task uses this exact layout:
+
+```markdown
+### Task N: [Descriptive Title]
+
+- [Step — what to configure or achieve. May include named values (key names, AS numbers,
+  subnet addresses, algorithm names) but never raw IOS command syntax.]
+- [Additional steps as needed.]
+- [Sub-steps can use nested bullets for multi-part tasks.]
+
+**Verification:** `show ...` command(s) that confirm the task is complete, plus the expected state.
+
+---
+```
+
+Rules for task bullet points:
+- Describe WHAT to configure in plain English. Named parameters (key-chain names, AS numbers, subnet values, algorithm names) are allowed — they provide necessary precision.
+- **Never write raw IOS command syntax** in the task body. No `router eigrp 100`, no `key chain`, no `passive-interface`, no full CLI lines.
+- The `**Verification:**` line at the end of each task MUST include the relevant `show` command(s) and the expected outcome. This is the only place where show commands appear in Section 5.
+
+Examples:
+- ✅ "Create a key-chain named OSPF_AUTH with key ID 1 and a strong key-string."
+- ❌ "Run `key chain OSPF_AUTH` / `key 1` / `key-string <value>`."
+- ✅ "Enable EIGRP in Autonomous System 100 on all three routers."
+- ❌ "Configure `router eigrp 100` on R1, R2, and R3."
+- ✅ **Verification:** "`show ip eigrp neighbors` must show two active neighbors on each router."
+
+**Section 4 — Base Configuration "NOT pre-loaded" list:**
+
+List concepts, not IOS syntax:
+- ✅ "EIGRP routing process"
+- ❌ "`router eigrp 100`"
+- ✅ "Subnet advertisement"
+- ❌ "`network` statements"
+
+**Section 7 — Cheatsheet format (REQUIRED):**
+
+The cheatsheet must be broken into named subsections — never one monolithic code block. Required structure:
+
+```markdown
+### [Group Name, e.g. "EIGRP Process Configuration"]
+
+​```
+[Minimal syntax skeleton showing command structure only]
+​```
+
+| Command | Purpose |
+|---------|---------|
+| `command syntax` | What it does |
+
+### [Next Group, e.g. "Interface Controls"]
+
+​```
+[Syntax skeleton]
+​```
+
+| Command | Purpose |
+|---------|---------|
+| ... | ... |
+
+> **Exam tip:** [One high-value exam callout per subsection where relevant]
+
+### Verification Commands
+
+| Command | What to Look For |
+|---------|-----------------|
+| `show ...` | What the student must confirm |
+
+### Wildcard Mask Quick Reference
+
+| Subnet Mask | Wildcard Mask | Common Use |
+|-------------|---------------|------------|
+
+### Common [Protocol] Failure Causes
+
+| Symptom | Likely Cause |
+|---------|-------------|
+```
+
+Rules:
+- Configuration command groups each get: a syntax skeleton code block + a command/purpose table
+- Verification commands always go in a `Command | What to Look For` table, never in a code block
+- Every cheatsheet ends with a Wildcard/Mask reference table (if applicable) and a Failure Causes table
 
 **Solutions section format (required):**
 ```markdown
@@ -261,11 +347,27 @@ Complete IOS configurations for every active device, implementing all lab object
 
 --# Step 5: Generate topology.drawio
 
-Create the topology diagram following the drawio Visual Style Guide. Invoke the `drawio` skill to ensure compliance:
-- White connection lines (`strokeColor=#FFFFFF`)
-- Device labels on the empty side of the icon
-- IP last octet labels near each interface
-- Title at top center, legend box at bottom-right
+**STOP. Before writing a single line of XML, read `.agent/skills/drawio/SKILL.md` §4.2–§4.7 in full.**
+
+Use the §4.7 reference XML snippets as your starting template. Never write topology XML from scratch — always copy and adapt the reference snippets for Device Icon, Device Label, White Connection Line, IP Last Octet Label, and Legend Box.
+
+**Mandatory pre-write checklist (verify against drawio/SKILL.md before writing):**
+- [ ] Device shape: `shape=mxgraph.cisco.routers.router;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;` — not a rectangle
+- [ ] Device labels: separate `text` cells positioned on the empty side of the icon (§4.3.1) — not embedded in the router cell value
+- [ ] Connection lines: `strokeColor=#FFFFFF;strokeWidth=2` — white, never default black
+- [ ] IP last-octet labels: separate `edgeLabel` cells (`.1`, `.2`) near each interface endpoint — not embedded in the edge label string
+- [ ] Legend box: black fill `#000000`, white text `#FFFFFF`, bottom-right corner — not colored boxes matching router fills
+- [ ] Title: bold, 16pt, top center
+
+**Mandatory post-write validation checklist (run after writing the XML):**
+- [ ] Open the file mentally and verify every router cell uses `mxgraph.cisco.routers.router` shape
+- [ ] Every router has a separate label cell — no hostname/role/loopback text in the router cell `value=`
+- [ ] Every edge has `strokeColor=#FFFFFF` in its style string
+- [ ] Every interface endpoint has a standalone `.N` octet cell parented to `"1"` (canvas root)
+- [ ] Legend is a single cell with `fillColor=#000000;fontColor=#FFFFFF` at bottom-right
+- [ ] The `.drawio` file is the only required diagram artifact — no PNG export needed
+
+If any checklist item fails, fix it before moving to Step 6. Do not mark topology complete with known violations.
 
 --# Step 6: Generate setup_lab.py
 

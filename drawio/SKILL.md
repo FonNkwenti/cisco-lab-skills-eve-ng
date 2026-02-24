@@ -18,14 +18,9 @@ Store diagrams in the following directories based on their type:
 
 --# 2. File Formats & Deliverables
 
-For every diagram, you must maintain and deliver two files with the **exact same basename**:
+The only required deliverable is:
 
-1.  **Source File (`.drawio`)**: The editable XML format.
-2.  **Exported Image (`.png`)**: A high-resolution visual representation for documentation.
-    - **Scale**: 200% (Scale 2.0) for high DPI.
-    - **Background**: Transparent.
-    - **Quality**: Lossless.
-    - **Automation**: Use `drawio-desktop` CLI or automated scripts when possible.
+1.  **Source File (`.drawio`)**: The editable XML format. This is the canonical diagram file.
 
 --# 3. Naming Conventions
 
@@ -33,7 +28,6 @@ For every diagram, you must maintain and deliver two files with the **exact same
 - **Pattern**: `[lab-name]-[diagram-type].extension`
 - **Examples**:
   - `eigrp-basic-adjacency-topology.drawio`
-  - `eigrp-basic-adjacency-topology.png`
   - `packet-flow-vlan-routing.drawio`
 
 --# 4. Visual Style Guide
@@ -308,15 +302,12 @@ tunnel_overlays:
     - [ ] Protocol boundaries (Areas, AS) are clearly marked.
     - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists tunnel colors if tunnels are present.
 4.  Save the editable file as `.drawio` in the appropriate subdirectory.
-5.  Export the diagram as a `.png` (Transparent Background, 200% Zoom/Scale 2.0 for high DPI) to the same directory.
-6.  Link the PNG in your README.md files.
 
 ### Updating a Diagram
 1.  Open the existing `.drawio` file.
 2.  Make necessary modifications.
 3.  Validate against the checklist above.
 4.  Save the `.drawio` file.
-5.  Re-export to `.png`, overwriting the existing image.
 
 -# Common Issues
 

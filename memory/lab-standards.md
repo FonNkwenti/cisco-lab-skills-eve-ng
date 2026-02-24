@@ -10,7 +10,6 @@ labs/[chapter]/lab-NN-[name]/
 ├── initial-configs/   R1.cfg, R2.cfg, ...
 ├── solutions/         R1.cfg, R2.cfg, ...
 ├── topology.drawio
-├── topology.png
 ├── setup_lab.py
 └── scripts/fault-injection/
     ├── README.md
@@ -41,6 +40,40 @@ labs/[chapter]/lab-NN-[name]/
 - **Narrative-first**: "As the lead network engineer for Acme Corp, you must..."
 - **Cisco official terminology**: "Feasible Successor", "Administrative Distance"
 - **Challenge-first**: No step-by-step hints until the hidden solution section
+
+## Task Formatting (Section 5) — REQUIRED
+
+Section 5 uses **Tasks**, not Objectives. Each task uses this exact layout:
+
+```markdown
+### Task N: [Descriptive Title]
+
+- [Step — what to configure. Named values (key names, AS numbers, subnets) are fine. No raw IOS command syntax.]
+- [Additional steps.]
+
+**Verification:** `show ...` command(s) and expected state.
+
+---
+```
+
+**No raw IOS command syntax in task steps or in the Section 4 "NOT pre-loaded" list.**
+Named parameters (key-chain names, AS numbers, algorithm names, subnet addresses) are allowed.
+The `**Verification:**` line at the end of each task is the only place show commands appear in Section 5.
+
+- ✅ "Create a key-chain named OSPF_AUTH with key ID 1 and a strong key-string."
+- ❌ "Run `key chain OSPF_AUTH` / `key 1` / `key-string <value>`."
+- ✅ "Enable EIGRP in Autonomous System 100 on all three routers."
+- ❌ "Configure `router eigrp 100` on R1, R2, and R3."
+
+## Cheatsheet Formatting (Section 7) — REQUIRED
+
+Never put all commands in one monolithic code block. Always use named subsections:
+
+1. One subsection per logical command group — each with a syntax skeleton code block followed by a `Command | Purpose` table
+2. Verification commands in a `Command | What to Look For` table (never a code block)
+3. End with a mask/wildcard reference table and a failure-causes table
+
+Reference `lab-workbook-creator/SKILL.md` Section 5/7 format blocks for the exact template.
 
 ## Diagram Standards
 

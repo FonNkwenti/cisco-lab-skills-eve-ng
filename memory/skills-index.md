@@ -8,7 +8,7 @@ Quick reference for all skills in this repository.
 | `chapter-builder` | Generating multiple labs at once with config chaining | All lab artifacts for a chapter |
 | `lab-workbook-creator` | Generating a single lab | `workbook.md`, configs, `setup_lab.py`, `topology.drawio` |
 | `fault-injector` | Creating automated troubleshooting scenario scripts | `inject_scenario_0N.py`, `apply_solution.py` |
-| `drawio` | Creating or fixing topology diagrams | `topology.drawio`, `topology.png` |
+| `drawio` | Creating or fixing topology diagrams | `topology.drawio` |
 | `gns3` | Reference for platform capabilities and constraints | (reference only) |
 | `cisco-troubleshooting-1` | Systematically diagnosing a network fault | Structured resolution report |
 

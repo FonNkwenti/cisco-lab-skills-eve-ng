@@ -27,7 +27,7 @@ Every lab directory MUST contain:
 - `workbook.md` — student workbook with 9+ sections
 - `initial-configs/` — per-device .cfg files
 - `solutions/` — per-device .cfg files
-- `topology.drawio` + `topology.png` — Cisco-icon diagram
+- `topology.drawio` — Cisco-icon diagram (`.drawio` only; no PNG required)
 - `setup_lab.py` — Netmiko telnet automation
 
 Every workbook MUST include:
