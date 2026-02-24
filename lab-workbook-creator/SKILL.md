@@ -28,7 +28,7 @@ Write a complete workbook with all required sections:
 3. **Hardware & Environment Specifications** — cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/`
 5. **Lab Challenge: Core Implementation** — step-by-step objectives for the student
-6. **Verification & Analysis** — expected `show` command outputs per objective
+6. **Verification & Analysis** — expected `show` command outputs per objective, with inline `!` comments marking the specific lines or values the student must confirm
 7. **Verification Cheatsheet** — quick-reference commands for the entire lab
 8. **Solutions (Spoiler Alert!)** — solution configs for lab objectives only, wrapped in `<details>` blocks
 9. **Troubleshooting Scenarios** — fault injection workflow + symptom-based tickets with `<details>` spoilers
@@ -202,6 +202,23 @@ Triangle (hub + two branches) example:
 10.23.0.1/30│                            │10.23.0.2/30
             └────────────────────────────┘
                       10.23.0.0/30
+```
+
+**Verification & Analysis format (required in Section 6):**
+
+Every verification code block must use inline `!` comments to mark the exact line(s) or value(s) the student must confirm. Do not rely on prose descriptions alone.
+
+```bash
+R1# show ip eigrp neighbors
+EIGRP-IPv4 Neighbors for AS(100)
+H   Address         Interface       Hold  Uptime   SRTT   RTO  Q  Seq
+                                   (sec)           (ms)       Cnt Num
+0   10.12.0.2       Fa0/0             12  00:01:43   10   200  0  5   ! ← R2 must appear here
+1   10.13.0.2       Fa1/0             11  00:01:40   12   200  0  4   ! ← R3 must appear here
+
+R1# show ip route eigrp
+D    10.2.0.0/24 [90/156160] via 10.12.0.2, 00:01:43, Fa0/0   ! ← AD=90, metric correct
+D    10.3.0.0/24 [90/156160] via 10.13.0.2, 00:01:40, Fa1/0   ! ← AD=90, metric correct
 ```
 
 **Console Access Table format (required in Section 3):**
