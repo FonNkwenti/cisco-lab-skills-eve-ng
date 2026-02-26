@@ -7,7 +7,7 @@ description: Systematically diagnoses and resolves Cisco IOS network faults usin
 
 Implements the **Structured Troubleshooting Process** from Cisco curriculum. Every fault follows a four-phase lifecycle: Problem Definition → Methodology Selection → Diagnostic Execution → Resolution & Reporting.
 
-Integrates with GNS3 labs by reading `workbook.md` and `challenges.md` for context, connecting to live routers via Netmiko telnet, and comparing against `initial-configs/` and `solutions/`.
+Integrates with GNS3 labs by reading `workbook.md` for context, connecting to live routers via Netmiko telnet, and comparing against `initial-configs/` and `solutions/`.
 
 -# Instructions
 
@@ -15,10 +15,9 @@ Integrates with GNS3 labs by reading `workbook.md` and `challenges.md` for conte
 
 Before diagnosing, read the lab files at `labs/[chapter]/[lab-NN-slug]/`:
 
-1. **`workbook.md`** — topology, objectives, Console Access Table, expected verification outputs, solutions (private reference — do NOT reveal unless asked)
-2. **`challenges.md`** — standalone challenge exercises and fault tickets
-3. **`initial-configs/`** — pre-configured baseline state for each router
-4. **`solutions/`** — expected end-state (private reference only)
+1. **`workbook.md`** — topology, objectives, Console Access Table, expected verification outputs, Section 9 troubleshooting scenarios (private reference — do NOT reveal unless asked)
+2. **`initial-configs/`** — pre-configured baseline state for each router
+3. **`solutions/`** — expected end-state (private reference only)
 
 Parse the Console Access Table to build the device-to-port map:
 ```
@@ -120,7 +119,6 @@ See `references/resolution-report-template.md` for the full template.
 | Resource | Path |
 |----------|------|
 | Lab workbook | `labs/[chapter]/lab-NN-[slug]/workbook.md` |
-| Fault tickets | `labs/[chapter]/lab-NN-[slug]/challenges.md` |
 | Initial configs | `labs/[chapter]/lab-NN-[slug]/initial-configs/` |
 | Solution configs | `labs/[chapter]/lab-NN-[slug]/solutions/` |
 | Chapter baseline | `labs/[chapter]/baseline.yaml` |

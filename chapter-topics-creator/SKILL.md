@@ -139,7 +139,6 @@ Before finishing, confirm:
 - [ ] Total device count is between 3 (minimum) and 15 (maximum) across core + optional
 - [ ] All console ports follow the convention: RN = 500N
 - [ ] Platform choices respect Apple Silicon constraints — c7200 or c3725 only (see `gns3` skill)
-- [ ] All topology diagrams follow the drawio Visual Style Guide (invoke the `drawio` skill)
 - [ ] IP addresses are pre-reserved for all optional devices even if not active in early labs
 - [ ] The last 2 labs are Capstone I (`type: capstone_i`) and Capstone II (`type: capstone_ii`), both with `clean_slate: true`
 

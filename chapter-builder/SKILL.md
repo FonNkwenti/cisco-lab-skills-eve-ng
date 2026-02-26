@@ -25,6 +25,8 @@ For each subsequent lab number:
 3. Add new devices ONLY if `labs[N].devices` introduces them beyond the previous lab.
 4. Use the `lab-workbook-creator` skill to generate: `workbook.md`, `initial-configs/`, `solutions/`, and `topology.drawio`.
 
+> **Note:** Fault injection scripts are generated automatically by `lab-workbook-creator` Step 7 (which invokes the `fault-injector` skill). No separate fault-injection step is needed here.
+
 --# Step 4: Generate Topology Diagrams
 All generated `topology.drawio` files MUST follow the drawio Visual Style Guide. Invoke the `drawio` skill to ensure:
 - White connection lines (`strokeColor=#FFFFFF`), never black.

@@ -12,7 +12,7 @@ Generates Python scripts that inject the troubleshooting scenarios defined in la
 --# Step 1: Parse Inputs
 
 Read from the lab directory:
-1. `workbook.md` — extract troubleshooting scenarios from Section 8 and the Console Access Table
+1. `workbook.md` — extract troubleshooting scenarios from Section 9 and the Console Access Table
 2. Console Access Table → device-to-port map: `{"R1": 5001, "R2": 5002, ...}`
 3. From each scenario extract: **Scenario Number**, **Target Device**, **Fault Type**, **Commands to inject**
 
@@ -38,7 +38,8 @@ Use `assets/apply_solution_template.py` as the base template. Customise it to re
 --# Step 4: Generate scripts/fault-injection/README.md
 
 Use `assets/README_template.md` as the base. Fill in:
-- One section per scenario: name, fault description, target device, command to run
+- One section per scenario: scenario number, target device, command to run
+- **Ops-only — do NOT include fault names or descriptions that reveal what is broken**
 - Usage instructions for injecting and restoring
 - Prerequisites (GNS3 running, netmiko installed)
 
@@ -115,8 +116,8 @@ if __name__ == "__main__":
 -# Common Issues
 
 --# workbook.md has no troubleshooting scenarios
-- **Cause:** The workbook was generated without a Section 8, or scenarios were not written.
-- **Solution:** Stop. Ask the user to add at least 3 troubleshooting scenarios to `workbook.md` Section 8 before running this skill. Use `assets/troubleshooting_scenarios_template.md` (from the `lab-workbook-creator` assets) as a reference format.
+- **Cause:** The workbook was generated without a Section 9, or scenarios were not written.
+- **Solution:** Stop. Ask the user to add at least 3 troubleshooting scenarios to `workbook.md` Section 9 before running this skill. Use `assets/troubleshooting_scenarios_template.md` (from the `lab-workbook-creator` assets) as a reference format.
 
 --# Console Access Table not found in workbook
 - **Cause:** Workbook was generated with a non-standard structure.

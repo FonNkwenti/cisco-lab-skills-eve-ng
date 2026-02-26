@@ -21,9 +21,39 @@ Identify which devices are active for this lab number from `baseline.yaml labs[N
 
 --# Step 2: Generate workbook.md
 
+**Table of Contents (required):** Immediately after the workbook title line, insert a TOC block before Section 1. Use Markdown anchor links matching the exact section headings. Required format:
+
+```markdown
+## Table of Contents
+
+1. [Concepts & Skills Covered](#1-concepts--skills-covered)
+2. [Topology & Scenario](#2-topology--scenario)
+3. [Hardware & Environment Specifications](#3-hardware--environment-specifications)
+4. [Base Configuration](#4-base-configuration)
+5. [Lab Challenge: Core Implementation](#5-lab-challenge-core-implementation)
+6. [Verification & Analysis](#6-verification--analysis)
+7. [Verification Cheatsheet](#7-verification-cheatsheet)
+8. [Solutions (Spoiler Alert!)](#8-solutions-spoiler-alert)
+9. [Troubleshooting Scenarios](#9-troubleshooting-scenarios)
+10. [Lab Completion Checklist](#10-lab-completion-checklist)
+
+---
+```
+
+Rules:
+- TOC anchor slugs must match the actual section heading text (lowercase, spaces→hyphens, special chars stripped)
+- For capstone labs: update Section 5 link text to match the actual heading (`Full Protocol Mastery` or `Comprehensive Troubleshooting`)
+- The `---` horizontal rule after the TOC separates it from Section 1
+
 Write a complete workbook with all required sections:
 
-1. **Concepts & Skills Covered** — exam blueprint bullets this lab addresses
+1. **Section 1 — Concepts & Skills Covered** — structured as follows:
+   a. `**Exam Objective:**` line with blueprint bullet(s) and topic name
+   b. One short intro paragraph (what the lab covers and why it matters)
+   c. Named theory subsections (`### Topic`) — prose, IOS syntax blocks, reference tables
+      - Minimum 3 subsections; depth mirrors labs 01/02 style
+      - Explain the protocol concept, not just the commands
+   d. `**Skills this lab develops:**` table — Skill | Description (2 columns)
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/`
@@ -383,7 +413,7 @@ The script must:
 
 After generating the workbook, invoke the `fault-injector` skill to create `scripts/fault-injection/` scripts based on the troubleshooting scenarios in the workbook.
 
-Use `assets/troubleshooting_scenarios_template.md` as the template for Section 8 troubleshooting content.
+Use `assets/troubleshooting_scenarios_template.md` as the template for Section 9 troubleshooting content.
 
 -# Common Issues
 
