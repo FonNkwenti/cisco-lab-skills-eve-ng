@@ -239,6 +239,147 @@ tunnel_overlays:
     description: GRE Tunnel for EIGRP over VPN
 ```
 
+### 4.10 Protocol Domain Zones (Area / AS Overlays)
+
+Domain zones represent logical groupings of devices and links that share a routing boundary — OSPF areas, BGP autonomous systems, VRFs, MPLS domains, etc. They are drawn as **dashed, semi-transparent colored ellipses** that sit visually behind all routers and links.
+
+#### 4.10.1 Drawing Order — Zones First
+
+Zone shapes **must be placed before** (earlier in the XML than) all router cells and link cells. Draw.io renders cells in document order; placing zones first ensures they appear behind devices and lines.
+
+#### 4.10.2 Zone Shape Style
+
+All zone shapes share the same base style pattern:
+
+```
+ellipse;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;opacity=35;
+fontSize=12;fontStyle=1;fontColor=#ffffff;
+strokeColor=<COLOR>;fillColor=<DARK_FILL>;
+verticalAlign=<top|bottom>;
+```
+
+- `dashed=1` — boundary is always dashed (never solid)
+- `opacity=35` — semi-transparent so routers and links show through
+- `fontColor=#ffffff` — white text so label reads against dark canvas
+- `fillColor` — a dark-tinted version of the stroke color (see table below)
+- `verticalAlign` — place label at `top` if devices occupy the bottom of the ellipse, `bottom` if devices are near the top
+
+#### 4.10.3 Color Table by Domain Type
+
+| Domain Type            | strokeColor | fillColor | Label example              |
+|------------------------|-------------|-----------|----------------------------|
+| OSPF Area 0 (Backbone) | `#1565C0`   | `#1a3a5c` | `Area 0 (Backbone)`        |
+| OSPF Area N (Normal)   | `#2E7D32`   | `#1b3d27` | `Area 1`                   |
+| OSPF Stub              | `#E65100`   | `#4a1e00` | `Area 2 (Stub)`            |
+| OSPF Totally Stubby    | `#E65100`   | `#4a1e00` | `Area 2 (Totally Stubby)`  |
+| OSPF NSSA              | `#6A1B9A`   | `#2e0d40` | `Area 3 (NSSA)`            |
+| BGP AS (first/local)   | `#00838F`   | `#003d45` | `AS 65001 (iBGP)`          |
+| BGP AS (peer 2)        | `#F57F17`   | `#4a2700` | `AS 65002`                 |
+| BGP AS (peer 3)        | `#AD1457`   | `#45072a` | `AS 65003`                 |
+| BGP AS (peer 4+)       | `#558B2F`   | `#243d13` | `AS 65004`                 |
+| VRF instance           | `#4527A0`   | `#1a0f40` | `VRF CUSTOMER-A`           |
+| MPLS domain            | `#37474F`   | `#1a2226` | `MPLS Core`                |
+
+> **Rule:** Each distinct domain gets a unique color from the table. When multiple OSPF areas are present, Area 0 is always blue; assign subsequent normal areas green; assign stub/NSSA areas orange/purple. For BGP, assign one color per AS — rotate through the BGP rows in order.
+
+#### 4.10.4 Zone Sizing and Positioning
+
+- The ellipse must **fully enclose** all devices and links that belong to the zone, with at least 20–30px of padding around the outermost device edges.
+- Zones that **share a device** (e.g., an ABR in Area 0 and Area 1) will **overlap** — this is correct and expected. The semi-transparent fills stack and show the shared boundary visually.
+- Zones for larger areas (backbone Area 0) are typically wider and taller; peripheral areas (stub, NSSA) are smaller ellipses containing only their few devices.
+
+#### 4.10.5 Zone Label Placement
+
+- The label text inside the ellipse identifies the zone name and type.
+- Use `verticalAlign=top` to place the label at the top of the ellipse when devices sit in the lower portion.
+- Use `verticalAlign=bottom` to place the label at the bottom when devices sit near the top of the ellipse.
+- Never center the label vertically if it would overlap a router icon.
+
+#### 4.10.6 Reference XML Snippet — Zone Shapes
+
+**OSPF Area 0 (Backbone) — blue:**
+```xml
+<!-- Draw zones FIRST — before any router or link cells -->
+<mxCell id="area0_shape" value="Area 0&#xa;(Backbone)"
+  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#1565C0;strokeWidth=2;
+         fillColor=#1a3a5c;opacity=35;fontSize=12;fontStyle=1;
+         verticalAlign=top;fontColor=#ffffff;"
+  vertex="1" parent="1">
+  <mxGeometry x="20" y="55" width="540" height="380" as="geometry" />
+</mxCell>
+```
+
+**OSPF Area 1 (Normal) — green:**
+```xml
+<mxCell id="area1_shape" value="Area 1"
+  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2E7D32;strokeWidth=2;
+         fillColor=#1b3d27;opacity=35;fontSize=12;fontStyle=1;
+         verticalAlign=bottom;fontColor=#ffffff;"
+  vertex="1" parent="1">
+  <mxGeometry x="20" y="380" width="520" height="180" as="geometry" />
+</mxCell>
+```
+
+**OSPF Stub / Totally Stubby Area — orange:**
+```xml
+<mxCell id="area2_shape" value="Area 2&#xa;(Totally Stubby)"
+  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#E65100;strokeWidth=2;
+         fillColor=#4a1e00;opacity=35;fontSize=12;fontStyle=1;
+         verticalAlign=top;fontColor=#ffffff;"
+  vertex="1" parent="1">
+  <mxGeometry x="448" y="335" width="310" height="125" as="geometry" />
+</mxCell>
+```
+
+**BGP Autonomous System — teal (local AS) and orange (peer AS):**
+```xml
+<!-- Local AS -->
+<mxCell id="as65001_shape" value="AS 65001&#xa;(iBGP)"
+  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#00838F;strokeWidth=2;
+         fillColor=#003d45;opacity=35;fontSize=12;fontStyle=1;
+         verticalAlign=top;fontColor=#ffffff;"
+  vertex="1" parent="1">
+  <mxGeometry x="20" y="55" width="420" height="340" as="geometry" />
+</mxCell>
+
+<!-- Peer AS -->
+<mxCell id="as65002_shape" value="AS 65002"
+  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#F57F17;strokeWidth=2;
+         fillColor=#4a2700;opacity=35;fontSize=12;fontStyle=1;
+         verticalAlign=top;fontColor=#ffffff;"
+  vertex="1" parent="1">
+  <mxGeometry x="500" y="55" width="280" height="240" as="geometry" />
+</mxCell>
+```
+
+#### 4.10.7 Legend Requirements for Zones
+
+When zone shapes are present, the legend box must list each zone with its color. Format:
+
+```
+Legend
+--- Physical Link
+[blue dashed] Area 0 (Backbone)
+[green dashed] Area 1 (Normal)
+[orange dashed] Area 2 (Totally Stubby)
+OSPF Process ID: 1
+```
+
+Since Draw.io legend cells are plain text, describe colors in words or use Unicode colored indicators where possible. At minimum, name each zone and its type.
+
+#### 4.10.8 When to Apply Zone Shapes
+
+| Lab type                          | Zones to draw                                           |
+|-----------------------------------|---------------------------------------------------------|
+| OSPF single-area                  | One Area 0 ellipse enclosing all devices                |
+| OSPF multi-area                   | One ellipse per area; ABRs sit inside overlapping zones |
+| OSPF stub / totally stubby / NSSA | Area 0 + any normal areas + stub/NSSA area (orange/purple) |
+| BGP single-AS                     | One AS ellipse around all iBGP peers                    |
+| BGP multi-AS (eBGP)               | One ellipse per AS; eBGP links cross zone boundaries    |
+| EIGRP                             | One ellipse per AS number if multiple ASes present      |
+| VRF / MPLS                        | One ellipse per VRF or MPLS domain if topologically relevant |
+| Single-protocol flat topology     | Zone shapes optional but recommended for clarity        |
+
 ### 4.7 Reference XML Snippets
 
 **Title Cell:**
@@ -299,8 +440,10 @@ tunnel_overlays:
     - [ ] **No link visually crosses through an intermediate device** (see Section 4.8).
     - [ ] **Tunnel overlays** use thin colored dotted lines and arc above physical devices (see Section 4.9).
     - [ ] **Tunnel endpoint octets** (`.1` / `.2`) are placed near the top of source/target devices (see Section 4.9.4).
-    - [ ] Protocol boundaries (Areas, AS) are clearly marked.
-    - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists tunnel colors if tunnels are present.
+    - [ ] **Protocol domain zones** (OSPF areas, BGP AS, VRFs) drawn as dashed semi-transparent ellipses — placed FIRST in XML so they render behind routers and links (see Section 4.10).
+    - [ ] Each zone uses the correct color from the §4.10.3 table (blue=backbone, green=normal, orange=stub, teal=BGP local AS, etc.).
+    - [ ] Zone ellipses fully enclose their member devices with ≥20px padding; overlapping zones are correct at ABR/ASBR boundaries.
+    - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists zone types and tunnel colors where applicable.
 4.  Save the editable file as `.drawio` in the appropriate subdirectory.
 
 ### Updating a Diagram
@@ -310,6 +453,16 @@ tunnel_overlays:
 4.  Save the `.drawio` file.
 
 -# Common Issues
+
+--# Zone ellipses cover (obscure) routers and links
+
+- **Cause:** Zone shape cells were placed after router and link cells in the XML, causing them to render on top of everything.
+- **Solution:** Move all zone `mxCell` elements to appear before the first router cell in the XML. Draw.io renders in document order — zones must come first.
+
+--# Zone ellipse does not enclose all member devices
+
+- **Cause:** Ellipse geometry was sized for the routers but did not account for labels or link endpoints extending beyond the icon bounds.
+- **Solution:** Extend the ellipse by at least 20–30px beyond the outermost device icon on every side. Check that interface octet labels near the zone boundary are also inside the ellipse.
 
 --# Connection lines are black instead of white
 - **Cause:** Default Draw.io line color was used without applying the style guide.
