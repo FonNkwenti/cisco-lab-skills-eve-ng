@@ -19,12 +19,16 @@ This GNS3 environment uses **Dynamips** (Cisco IOS emulation) only.
 
 --# 2. Platform Selection Guide
 
-| Condition                            | Use                      |
-|--------------------------------------|--------------------------|
-| Any new lab (all roles)              | `c7200`                  |
-| L2 switching ports (NM-16ESW) only   | `c3725` ⚠ DEPRECATED     |
+| Condition | Use |
+|-----------|-----|
+| Hub, Core, or ABR role | `c7200` |
+| IPsec, GRE crypto features needed | `c7200` |
+| More than 3 FastEthernet interfaces needed | `c7200` |
+| Branch, Spoke, or Edge role | `c7200` |
+| L2 switching ports needed (NM-16ESW) | `c3725` |
+| Serial WAN links | either (both support `NM-4T`) |
 
-**c3725 is deprecated.** Do not use it for new lab generation. Use `c7200` for all router roles. Existing labs that reference c3725 are read-only references — do not chain new labs from them on c3725.
+> **Rule:** Use `c3725` **only** when the lab requires L2 switching (NM-16ESW in slot 1). Use `c7200` for all pure-routing roles. Never mix up named-mode EIGRP or IOS 15+ features on a c3725 — its IOS 12.4 image does not support them.
 
 --# 3. Hardware Templates (Source of Truth)
 
@@ -72,7 +76,7 @@ Base port: 5000. Assign sequentially by router number.
    `Source:Interface ↔ Target:Interface`
 4. **Supported node types (non-IOS):** Unmanaged Switch (generic GNS3), VPCS (ping testing only).
 5. **Device count:** Minimum 3 routers, maximum 15 routers per chapter topology (core + optional combined).
-6. **c7200 is the only approved platform for new lab generation.** c3725 is deprecated. Use c7200 for all router roles. If a command fails during generation, check `reference-docs/ios-compatibility.yaml` — if it is `pass` on c7200, proceed. If it is `fail` on both platforms, do not use the command; find a supported alternative.
+6. **Platform-command alignment:** Before generating configs, confirm the IOS image version supports the required syntax. Check `reference-docs/ios-compatibility.yaml`. Named-mode EIGRP and any IOS 15+ feature must use c7200. If a command is `fail` on the target platform, switch to c7200 or find a supported alternative.
 
 -# Common Issues
 
@@ -91,7 +95,12 @@ Base port: 5000. Assign sequentially by router number.
 -# Examples
 
 When generating `baseline.yaml` for an OSPF multi-area lab with 4 routers:
-- R1 (ABR, connects Area 0 to Area 1): `c7200` — hub/ABR role, 3 interfaces
-- R2 (Area 0 internal): `c7200` — all new lab routers use c7200
-- R3 (ABR, connects Area 0 to Area 2): `c7200` — hub/ABR role, 3 interfaces
-- R7 (Area 2 stub, added in Lab 05): `c7200` — all new lab routers use c7200
+- R1 (ABR, connects Area 0 to Area 1): `c7200` — hub/ABR role, needs 3 interfaces
+- R2 (Area 0 internal): `c7200` — routing-only role
+- R3 (ABR, connects Area 0 to Area 2): `c7200` — hub/ABR role, needs 3 interfaces
+- R7 (Area 2 stub, added in Lab 05): `c7200` — routing-only role
+
+When generating `baseline.yaml` for a switching lab (e.g., VLANs, STP):
+- SW1 (Layer 2 switch, 12 access ports): `c3725` — NM-16ESW in slot 1 provides fa1/0–fa1/15
+- SW2 (Layer 2 switch): `c3725` — NM-16ESW required; no L3 routing features needed
+- R1 (default gateway / router-on-a-stick): `c7200` — routing role
