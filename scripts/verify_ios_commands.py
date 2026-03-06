@@ -55,17 +55,34 @@ CONTEXT_MAP = {
         "enter": ["router bgp 65000"],
         "exit": ["no router bgp 65000"],
     },
+    "af-ipv4-bgp": {
+        "enter": ["router bgp 65000", "address-family ipv4"],
+        "exit": ["no router bgp 65000"],
+    },
+    "router-ospfv3": {
+        "enter": ["router ospfv3 1"],
+        "exit": ["no router ospfv3 1"],
+    },
+    # NM-16ESW switch port (c3725 slot 1). c7200 has no switch ports so
+    # context entry will fail on c7200 — all commands auto-fail there.
+    "interface-switch": {
+        "enter": ["interface FastEthernet1/0"],
+        "exit": ["interface FastEthernet1/0", "no switchport"],
+    },
 }
 
 # Test contexts in dependency order (parent before child)
 CONTEXT_ORDER = [
-    "global", "interface", "router-eigrp", "router-eigrp-named",
-    "af-ipv4-unicast", "router-ospf", "router-bgp",
+    "global", "interface", "interface-switch",
+    "router-eigrp", "router-eigrp-named", "af-ipv4-unicast",
+    "router-ospf", "router-ospfv3",
+    "router-bgp", "af-ipv4-bgp",
 ]
 
 # Child context → required parent context (auto-fail if parent fails)
 CONTEXT_DEPS = {
     "af-ipv4-unicast": "router-eigrp-named",
+    "af-ipv4-bgp": "router-bgp",
 }
 
 

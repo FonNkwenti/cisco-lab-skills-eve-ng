@@ -8,7 +8,7 @@ platforms:
     console_port: 5002
     deprecated: false
 
-# context values: global | interface | router-eigrp | router-eigrp-named | af-ipv4-unicast | router-ospf | router-bgp
+# context values: global | interface | interface-switch | router-eigrp | router-eigrp-named | af-ipv4-unicast | router-ospf | router-ospfv3 | router-bgp | af-ipv4-bgp
 commands:
   - command: "router eigrp ENARSI"
     context: global
@@ -63,3 +63,295 @@ commands:
     c7200: unknown
     c3725: unknown
     notes: "Named mode EIGRP — route-map based distribute-list under topology base"
+
+# ─── OSPF (OSPFv2) — verified in ENCOR OSPF labs 01–08 ──────────────────────
+
+  - command: "router ospf 1"
+    context: global
+    c7200: pass
+    c3725: pass
+    notes: "OSPFv2 process — verified in ENCOR labs 01–08"
+
+  - command: "network 10.0.0.0 0.0.0.3 area 0"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "OSPF network statement — wildcard mask + area; any address/mask/area values"
+
+  - command: "ip ospf network point-to-point"
+    context: interface
+    c7200: pass
+    c3725: pass
+    notes: "Override OSPF network type on broadcast/serial links"
+
+  - command: "ip ospf cost 10"
+    context: interface
+    c7200: pass
+    c3725: pass
+    notes: "Manual OSPF cost override"
+
+  - command: "ip ospf priority 100"
+    context: interface
+    c7200: pass
+    c3725: pass
+    notes: "DR election priority; 0 = never elected DR"
+
+  - command: "ip ospf authentication message-digest"
+    context: interface
+    c7200: pass
+    c3725: pass
+    notes: "Enable MD5 auth on interface; pair with ip ospf message-digest-key"
+
+  - command: "ip ospf message-digest-key 1 md5 KEY"
+    context: interface
+    c7200: pass
+    c3725: pass
+    notes: "MD5 key for OSPF interface authentication"
+
+  - command: "ip ospf authentication key-chain OSPF_AUTH"
+    context: interface
+    c7200: unknown
+    c3725: unknown
+    notes: "Key-chain auth (IOS 15.3+) — untested on Dynamips; use MD5 as safe alternative"
+
+  - command: "area 1 stub"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: ""
+
+  - command: "area 1 stub no-summary"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "Totally stubby area — ABR config only"
+
+  - command: "area 1 nssa"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: ""
+
+  - command: "area 1 nssa no-summary"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "Totally NSSA — ABR config only"
+
+  - command: "area 1 authentication message-digest"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "Area-wide MD5 auth — applies to all interfaces in the area"
+
+  - command: "area 1 range 10.1.0.0 255.255.0.0"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "ABR inter-area route summarization"
+
+  - command: "default-information originate"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "Redistribute default route into OSPF; requires default route in RIB"
+
+  - command: "redistribute connected subnets"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "subnets keyword required to include non-classful routes"
+
+  - command: "redistribute eigrp 100 subnets route-map MAP"
+    context: router-ospf
+    c7200: pass
+    c3725: pass
+    notes: "Mutual redistribution; always use route-map to tag and control metrics"
+
+# ─── OSPFv3 — IOS 15.3+ (c7200 only) ────────────────────────────────────────
+
+  - command: "router ospfv3 1"
+    context: global
+    c7200: pass
+    c3725: fail
+    notes: "OSPFv3 process (IOS 15.3+) — supports both IPv4 and IPv6 address families"
+
+  - command: "ospfv3 1 ipv4 area 0"
+    context: interface
+    c7200: pass
+    c3725: fail
+    notes: "Enable OSPFv3 IPv4 AF on interface; requires 'router ospfv3' process"
+
+  - command: "ospfv3 1 ipv6 area 0"
+    context: interface
+    c7200: pass
+    c3725: fail
+    notes: "Enable OSPFv3 IPv6 AF on interface"
+
+  - command: "redistribute ospfv3 1 subnets"
+    context: router-ospf
+    c7200: pass
+    c3725: fail
+    notes: "Redistribute OSPFv3 routes into OSPFv2; IOS 15.3+ only"
+
+# ─── BGP — verified in ENCOR BGP lab-01 ─────────────────────────────────────
+
+  - command: "router bgp 65001"
+    context: global
+    c7200: pass
+    c3725: pass
+    notes: "BGP process — verified in ENCOR BGP lab-01 (basic eBGP peering)"
+
+  - command: "bgp router-id 10.1.1.1"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Explicit BGP router-id; prevents ambiguity in multi-interface routers"
+
+  - command: "bgp log-neighbor-changes"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Log BGP neighbor state transitions to syslog"
+
+  - command: "neighbor 10.0.0.1 remote-as 65002"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Define BGP peer; eBGP when AS differs, iBGP when AS matches"
+
+  - command: "neighbor 10.0.0.1 description ISP-1"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: ""
+
+  - command: "network 10.1.1.1 mask 255.255.255.255"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Advertise prefix into BGP; exact match required in RIB"
+
+  - command: "address-family ipv4"
+    context: router-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Enter BGP IPv4 unicast AF; required for neighbor activation in modern IOS"
+
+  - command: "neighbor 10.0.0.1 activate"
+    context: af-ipv4-bgp
+    c7200: pass
+    c3725: pass
+    notes: "Activate BGP peer in IPv4 unicast address-family"
+
+# ─── Switching (c3725 NM-16ESW) — verified in ENCOR Switching labs 01–02 ─────
+# NOTE: interface-switch context uses FastEthernet1/0 (NM-16ESW in slot 1).
+#       c7200 has no layer-2 switch ports — all switchport commands fail there.
+
+  - command: "switchport mode access"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: "NM-16ESW switch port access mode"
+
+  - command: "switchport mode trunk"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: ""
+
+  - command: "switchport access vlan 10"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: ""
+
+  - command: "switchport trunk encapsulation dot1q"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: "Required before 'switchport mode trunk' on NM-16ESW"
+
+  - command: "switchport trunk native vlan 99"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: ""
+
+  - command: "switchport trunk allowed vlan 10,20,30"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: ""
+
+  - command: "switchport nonegotiate"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: "Disable DTP; always use on manually configured trunk ports"
+
+  - command: "spanning-tree portfast"
+    context: interface-switch
+    c7200: fail
+    c3725: pass
+    notes: "Per-interface PortFast — works on NM-16ESW access ports"
+
+  - command: "spanning-tree vlan 10 priority 4096"
+    context: global
+    c7200: unknown
+    c3725: pass
+    notes: "Per-VLAN STP priority — must be multiple of 4096; verified on NM-16ESW"
+
+  - command: "channel-group 1 mode on"
+    context: interface-switch
+    c7200: unknown
+    c3725: pass
+    notes: "Static EtherChannel — the only supported mode on IOS 12.4(15)T14 / NM-16ESW"
+
+  - command: "spanning-tree portfast default"
+    context: global
+    c7200: unknown
+    c3725: fail
+    notes: "Global PortFast — not supported on IOS 12.4(15)T14 / NM-16ESW; use per-interface instead"
+
+  - command: "spanning-tree mode rapid-pvst"
+    context: global
+    c7200: unknown
+    c3725: fail
+    notes: "RSTP — not supported on IOS 12.4(15)T14 / NM-16ESW; platform runs 802.1D PVST+ only"
+
+  - command: "spanning-tree bpduguard enable"
+    context: interface-switch
+    c7200: unknown
+    c3725: fail
+    notes: "BPDU Guard — not supported on IOS 12.4(15)T14 / NM-16ESW"
+
+  - command: "channel-group 1 mode active"
+    context: interface-switch
+    c7200: unknown
+    c3725: fail
+    notes: "LACP — not supported on IOS 12.4(15)T14 / NM-16ESW"
+
+  - command: "channel-group 1 mode desirable"
+    context: interface-switch
+    c7200: unknown
+    c3725: fail
+    notes: "PAgP — not supported on IOS 12.4(15)T14 / NM-16ESW"
+
+  - command: "vtp domain ENCOR-LAB"
+    context: global
+    c7200: fail
+    c3725: pass
+    notes: "VTP domain config — NM-16ESW only; c7200 has no VTP support"
+
+  - command: "vtp mode server"
+    context: global
+    c7200: fail
+    c3725: pass
+    notes: ""
+
+  - command: "vtp version 2"
+    context: global
+    c7200: fail
+    c3725: pass
+    notes: ""
