@@ -1,6 +1,6 @@
 ---
 name: mega-capstone-creator
-description: Generates the CCNP ENARSI Mega Capstone — a single integrated lab spanning all 7 chapter domains (EIGRP, OSPF, BGP, Redistribution, VPN, Infrastructure Security, Infrastructure Services). Use only when invoked via the /mega-capstone command after all chapter capstones are approved. Produces a full DeepSeek Standard lab package in labs/mega-capstone/.
+description: Generates a multi-domain Mega Capstone lab spanning all chapter domains for an exam series. Use only when invoked via the /mega-capstone command after all chapter capstones are approved. Produces a complete lab package in labs/mega-capstone/.
 ---
 
 # Mega Capstone Creator Skill

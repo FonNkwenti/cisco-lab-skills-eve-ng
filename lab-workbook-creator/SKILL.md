@@ -1,6 +1,6 @@
 ---
 name: lab-workbook-creator
-description: Creates a complete CCNP ENARSI lab workbook, initial-configs, solutions, topology diagram, and setup_lab.py automation script for a single lab. Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "write a workbook", or when chapter-builder invokes it for each lab in a sequence.
+description: Creates a complete lab workbook, initial-configs, solutions, topology diagram, and setup_lab.py automation script for a single lab. Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "write a workbook", or when chapter-builder invokes it for each lab in a sequence.
 ---
 
 # Lab Workbook Creator Skill
@@ -11,11 +11,13 @@ Converts a lab topic entry from `baseline.yaml` into a full DeepSeek Standard la
 
 --# Step 1: Read Inputs
 
-Before generating anything, read:
+Before generating anything, read in parallel:
 1. `labs/[chapter]/baseline.yaml` — active devices, IPs, console ports, lab objectives
-2. Check `baseline.yaml labs[N].type` — if `capstone_i` or `capstone_ii`, set `clean_slate: true` for this lab
-3. Previous lab's `solutions/` (if this is not Lab 01 AND `clean_slate` is not true) — becomes this lab's `initial-configs/`
-4. `specs/[chapter]/chapter-spec.md` — exam bullet context for the lab's objectives
+2. `specs/[chapter]/chapter-spec.md` — exam bullet context for the lab's objectives
+
+Then, using the baseline you just read:
+3. Check `baseline.yaml labs[N].type` — if `capstone_i` or `capstone_ii`, set `clean_slate: true` for this lab
+4. Previous lab's `solutions/` (if this is not Lab 01 AND `clean_slate` is not true) — becomes this lab's `initial-configs/`
 
 Identify which devices are active for this lab number from `baseline.yaml labs[N].devices`.
 
@@ -494,11 +496,44 @@ The script must:
 
 **Validate:** Run `python3 -m py_compile setup_lab.py` — fix any SyntaxError before proceeding.
 
---# Step 7: Invoke fault-injector skill
+--# Step 7: Generate fault injection scripts
 
-After generating the workbook, invoke the `fault-injector` skill to create `scripts/fault-injection/` scripts based on the troubleshooting scenarios in the workbook.
+Dispatch a **single subagent** (general-purpose) to generate the fault injection scripts. This isolates the fault-injector/SKILL.md read and all Python script generation from main context.
 
-Use `assets/troubleshooting_scenarios_template.md` as the template for Section 9 troubleshooting content.
+Fill in all [bracketed] placeholders before dispatching.
+
+---SUBAGENT: Fault Injection Scripts (general-purpose)---
+
+Prompt:
+
+You are generating fault injection scripts for a Cisco certification lab.
+
+## Task
+Generate all fault injection scripts and supporting files in:
+  labs/[chapter]/[lab-path]/scripts/fault-injection/
+
+## MANDATORY FIRST ACTION
+Read .agent/skills/fault-injector/SKILL.md in full.
+Follow it exactly — especially the template locations in assets/.
+
+## Read After fault-injector/SKILL.md
+1. labs/[chapter]/[lab-path]/workbook.md — Section 9 (troubleshooting scenarios) and Section 3 (Console Access Table)
+
+## Lab Context
+- Chapter: [chapter]
+- Lab path: [lab-path]
+- Active devices: [list from baseline.yaml labs[N].devices — e.g. R1, R2, R3]
+- Console ports: [R1=5001, R2=5002, R3=5003 — from baseline.yaml]
+- Number of troubleshooting scenarios: [count from workbook.md Section 9]
+
+## Pre-Write Checklist
+- [ ] fault-injector/SKILL.md read in full
+- [ ] Console Access Table extracted from workbook.md Section 3
+- [ ] Each scenario's fault type and target device identified from Section 9
+- [ ] Template files in assets/ read before writing any inject script
+
+## Output Confirmation
+List all files created, py_compile result for each .py file, and fault-injector/SKILL.md Step 5 checklist completion status.
 
 --# Step 8: Write meta.yaml
 

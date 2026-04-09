@@ -1,6 +1,6 @@
 ---
 name: chapter-topics-creator
-description: Generates a chapter blueprint and baseline.yaml from CCNP ENARSI exam objectives, ensuring complete blueprint coverage and progressive lab difficulty. Use when the user asks to "plan a chapter", "create chapter topics", "start a new chapter", "what labs should I build for [technology]", "generate baseline.yaml", or "how should I structure the [technology] labs".
+description: Generates a chapter blueprint and baseline.yaml from exam objectives, ensuring complete blueprint coverage and progressive lab difficulty. Use when the user asks to "plan a chapter", "create chapter topics", "start a new chapter", "what labs should I build for [technology]", "generate baseline.yaml", or "how should I structure the [technology] labs".
 ---
 
 # Chapter Topics Creator Skill

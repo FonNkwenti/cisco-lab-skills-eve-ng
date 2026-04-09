@@ -1,11 +1,11 @@
 ---
 name: fault-injector
-description: Generates Python fault-injection scripts for GNS3 lab troubleshooting scenarios using Netmiko. Use when the user asks to "inject faults", "generate troubleshooting scripts", "create fault scenarios", "add troubleshooting practice", or automatically after lab-workbook-creator generates a workbook.
+description: Generates Python fault-injection scripts for lab troubleshooting scenarios using Netmiko. Use when the user asks to "inject faults", "generate troubleshooting scripts", "create fault scenarios", "add troubleshooting practice", or automatically after lab-workbook-creator generates a workbook.
 ---
 
 # Fault Injector Skill
 
-Generates Python scripts that inject the troubleshooting scenarios defined in lab workbooks into the live GNS3 environment. Enables students to set up fault conditions for exam-style troubleshooting practice without manual configuration.
+Generates Python scripts that inject the troubleshooting scenarios defined in lab workbooks into the live lab environment. Enables students to set up fault conditions for exam-style troubleshooting practice without manual configuration.
 
 -# Instructions
 
