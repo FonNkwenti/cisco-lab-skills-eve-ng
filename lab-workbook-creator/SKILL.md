@@ -431,8 +431,9 @@ For `capstone_ii`, Section 5 heading and opening must be:
 
 --# Step 4: Generate initial-configs/
 
-- **Lab 01:** Generate base IP addressing from `baseline.yaml core_topology` (IP config only — no routing protocol config).
-- **Lab N (N > 1, not capstone):** Copy exactly from Lab (N-1) `solutions/`. Do not modify.
+- **First progressive lab (number 0):** Generate base IP addressing from `baseline.yaml core_topology` (IP config only — no routing protocol config).
+- **Subsequent progressive labs (N > 0):** Copy exactly from Lab (N-1) `solutions/`. Do not modify.
+- **Standalone labs (`type: standalone`):** Generate from `baseline.yaml core_topology` IP addressing only — not chained from previous lab.
 - **Capstone I or Capstone II (`clean_slate: true`):** Generate from `baseline.yaml core_topology` IP addressing only — do NOT copy previous lab solutions. All routing protocol config is absent; the student configures everything from scratch.
 - One `.cfg` file per active device, named `[Device].cfg`.
 
@@ -446,7 +447,7 @@ Fill in all [bracketed] placeholders before dispatching.
 
 Prompt:
 
-You are generating a topology.drawio diagram for a CCNP ENARSI EVE-NG lab.
+You are generating a topology.drawio diagram for a Cisco certification EVE-NG lab.
 
 ## Task
 Write Draw.io XML to:
@@ -547,7 +548,7 @@ After the fault-injector skill completes, write `meta.yaml` in the lab directory
 1. Get `skill_version`: run `git -C .agent/skills log --format="%ci" -1` and take the date portion (YYYY-MM-DD).
 2. Get today's date (YYYY-MM-DD).
 3. Glob all files created in this lab directory (recursive, relative paths).
-4. Write `labs/[chapter]/[lab-dir]/meta.yaml`:
+4. Write `labs/<topic>/lab-NN-<slug>/meta.yaml`:
 
 ```yaml
 # Auto-generated — do not edit manually. Use /tag-lab to stamp external agent runs.
@@ -556,7 +557,7 @@ chapter: [chapter]
 created:
   date: "[YYYY-MM-DD]"
   agent: claude-sonnet-4-6
-  skill: create-lab
+  skill: lab-workbook-creator
   skill_version: "[YYYY-MM-DD]"
   files:
     - workbook.md

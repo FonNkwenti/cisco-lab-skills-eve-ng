@@ -11,9 +11,9 @@ description: Visual style guide and workflow for creating Cisco network topology
 
 Store diagrams in the following directories based on their type:
 
-- **Topology Diagrams**: `labs/[chapter]/[lab-folder]/topology.drawio`
+- **Topology Diagrams**: `labs/<topic>/lab-NN-<slug>/topology.drawio`
   - Use for network topologies, physical cabling, and logical connectivity.
-- **Flow Diagrams**: `labs/[chapter]/[lab-folder]/flow-[description].drawio`
+- **Flow Diagrams**: `labs/<topic>/lab-NN-<slug>/flow-[description].drawio`
   - Use for packet flows, process charts, and logic flows.
 
 --# 2. File Formats & Deliverables

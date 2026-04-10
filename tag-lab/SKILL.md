@@ -20,7 +20,7 @@ Examples:
 Resolution rules:
 - `chapter` = first path segment (e.g., `eigrp`)
 - `lab-slug` = second path segment — match by prefix glob if partial (e.g., `lab-07` matches `lab-07-filtering-route-maps`)
-- Full lab path: `labs/[chapter]/[lab-dir]/`
+- Full lab path: `labs/<topic>/lab-NN-<slug>/`
 - `agent-name` = second argument as-is (e.g., `gemini-2.0-flash`, `kimi-k2.5`, `claude-sonnet-4-6`)
 - `skill-name` = third argument as-is (e.g., `create-lab`, `inject-faults`, `chapter-topics`)
 

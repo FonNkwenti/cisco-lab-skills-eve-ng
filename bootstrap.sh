@@ -31,7 +31,7 @@ if [ -d "$TARGET_DIR" ]; then
 fi
 
 echo "→ Creating directory structure..."
-mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE",conductor/tracks,labs/common,tests,docs,.prompts}
+mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE",specs,conductor/tracks,labs,tests,docs,.prompts}
 
 echo "→ Initializing git repo..."
 git -C "$TARGET_DIR" init
@@ -141,5 +141,5 @@ echo "  ✅ Done! Project: $TARGET_DIR"
 echo ""
 echo "  Next steps:"
 echo "  1. Create GitHub repo and push: git remote add origin <url> && git push"
-echo "  2. Use chapter-topics-creator skill for your first chapter"
+echo "  2. Upload blueprint to blueprint/$EXAM_CODE/blueprint.md, then run exam-planner"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

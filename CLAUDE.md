@@ -14,8 +14,8 @@ Always read at the start of a lab generation session:
 ## Three-Phase Workflow
 
 1. **exam-planner** — reads full blueprint, creates `topic-plan.yaml` + empty `labs/<topic>/` folders
-2. **spec-creator** (in `chapter-topics-creator/`) — creates `spec.md` + `baseline.yaml` per topic (review after each)
-3. **lab-builder** (in `lab-workbook-creator/`) — builds one lab at a time from the spec (review after each)
+2. **spec-creator** — creates `spec.md` + `baseline.yaml` per topic (review after each)
+3. **lab-builder** — builds one lab at a time from the spec (review after each)
 
 Blueprint location: `blueprint/<exam-code>/blueprint.md`
 
@@ -34,10 +34,10 @@ Skills that generate large output are dispatched as subagents to protect main co
 
 ## Exam-Agnostic Design
 
-Skills in this repo are platform and exam agnostic. Exam-specific content (blueprint bullets,
-IP addressing plans, chapter-spec.md) lives in the exam repo, not here. When a skill
-references a specific exam (e.g., "ENARSI") treat it as an example — apply to the actual
-exam in context.
+Skills in this repo are platform and exam agnostic. Exam-specific content (blueprint file,
+topic-plan.yaml, spec.md, baseline.yaml, labs) lives in the exam repo, not here. When a skill
+references a specific exam (e.g., "ENARSI" or "ENCOR") treat it as an example — apply to the
+actual exam in context.
 
 ## Platform Reference
 

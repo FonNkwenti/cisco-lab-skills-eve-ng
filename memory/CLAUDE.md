@@ -5,10 +5,12 @@
 
 ## Available Skills
 
-@skills/chapter-builder/SKILL.md
-@skills/chapter-topics-creator/SKILL.md
-@skills/lab-workbook-creator/SKILL.md
+@skills/exam-planner/SKILL.md
+@skills/spec-creator/SKILL.md            (Phase 2)
+@skills/lab-builder/SKILL.md             (Phase 3 orchestrator)
+@skills/lab-workbook-creator/SKILL.md    (single lab generator)
 @skills/fault-injector/SKILL.md
+@skills/mega-capstone-creator/SKILL.md
 @skills/tag-lab/SKILL.md
 @skills/drawio/SKILL.md
 @skills/eve-ng/SKILL.md
@@ -24,8 +26,16 @@
 
 ## Lab Standards (DeepSeek Standard)
 
+## Three-Phase Workflow
+
+1. **exam-planner** — reads `blueprint/<exam-code>/blueprint.md`, produces `specs/topic-plan.yaml` + empty `labs/<topic>/` folders
+2. **spec-creator** — reads `topic-plan.yaml`, produces `labs/<topic>/spec.md` + `baseline.yaml` per topic, with pause-for-review
+3. **lab-builder** — builds labs one at a time from `baseline.yaml`, pauses after each for review
+
+Lab directories use descriptive zero-indexed names: `lab-00-introduction`, `lab-01-classic-adjacency`.
+
 Every lab directory MUST contain:
-- `workbook.md` — student workbook with 9+ sections
+- `workbook.md` — student workbook with 10 sections
 - `initial-configs/` — per-device .cfg files
 - `solutions/` — per-device .cfg files
 - `topology.drawio` — Cisco-icon diagram (`.drawio` only; no PNG required)

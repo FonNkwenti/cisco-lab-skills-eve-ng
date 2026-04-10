@@ -147,8 +147,8 @@ These directories are platform-agnostic and should be copied as-is:
 
 - `lab-workbook-creator/` — workbook generation skill
 - `drawio/` — diagram skill
-- `chapter-builder/` — chapter scaffolding
-- `chapter-topics-creator/`
+- `spec-creator/` — topic spec generation
+- `lab-builder/` — lab generation orchestrator
 - `cisco-troubleshooting-1/`
 - `fault-injector/`
 - `mega-capstone-creator/`

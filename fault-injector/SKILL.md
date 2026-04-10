@@ -76,7 +76,7 @@ Update provenance tracking for this lab.
 -# Output Structure
 
 ```
-labs/[chapter]/[lab-NN]/
+labs/<topic>/lab-NN-<slug>/
 └── scripts/
     └── fault-injection/
         ├── README.md

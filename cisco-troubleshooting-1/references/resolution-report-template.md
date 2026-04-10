@@ -8,7 +8,7 @@ Use this template to generate the final troubleshooting report.
 
 ```
 Incident ID:     [INC-YYYY-NNNN]
-Lab:             labs/[chapter]/[lab-NN-slug]/
+Lab:             labs/<topic>/lab-NN-<slug>/
 Reported:        [timestamp]
 Severity:        [High / Medium / Low]
 

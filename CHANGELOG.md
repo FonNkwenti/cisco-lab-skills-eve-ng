@@ -4,6 +4,51 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ---
 
+## [2.0.0] — 2026-04-10
+
+### Skill Restructure — Three-Phase Workflow
+
+**What changed:** Introduced a three-phase lab generation workflow with exam-wide planning,
+per-topic spec creation, and pause-and-review lab building.
+
+**New skills:**
+- `exam-planner` — reads full blueprint from `blueprint/<exam-code>/blueprint.md`, produces
+  `specs/topic-plan.yaml` with technology-based topic breakdown and lab count estimates
+- `capstone-creator` scope planned but deferred; per-topic capstones remain in spec-creator
+
+**Renamed skills (directory and skill name):**
+- `chapter-topics-creator/` → `spec-creator/` — now reads from `topic-plan.yaml` instead of
+  requiring manual `chapter-spec.md`; generates `spec.md` + `baseline.yaml` per topic
+- `chapter-builder/` → `lab-builder/` — default is now pause-and-review (not batch);
+  pauses after each lab for user approval
+
+**Breaking changes:**
+- `baseline.yaml` schema: labs are zero-indexed (`number: 0`), new `folder` field with
+  descriptive slugs (`lab-00-introduction`), new `blueprint_refs` field per lab
+- Lab directory naming: `lab-NN-[name]/` replaces `labNN/` (e.g., `lab-00-introduction/`
+  instead of `lab01/`)
+- Blueprint input: now read from `blueprint/<exam-code>/blueprint.md` via exam-planner,
+  not manually written into `chapter-spec.md`
+- Exam repos using `chapter-spec.md` as the primary input must migrate to the
+  `topic-plan.yaml` workflow
+
+**Other changes:**
+- `bootstrap.ps1` / `bootstrap.sh`: now scaffold `blueprint/`, `specs/`, `labs/` directories
+- `memory/CLAUDE.md`: updated skill list and added three-phase workflow summary
+- `memory/skills-index.md`: updated workflow diagram and platform selection table
+- `memory/lab-standards.md`: config chaining rules updated for zero-indexed numbering
+- EVE-NG inventory: added Linux Ubuntu Server 20.04 to installed images
+
+**Why:** The previous workflow required users to manually write `chapter-spec.md` per chapter
+before any labs could be generated. The new workflow reads the full exam blueprint once and
+plans the entire exam, reducing manual effort and ensuring complete blueprint coverage.
+
+**Affected projects:** All exam repos need `git submodule update --remote .agent/skills`
+and should adopt the new three-phase workflow. Existing labs generated with v1.x continue
+to work but new labs should use the v2.0 workflow.
+
+---
+
 ## [1.0.0] — 2026-02-20
 
 ### Initial Release — Extracted from ccnp-encor-labs-conductor

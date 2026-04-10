@@ -5,7 +5,7 @@ The canonical quality bar for all labs in this system.
 ## Required Files Per Lab
 
 ```
-labs/[chapter]/lab-NN-[name]/
+labs/<topic>/lab-NN-<slug>/
 ├── workbook.md
 ├── initial-configs/   R1.cfg, R2.cfg, ...
 ├── solutions/         R1.cfg, R2.cfg, ...
@@ -84,9 +84,11 @@ Reference `lab-workbook-creator/SKILL.md` Section 5/7 format blocks for the exac
 
 ## Config Chaining Rules
 
-- Lab 01 `initial-configs/` = IP addressing only from `baseline.yaml`
-- Lab N `initial-configs/` = Lab (N-1) `solutions/`
-- **Never remove** a config command between labs — only add
+- Lab 00 (first progressive) `initial-configs/` = IP addressing only from `baseline.yaml`
+- Lab N (progressive, N > 0) `initial-configs/` = Lab (N-1) `solutions/`
+- Standalone labs `initial-configs/` = IP addressing only from `baseline.yaml`
+- Capstone I + II `initial-configs/` = IP addressing only from `baseline.yaml` (clean slate)
+- **Never remove** a config command between progressive labs — only add
 
 ## Troubleshooting Scenario Requirements
 

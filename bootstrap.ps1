@@ -54,8 +54,9 @@ try {
     $dirs = @(
         ".agent",
         "blueprint/$ExamCode",
+        "specs",
         "conductor/tracks",
-        "labs/common",
+        "labs",
         "tests",
         "docs",
         ".prompts"
@@ -175,7 +176,7 @@ Lab creation uses skills in \`.agent/skills/\`. See [CLAUDE.md](CLAUDE.md) for c
     Write-Host ""
     Write-Host "  Next steps:"
     Write-Host "  1. Create GitHub repo and push: git remote add origin <url> && git push"
-    Write-Host "  2. Use chapter-topics-creator skill for your first chapter"
+    Write-Host "  2. Upload blueprint to blueprint/$ExamCode/blueprint.md, then run exam-planner"
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     Write-Host ""
 }

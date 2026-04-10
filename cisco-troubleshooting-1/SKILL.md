@@ -13,7 +13,7 @@ Integrates with EVE-NG labs by reading `workbook.md` for context, connecting to 
 
 --# Phase 0: Lab Context Gathering (Mandatory)
 
-Before diagnosing, read the lab files at `labs/[chapter]/[lab-NN-slug]/`:
+Before diagnosing, read the lab files at `labs/<topic>/lab-NN-<slug>/`:
 
 1. **`workbook.md`** — topology, objectives, Console Access Table, expected verification outputs, Section 9 troubleshooting scenarios (private reference — do NOT reveal unless asked)
 2. **`initial-configs/`** — pre-configured baseline state for each router
@@ -101,7 +101,7 @@ See `references/resolution-report-template.md` for the full template.
 
 --# Lab context files not found
 - **Cause:** Lab path is wrong or workbook.md has not been generated yet.
-- **Solution:** Confirm the path format `labs/[chapter]/lab-NN-[slug]/`. If workbook.md is missing, run the `create-lab` skill first.
+- **Solution:** Confirm the path format `labs/<topic>/lab-NN-<slug>/`. If workbook.md is missing, run the `create-lab` skill first.
 
 --# Console Access Table missing or unparseable
 - **Cause:** workbook.md was generated with a non-standard format, or dynamic EVE-NG ports haven't been populated yet.
@@ -119,10 +119,10 @@ See `references/resolution-report-template.md` for the full template.
 
 | Resource | Path |
 |----------|------|
-| Lab workbook | `labs/[chapter]/lab-NN-[slug]/workbook.md` |
-| Initial configs | `labs/[chapter]/lab-NN-[slug]/initial-configs/` |
-| Solution configs | `labs/[chapter]/lab-NN-[slug]/solutions/` |
-| Chapter baseline | `labs/[chapter]/baseline.yaml` |
+| Lab workbook | `labs/<topic>/lab-NN-<slug>/workbook.md` |
+| Initial configs | `labs/<topic>/lab-NN-<slug>/initial-configs/` |
+| Solution configs | `labs/<topic>/lab-NN-<slug>/solutions/` |
+| Chapter baseline | `labs/<topic>/baseline.yaml` |
 
 -# Examples
 

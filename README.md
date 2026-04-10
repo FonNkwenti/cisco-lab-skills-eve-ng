@@ -11,14 +11,14 @@ One repo, shared across all exam series (ENARSI, SPCOR, ENCOR, etc.). Fix a skil
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 1 | `exam-planner` | Reads full blueprint, groups into technology topics, creates `topic-plan.yaml` + empty folders |
-| 2 | `spec-creator` (in `chapter-topics-creator/`) | Creates detailed lab spec + `baseline.yaml` per topic (one at a time, with review) |
+| 2 | `spec-creator` | Creates detailed lab spec + `baseline.yaml` per topic (one at a time, with review) |
 | 3 | `lab-workbook-creator` | Builds a single lab package (workbook, configs, topology, scripts) per topic (one at a time, with review) |
 
 ### Supporting Skills
 
 | Skill | What It Does |
 |-------|-------------|
-| `chapter-builder` | Generates all labs in a topic with config chaining |
+| `lab-builder` | Generates all labs in a topic with config chaining |
 | `fault-injector` | Creates automated Netmiko fault injection scripts |
 | `mega-capstone-creator` | Generates the multi-domain final capstone spanning all topics |
 | `drawio` | Visual style guide + `generate_topo.py` for topology diagrams |
@@ -32,9 +32,9 @@ One repo, shared across all exam series (ENARSI, SPCOR, ENCOR, etc.). Fix a skil
 cisco-lab-skills/              ← submodule root (mounted at .agent/skills/)
 ├── exam-planner/              (Phase 1 — blueprint → topic plan)
 │   └── SKILL.md
-├── chapter-topics-creator/    (Phase 2 — spec-creator: topic → spec + baseline)
+├── spec-creator/              (Phase 2 — topic → spec + baseline)
 │   └── SKILL.md
-├── chapter-builder/
+├── lab-builder/               (Phase 3 — orchestrates lab generation)
 │   └── SKILL.md
 ├── lab-workbook-creator/
 │   ├── SKILL.md
@@ -271,7 +271,7 @@ git submodule update --init
 
 ```bash
 cd C:\Users\Nkwenti\Documents\Labs\Cisco\cisco-lab-skills-eve-ng
-# edit chapter-topics-creator/SKILL.md, lab-workbook-creator/SKILL.md, etc.
+# edit spec-creator/SKILL.md, lab-workbook-creator/SKILL.md, etc.
 git add .
 git commit -m "fix(lab-workbook-creator): capstone clean-slate initial-config logic"
 ```

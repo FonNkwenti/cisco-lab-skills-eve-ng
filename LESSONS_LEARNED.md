@@ -169,9 +169,9 @@ Never use `FastEthernet` in new EVE-NG labs unless using a legacy Dynamips image
 
 Solutions from Lab N become initial configs for Lab N+1. Never `no` a command between labs unless that lab explicitly teaches undoing it.
 
-### ⚡ Pattern: Always run `chapter-topics-creator` first
+### ⚡ Pattern: Always run `spec-creator` first
 
-Starting a chapter by jumping to `lab-workbook-creator` for Lab 01 causes topology problems in later labs (interface exhaustion, no room for optional devices). `chapter-topics-creator` pre-reserves IPs and interfaces for all planned labs via `baseline.yaml`.
+Starting a topic by jumping to `lab-workbook-creator` for Lab 00 causes topology problems in later labs (interface exhaustion, no room for optional devices). `spec-creator` pre-reserves IPs and interfaces for all planned labs via `baseline.yaml`.
 
 ### ⚡ Pattern: Console Access Table is required for fault-injector
 
