@@ -33,6 +33,5 @@ exam in context.
 
 ## Platform Reference
 
-`gns3/SKILL.md` — GNS3/Dynamips constraints (Apple Silicon, c7200/c3725 only).
-`eve-ng/SKILL.md` — EVE-NG constraints (Intel hardware, QEMU images). Replace `gns3` with
-`eve-ng` when working in an EVE-NG exam repo.
+`eve-ng/SKILL.md` — **Active platform.** EVE-NG constraints (Intel/Windows, QEMU/IOL images: IOSv, IOSvL2, CSR1000v, XRv 9000, NX-OSv, ASAv).
+`gns3/SKILL.md` — **DEPRECATED.** GNS3/Dynamips archive (Apple Silicon, c7200/c3725 only). Read-only reference.

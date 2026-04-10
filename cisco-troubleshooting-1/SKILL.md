@@ -1,13 +1,13 @@
 ---
 name: cisco-troubleshooting-1
-description: Systematically diagnoses and resolves Cisco IOS network faults using structured methodologies. Use when a user reports a network fault, says a lab "isn't working", asks to "troubleshoot" a problem, or describes EIGRP/OSPF/BGP adjacency failures, missing routes, connectivity problems, or configuration errors in a GNS3 lab. Do NOT use for initial network design, security hardening, capacity planning, or routine monitoring.
+description: Systematically diagnoses and resolves Cisco IOS network faults using structured methodologies. Use when a user reports a network fault, says a lab "isn't working", asks to "troubleshoot" a problem, or describes EIGRP/OSPF/BGP adjacency failures, missing routes, connectivity problems, or configuration errors in an EVE-NG lab. Do NOT use for initial network design, security hardening, capacity planning, or routine monitoring.
 ---
 
 # Cisco Network Troubleshooting Skill
 
 Implements the **Structured Troubleshooting Process** from Cisco curriculum. Every fault follows a four-phase lifecycle: Problem Definition → Methodology Selection → Diagnostic Execution → Resolution & Reporting.
 
-Integrates with GNS3 labs by reading `workbook.md` for context, connecting to live routers via Netmiko telnet, and comparing against `initial-configs/` and `solutions/`.
+Integrates with EVE-NG labs by reading `workbook.md` for context, connecting to live routers via Netmiko (telnet to EVE-NG host or SSH), and comparing against `initial-configs/` and `solutions/`.
 
 -# Instructions
 
@@ -21,8 +21,9 @@ Before diagnosing, read the lab files at `labs/[chapter]/[lab-NN-slug]/`:
 
 Parse the Console Access Table to build the device-to-port map:
 ```
-R1 → 5001 | R2 → 5002 | R3 → 5003 | R7 → 5007  (default pattern: RN → 500N)
+R1 → <port> | R2 → <port> | R3 → <port>   (dynamic EVE-NG ports from workbook Section 3)
 ```
+EVE-NG assigns ports dynamically per lab session — check the Console Access Table in `workbook.md` Section 3 or the EVE-NG web UI for the assigned ports.
 
 --# Phase I: Problem Definition
 
@@ -64,9 +65,9 @@ Connect to routers via Netmiko:
 ```python
 from netmiko import ConnectHandler
 conn = ConnectHandler(
-    device_type="cisco_ios_telnet",
-    host="127.0.0.1",
-    port=5001,   # from Console Access Table
+    device_type="cisco_ios_telnet",   # or "cisco_ios" for SSH
+    host="<eve-ng-ip>",               # EVE-NG server IP
+    port=32768,                       # dynamic port from Console Access Table
     username="", password="", secret="",
     timeout=10,
 )
@@ -103,12 +104,12 @@ See `references/resolution-report-template.md` for the full template.
 - **Solution:** Confirm the path format `labs/[chapter]/lab-NN-[slug]/`. If workbook.md is missing, run the `create-lab` skill first.
 
 --# Console Access Table missing or unparseable
-- **Cause:** workbook.md was generated with a non-standard format.
-- **Solution:** Fall back to default port convention (R1=5001, R2=5002, RN=500N), or check `labs/[chapter]/baseline.yaml` for declared console ports.
+- **Cause:** workbook.md was generated with a non-standard format, or dynamic EVE-NG ports haven't been populated yet.
+- **Solution:** Ask the user to open the EVE-NG web UI, start the lab, note each node's assigned telnet port, and add them to `workbook.md` Section 3. There is no static port fallback — EVE-NG ports are always dynamic.
 
 --# Netmiko connection refused
-- **Cause:** GNS3 project is not running or device has not finished booting.
-- **Solution:** Open GNS3 and confirm all devices show "Running". IOS boot typically takes 30–60 seconds. Retry after boot completes.
+- **Cause:** EVE-NG lab is not running or the node has not finished booting.
+- **Solution:** Open EVE-NG web UI and confirm all nodes show "Running" (green). IOSv boot typically takes 60–90 seconds. XRv 9000 may take 10+ minutes. Retry after boot completes.
 
 --# User asks for the solution directly
 - **Cause:** User is stuck or frustrated.

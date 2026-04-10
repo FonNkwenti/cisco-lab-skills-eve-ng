@@ -175,18 +175,17 @@ rm -rf gns3/
 
 ---
 
-## Phase 5 — EVE-NG Skill Layer (Build Fresh)
+## Phase 5 — EVE-NG Skill Layer ✓ COMPLETE
 
-Create `eve-ng/` directory in the new repo with:
+`eve-ng/SKILL.md` has been created in this repo. It covers:
 
-```
-eve-ng/
-  api.md          # EVE-NG REST API cheat sheet
-  node-types.md   # QEMU image types and config
-  topology.md     # .unl file structure
-  connect.md      # Console/SSH connection methods
-  snapshots.md    # Lab snapshot and wipe procedures
-```
+- Section 1: Host architecture (Dell i7-1370P, KVM/QEMU)
+- Section 2: Platform selection guide (IOSv, IOSvL2, CSR1000v, IOL, XRv 9000, NX-OSv, ASAv)
+- Section 3: Hardware templates with interface maps per platform
+- Section 4: VPC node reference
+- Section 5: Console access (REST API discovery, HTML5, SecureCRT, telnet)
+- Section 6: Design rules for lab generation
+- Section 7: Common issues and solutions
 
 EVE-NG API base URL: `http://<eve-ng-ip>/api/`
 
@@ -196,7 +195,7 @@ Key endpoints:
 |---|---|---|
 | `/api/auth/login` | POST | Authenticate |
 | `/api/labs` | GET/POST | List or create labs |
-| `/api/labs/<lab>/nodes` | GET/POST | List or add nodes |
+| `/api/labs/<lab>/nodes` | GET/POST | List or add nodes — returns dynamic telnet ports |
 | `/api/labs/<lab>/nodes/<id>/start` | GET | Start a node |
 | `/api/labs/<lab>/nodes/<id>/stop` | GET | Stop a node |
 

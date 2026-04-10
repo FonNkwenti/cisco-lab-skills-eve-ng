@@ -13,7 +13,7 @@ Generates Python scripts that inject the troubleshooting scenarios defined in la
 
 Read from the lab directory:
 1. `workbook.md` — extract troubleshooting scenarios from Section 9 and the Console Access Table
-2. Console Access Table → device-to-port map: `{"R1": 5001, "R2": 5002, ...}`
+2. Console Access Table → device-to-port map: `{"R1": <port>, "R2": <port>, ...}`. Ports are dynamic in EVE-NG — populated from the Console Access Table in the workbook (which is filled in from the EVE-NG web UI after lab creation).
 3. From each scenario extract: **Scenario Number**, **Target Device**, **Fault Type**, **Commands to inject**
 
 --# Step 2: Generate Fault Injection Scripts
@@ -26,7 +26,9 @@ Use `assets/inject_scenario_01_template.py` (and `_02`, `_03`) as base templates
 - Docstring describing exactly what fault is injected
 
 Each script must:
-1. Connect via Netmiko `device_type="cisco_ios_telnet"` to `localhost:[console_port]`
+1. Connect via Netmiko to EVE-NG host IP + dynamic console port. Two supported modes:
+   - **Telnet (default):** `device_type="cisco_ios_telnet"`, `host=EVE_NG_HOST`, `port=<dynamic>`
+   - **SSH (alternative):** `device_type="cisco_ios"`, `host=<node-mgmt-ip>`, `port=22`
 2. Apply fault commands via `send_config_set()`
 3. Print clear progress output (connecting → injecting → done)
 4. Handle connection errors gracefully with a non-zero exit
@@ -41,7 +43,7 @@ Use `assets/README_template.md` as the base. Fill in:
 - One section per scenario: scenario number, target device, command to run
 - **Ops-only — do NOT include fault names or descriptions that reveal what is broken**
 - Usage instructions for injecting and restoring
-- Prerequisites (GNS3 running, netmiko installed)
+- Prerequisites (EVE-NG lab running with all nodes started, netmiko installed)
 
 --# Step 5: Validate
 
@@ -100,8 +102,8 @@ from netmiko import ConnectHandler
 import sys
 
 DEVICE_NAME  = "R2"
-CONSOLE_HOST = "127.0.0.1"
-CONSOLE_PORT = 5002
+EVE_NG_HOST  = "192.168.x.x"  # EVE-NG server IP — set to match your environment
+CONSOLE_PORT = 32768           # Dynamic port from EVE-NG web UI / Console Access Table
 
 FAULT_COMMANDS = [
     "no router eigrp 100",
@@ -109,11 +111,11 @@ FAULT_COMMANDS = [
 ]
 
 def inject_fault():
-    print(f"[*] Connecting to {DEVICE_NAME} on port {CONSOLE_PORT}...")
+    print(f"[*] Connecting to {DEVICE_NAME} on {EVE_NG_HOST}:{CONSOLE_PORT}...")
     try:
         conn = ConnectHandler(
             device_type="cisco_ios_telnet",
-            host=CONSOLE_HOST,
+            host=EVE_NG_HOST,
             port=CONSOLE_PORT,
             username="", password="", secret="",
             timeout=10,
@@ -140,8 +142,8 @@ if __name__ == "__main__":
 - **Solution:** Stop. Ask the user to add at least 3 troubleshooting scenarios to `workbook.md` Section 9 before running this skill. Use `assets/troubleshooting_scenarios_template.md` (from the `lab-workbook-creator` assets) as a reference format.
 
 --# Console Access Table not found in workbook
-- **Cause:** Workbook was generated with a non-standard structure.
-- **Solution:** Fall back to default port convention (R1=5001, RN=500N). Warn the user.
+- **Cause:** Workbook was generated with a non-standard structure, or the user hasn't populated dynamic EVE-NG ports yet.
+- **Solution:** Ask the user to start the lab in EVE-NG web UI, note the assigned telnet ports per node, and add them to the Console Access Table in `workbook.md` Section 3 before running this skill.
 
 --# Scenario fault commands are unclear
 - **Cause:** The solution section in the workbook doesn't clearly show what was misconfigured.

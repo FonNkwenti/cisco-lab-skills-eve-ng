@@ -2,11 +2,14 @@ from netmiko import ConnectHandler
 
 
 class FaultInjector:
-    def __init__(self, host="127.0.0.1"):
+    def __init__(self, host="192.168.x.x"):
+        """
+        host: EVE-NG server IP. Override with the actual IP of your EVE-NG server.
+        """
         self.host = host
 
     def _connect(self, port):
-        """Create a Netmiko connection to a GNS3 console port."""
+        """Create a Netmiko connection to an EVE-NG console port (telnet)."""
         device = {
             "device_type": "cisco_ios_telnet",
             "host": self.host,
@@ -20,7 +23,7 @@ class FaultInjector:
 
     def execute_commands(self, port, commands, description="Injecting fault"):
         """
-        Connects to a GNS3 console via Netmiko and executes IOS
+        Connects to an EVE-NG console port via Netmiko and executes IOS
         configuration commands.
         """
         try:

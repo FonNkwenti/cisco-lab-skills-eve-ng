@@ -30,15 +30,15 @@ The Mega Capstone uses approximately 10 routers covering all 7 domains. Write `l
 
 | Device | Platform | Role | Domain |
 |--------|----------|------|--------|
-| R1 | c7200 | EIGRP Hub / DMVPN Hub | EIGRP, VPN |
-| R2 | c7200 | EIGRP Branch A / DMVPN Spoke | EIGRP, VPN |
-| R3 | c7200 | EIGRP Branch B / DMVPN Spoke | EIGRP, VPN |
-| R4 | c7200 | OSPF ABR (Area 0 / Area 1) / EIGRP-OSPF Redistribution Boundary | OSPF, Redistribution |
-| R5 | c7200 | OSPF Area 1 Internal | OSPF |
-| R6 | c7200 | eBGP Edge / OSPF-BGP Redistribution Boundary / Edge Security | BGP, Redistribution, Security |
-| R7 | c7200 | OSPF Area 0 Internal | OSPF |
-| R8 | c7200 | Services Router (DHCP server, IP SLA source) | Infrastructure Services |
-| R9 | c7200 | IP SLA target / SNMP management | Infrastructure Services |
+| R1 | iosv | EIGRP Hub / DMVPN Hub | EIGRP, VPN |
+| R2 | iosv | EIGRP Branch A / DMVPN Spoke | EIGRP, VPN |
+| R3 | iosv | EIGRP Branch B / DMVPN Spoke | EIGRP, VPN |
+| R4 | iosv | OSPF ABR (Area 0 / Area 1) / EIGRP-OSPF Redistribution Boundary | OSPF, Redistribution |
+| R5 | iosv | OSPF Area 1 Internal | OSPF |
+| R6 | iosv | eBGP Edge / OSPF-BGP Redistribution Boundary / Edge Security | BGP, Redistribution, Security |
+| R7 | iosv | OSPF Area 0 Internal | OSPF |
+| R8 | iosv | Services Router (DHCP server, IP SLA source) | Infrastructure Services |
+| R9 | iosv | IP SLA target / SNMP management | Infrastructure Services |
 | SW1 | — | VPCS / syslog+SNMP collector (simulated as loopback on R9) | Infrastructure Services |
 
 **Addressing plan (fresh — do not reuse chapter subnets):**
@@ -52,7 +52,7 @@ The Mega Capstone uses approximately 10 routers covering all 7 domains. Write `l
 - Services: 10.200.99.0/24 (DHCP pool on R8 for simulated clients)
 - IPv6: 2001:db8:200::/48 prefix space, per-link /64s
 
-**Console ports:** R1=5011, R2=5012, … R9=5019 (avoids conflict with chapter labs)
+**Console ports:** Dynamic — assigned by EVE-NG at lab creation. Populate the Console Access Table in workbook.md Section 3 from the EVE-NG web UI after creating the lab.
 
 **`labs/mega-capstone/baseline.yaml` schema:** Same format as chapter baselines. Mark `standalone: true` at the top level to indicate this is not chained from any chapter.
 
@@ -176,7 +176,7 @@ Zones should be visually grouped:
 
 --# Step 8: Generate setup_lab.py
 
-Netmiko script connecting to all 9 devices via `cisco_ios_telnet` on ports 5011–5019. Same pattern as chapter lab scripts.
+Netmiko script connecting to all 9 devices via `cisco_ios_telnet` to EVE-NG host + dynamic ports. Accepts `--host <eve-ng-ip>` argument. Same structure as chapter lab setup scripts.
 
 --# Step 9: Generate scripts/fault-injection/
 
@@ -276,9 +276,9 @@ labs/mega-capstone/
 - **Cause:** Mega Capstone IPs overlap with a chapter's baseline addressing (both use 10.0.0.x loopbacks).
 - **Solution:** Use the 10.100.0.x/32 loopback range and 10.200.x.x/30 transit ranges reserved exclusively for the Mega Capstone. Never reuse chapter IP ranges.
 
---# Too many devices — GNS3 performance
-- **Cause:** 9 Dynamips routers may exceed available RAM on Apple Silicon hosts.
-- **Solution:** Note in workbook Section 3 that this lab requires at least 8GB of RAM allocated to GNS3. Recommend running on a host with 16GB. Alternatively, run in two segments: EIGRP+VPN (R1-R3) first, then OSPF+BGP (R4-R7) separately.
+--# Too many devices — EVE-NG resource planning
+- **Cause:** 9 IOSv nodes × 512 MB = ~4.5 GB RAM. Within the 64 GB host capacity but worth noting.
+- **Solution:** All 9 nodes should run comfortably on the Dell i7-1370P/64 GB host. If resource contention occurs, run in two segments: EIGRP+VPN (R1-R3) first, then OSPF+BGP (R4-R7) separately. Note: boot time for 9 IOSv nodes is approximately 2–3 minutes total.
 
 -# Examples
 
@@ -291,6 +291,6 @@ Actions:
 4. Generate `initial-configs/` (IP addressing only, 9 devices).
 5. Generate `solutions/` (full 7-domain configs, 9 devices).
 6. Generate `topology.drawio` via `drawio` skill.
-7. Generate `setup_lab.py` for 9 devices on ports 5011–5019.
+7. Generate `setup_lab.py` for 9 devices with `--host <eve-ng-ip>` and dynamic ports (populated from EVE-NG web UI).
 8. Invoke `fault-injector` skill to generate 7 inject scripts + `apply_solution.py`.
 9. Update `memory/progress.md` — add Mega Capstone row with status Review Needed.

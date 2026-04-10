@@ -5,7 +5,7 @@ description: Creates a complete lab workbook, initial-configs, solutions, topolo
 
 # Lab Workbook Creator Skill
 
-Converts a lab topic entry from `baseline.yaml` into a full DeepSeek Standard lab package. Prioritises theoretical context, copy-pasteable Cisco IOS configurations, and GNS3 automation scripts.
+Converts a lab topic entry from `baseline.yaml` into a full DeepSeek Standard lab package. Prioritises theoretical context, copy-pasteable Cisco IOS configurations, and EVE-NG automation scripts.
 
 -# Instructions
 
@@ -66,9 +66,9 @@ Re-read `.agent/skills/reference-data/ios-compatibility.yaml`. Delete `_verify_i
 ### 2e — Resolve failures
 
 For any command that is `fail` on the target platform:
-- If `pass` on c7200: switch the affected device to c7200 in the draft config.
+- If `pass` on `ios-xe` (CSR1000v): switch the affected device to `csr1000v` in the draft config.
   Log the platform change as a note in `decisions.md`. Proceed.
-- If `fail` on both platforms: do not use the command. Remove it from the draft
+- If `fail` on all platforms: do not use the command. Remove it from the draft
   and adjust the lab objective to use a supported alternative. Alert the user.
   Log the dropped command and affected blueprint bullet to `memory/decisions.md`.
   Verify the remaining lab objectives still cover all `baseline.yaml labs[N].objectives` entries —
@@ -401,8 +401,8 @@ D    10.3.0.0/24 [90/156160] via 10.13.0.2, 00:01:40, Fa1/0   ! ← AD=90, metri
 
 | Device | Port | Connection Command |
 |--------|------|--------------------|
-| R1 | 5001 | `telnet 127.0.0.1 5001` |
-| R2 | 5002 | `telnet 127.0.0.1 5002` |
+| R1 | (see EVE-NG UI) | `telnet <eve-ng-ip> <port>` |
+| R2 | (see EVE-NG UI) | `telnet <eve-ng-ip> <port>` |
 
 **Capstone workbook Section 5 format:**
 
@@ -441,7 +441,7 @@ Fill in all [bracketed] placeholders before dispatching.
 
 Prompt:
 
-You are generating a topology.drawio diagram for a CCNP ENARSI GNS3 lab.
+You are generating a topology.drawio diagram for a CCNP ENARSI EVE-NG lab.
 
 ## Task
 Write Draw.io XML to:
@@ -489,7 +489,7 @@ confirmation both checklists pass.
 Use `assets/setup_lab_template.py` as the base template. Customise it for this lab's active devices and console ports from `baseline.yaml`.
 
 The script must:
-1. Use `device_type='cisco_ios_telnet'` to connect via console ports
+1. Use `device_type='cisco_ios_telnet'` to connect via EVE-NG console ports (telnet to `<eve-ng-ip>:<dynamic-port>`)
 2. Loop through each active device
 3. Load the corresponding `initial-configs/[Device].cfg`
 4. Log progress clearly per device
@@ -523,7 +523,7 @@ Follow it exactly — especially the template locations in assets/.
 - Chapter: [chapter]
 - Lab path: [lab-path]
 - Active devices: [list from baseline.yaml labs[N].devices — e.g. R1, R2, R3]
-- Console ports: [R1=5001, R2=5002, R3=5003 — from baseline.yaml]
+- Console ports: [dynamic — populate from EVE-NG web UI after lab creation]
 - Number of troubleshooting scenarios: [count from workbook.md Section 9]
 
 ## Pre-Write Checklist
@@ -587,7 +587,7 @@ After `meta.yaml` is written:
 
 --# Device in baseline.yaml has no console port defined
 - **Cause:** Incomplete baseline.yaml.
-- **Solution:** Fall back to default convention (R1=5001, RN=500N). Flag the gap to the user.
+- **Solution:** Ask the user to populate console ports from the EVE-NG web UI. There is no static fallback — EVE-NG ports are dynamic.
 
 --# Solutions section incomplete
 - **Cause:** Not all lab objectives have a corresponding solution block.

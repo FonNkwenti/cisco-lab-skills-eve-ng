@@ -67,10 +67,10 @@ meta:
 core_topology:
   devices:
     - name: R1
-      platform: c7200|c3725
+      platform: iosv|iosvl2|csr1000v|iol_l3|iol_l2|xrv9k|nxosv9k|asav
       role: [descriptive role]
       loopback0: [IP/mask]
-      console_port: 5001
+      console_port: null   # Dynamic — assigned by EVE-NG at lab creation time
   links:
     - id: L1
       source: [Device:Interface]
@@ -80,10 +80,10 @@ core_topology:
 # Optional devices — added for specific labs
 optional_devices:
   - name: R4
-    platform: c7200|c3725
+    platform: iosv|iosvl2|csr1000v|iol_l3|iol_l2
     role: [role]
     loopback0: [IP/mask]
-    console_port: 5004
+    console_port: null   # Dynamic
     available_from: [lab number]
     purpose: [why needed]
 
@@ -146,7 +146,7 @@ Before finishing, confirm:
 - [ ] Every exam objective provided is covered by at least one lab
 - [ ] Total device count is between 3 (minimum) and 15 (maximum) across core + optional
 - [ ] All console ports follow the convention: RN = 500N
-- [ ] Platform choices respect Apple Silicon constraints — c7200 or c3725 only (see `gns3` skill)
+- [ ] Platform choices respect EVE-NG constraints — select from `iosv`, `iosvl2`, `csr1000v`, `iol_l3`, `iol_l2`, `xrv9k`, `nxosv9k`, `asav` (see `eve-ng` skill)
 - [ ] IP addresses are pre-reserved for all optional devices even if not active in early labs
 - [ ] The last 2 labs are Capstone I (`type: capstone_i`) and Capstone II (`type: capstone_ii`), both with `clean_slate: true`
 
@@ -178,8 +178,8 @@ After `baseline.yaml` and the chapter-spec.md backfill are complete:
 - **Solution:** Propose increasing the count, or explain which objectives will be combined into a single lab and why.
 
 --# Platform selection unclear
-- **Cause:** Lab requires features only available on c7200 (crypto, more interfaces) but default is c3725.
-- **Solution:** Use c7200 for Hub/Core routers and when IPsec, GRE, or more than 3 FastEthernet interfaces are needed. Use c3725 for Branch/Spoke roles.
+- **Cause:** Lab requires features not available on the default platform (e.g., IOS-XE features on IOSv, or switching features on a routing-only node).
+- **Solution:** See `eve-ng/SKILL.md` Platform Selection Guide. Use `iosvl2` for switching labs, `csr1000v` for IOS-XE features, `xrv9k` for IOS-XR. Default to `iosv` for general routing.
 
 -# Examples
 

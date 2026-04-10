@@ -4,11 +4,12 @@ from netmiko import ConnectHandler
 
 
 class LabSetup:
-    def __init__(self, devices):
-        self.devices = devices  # List of (name, port, config_path)
+    def __init__(self, devices, eve_ng_host="192.168.x.x"):
+        self.devices = devices          # List of (name, port, config_path)
+        self.eve_ng_host = eve_ng_host  # EVE-NG server IP
 
     def _connect(self, host, port):
-        """Create a Netmiko connection to a GNS3 console port."""
+        """Create a Netmiko connection to an EVE-NG console port."""
         device = {
             "device_type": "cisco_ios_telnet",
             "host": host,
@@ -44,18 +45,19 @@ class LabSetup:
             return False
 
     def run(self):
-        print("Starting Lab Setup Automation...")
+        print(f"Starting Lab Setup Automation (EVE-NG: {self.eve_ng_host})...")
         for name, port, config in self.devices:
             print(f"--- Setting up {name} ---")
-            self.push_config("127.0.0.1", port, config)
+            self.push_config(self.eve_ng_host, port, config)
 
 
 class LabRefresher:
-    def __init__(self, devices):
-        self.devices = devices  # List of (name, port, config_path)
+    def __init__(self, devices, eve_ng_host="192.168.x.x"):
+        self.devices = devices          # List of (name, port, config_path)
+        self.eve_ng_host = eve_ng_host  # EVE-NG server IP
 
     def _connect(self, host, port):
-        """Create a Netmiko connection to a GNS3 console port."""
+        """Create a Netmiko connection to an EVE-NG console port."""
         device = {
             "device_type": "cisco_ios_telnet",
             "host": host,
@@ -113,4 +115,4 @@ class LabRefresher:
 
     def run(self):
         for name, port, config_path in self.devices:
-            self.push_config("127.0.0.1", port, config_path)
+            self.push_config(self.eve_ng_host, port, config_path)

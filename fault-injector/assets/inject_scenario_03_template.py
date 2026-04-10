@@ -15,8 +15,8 @@ import sys
 
 # Device Configuration
 DEVICE_NAME = "R1"
-CONSOLE_HOST = "127.0.0.1"
-CONSOLE_PORT = 5001
+EVE_NG_HOST  = "192.168.x.x"  # EVE-NG server IP — update to match your environment
+CONSOLE_PORT = 32768           # Dynamic port from EVE-NG web UI / Console Access Table
 
 # Fault Configuration Commands
 FAULT_COMMANDS = [
@@ -31,7 +31,7 @@ def inject_fault():
     try:
         conn = ConnectHandler(
             device_type="cisco_ios_telnet",
-            host=CONSOLE_HOST,
+            host=EVE_NG_HOST,
             port=CONSOLE_PORT,
             username="",
             password="",
@@ -55,8 +55,8 @@ def inject_fault():
         print(f"[!] R1's Loopback0 (1.1.1.1/32) will NOT be advertised to neighbors")
 
     except ConnectionRefusedError:
-        print(f"[!] Error: Could not connect to {CONSOLE_HOST}:{CONSOLE_PORT}")
-        print(f"[!] Make sure GNS3 is running and {DEVICE_NAME} is started.")
+        print(f"[!] Error: Could not connect to {EVE_NG_HOST}:{CONSOLE_PORT}")
+        print(f"[!] Make sure the EVE-NG lab is running and {DEVICE_NAME} is started.")
         sys.exit(1)
     except Exception as e:
         print(f"[!] Error: {e}")

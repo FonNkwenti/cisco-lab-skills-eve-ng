@@ -5,8 +5,8 @@ Each script injects one fault. Work through the corresponding ticket in
 
 ## Prerequisites
 
-- GNS3 project must be running with all devices started
-- All devices accessible via their console ports
+- EVE-NG lab must be running with all nodes started
+- All nodes accessible via their EVE-NG console ports (telnet to `<eve-ng-ip>:<dynamic-port>`)
 - Python 3.x installed
 - `netmiko` library installed (`pip install netmiko`)
 

@@ -1,4 +1,6 @@
-# GNS3 Constraints — Apple Silicon (M1/M2/M3)
+> **DEPRECATED:** This file applies to GNS3/Apple Silicon. For EVE-NG on Windows/Intel, see `eve-ng-constraints.md`.
+
+# GNS3 Constraints — Apple Silicon (M1/M2/M3) — ARCHIVED
 
 Source of truth for all hardware decisions in lab generation.
 

@@ -25,7 +25,7 @@ labs/[chapter]/lab-NN-[name]/
 |---|---------|-------|
 | 1 | Concepts & Skills Covered | |
 | 2 | Topology & Scenario | Narrative enterprise context |
-| 3 | Hardware & Environment Specifications | Must include Console Access Table + Cabling Table |
+| 3 | Hardware & Environment Specifications | Must include Console Access Table + Cabling Table. Console ports are dynamic — populate from EVE-NG web UI after lab creation. Format: `telnet <eve-ng-ip> <port>` |
 | 4 | Base Configuration | |
 | 5 | Lab Challenge: Core Implementation | Challenge-first, no step hints |
 | 6 | Verification & Analysis | |

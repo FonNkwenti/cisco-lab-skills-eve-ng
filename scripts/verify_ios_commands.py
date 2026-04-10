@@ -1,21 +1,41 @@
 #!/usr/bin/env python3
 """
-verify_ios_commands.py — Test IOS commands against live GNS3 routers.
+verify_ios_commands.py — Test IOS commands against live EVE-NG routers.
 
-Connects to verification routers via Netmiko, tests each command in its
-correct IOS context, and updates .agent/skills/reference-data/ios-compatibility.yaml
+Connects to routers via Netmiko, tests each command in its correct IOS
+context, and updates .agent/skills/reference-data/ios-compatibility.yaml
 with pass/fail results.
 
 Usage:
-    python3 .agent/skills/scripts/verify_ios_commands.py              # test all unknown entries
-    python3 .agent/skills/scripts/verify_ios_commands.py cmds.yaml   # test specific list
+    # Test all unknown entries on default platforms (iosv + iosvl2)
+    python3 .agent/skills/scripts/verify_ios_commands.py
+
+    # Test specific platforms only
+    python3 .agent/skills/scripts/verify_ios_commands.py --platforms iosv iosvl2
+
+    # Test and add new command entries from a file
+    python3 .agent/skills/scripts/verify_ios_commands.py cmds.yaml
+
+    # Legacy GNS3 mode (Dynamips via localhost)
+    python3 .agent/skills/scripts/verify_ios_commands.py --legacy
 
 Prerequisites:
-    - GNS3 running with R1 (c7200, port 5001) and R2 (c3725, port 5002) started
-    - pip install netmiko pyyaml
+    - EVE-NG lab running with test routers:
+        * iosv_test  — IOSv node (routing tests)
+        * iosvl2_test — IOSvL2 node (switching tests)
+    - Ports discoverable via EVE-NG REST API, or passed manually via --ports
+    - pip install netmiko pyyaml requests
+
+Examples:
+    # Discover ports via REST API
+    python3 verify_ios_commands.py --host 192.168.1.100 --lab test_lab.unl
+
+    # Specify ports manually (IOSv=32768, IOSvL2=32769)
+    python3 verify_ios_commands.py --host 192.168.1.100 --ports iosv=32768 iosvl2=32769
 """
 
 import sys
+import argparse
 import yaml
 from pathlib import Path
 from netmiko import ConnectHandler
@@ -40,12 +60,12 @@ CONTEXT_MAP = {
         "exit": ["no router eigrp 100"],
     },
     "router-eigrp-named": {
-        "enter": ["router eigrp ENARSI"],
-        "exit": ["no router eigrp ENARSI"],
+        "enter": ["router eigrp VERIFY_TEST"],
+        "exit": ["no router eigrp VERIFY_TEST"],
     },
     "af-ipv4-unicast": {
-        "enter": ["router eigrp ENARSI", "address-family ipv4 unicast autonomous-system 100"],
-        "exit": ["no router eigrp ENARSI"],
+        "enter": ["router eigrp VERIFY_TEST", "address-family ipv4 unicast autonomous-system 100"],
+        "exit": ["no router eigrp VERIFY_TEST"],
     },
     "router-ospf": {
         "enter": ["router ospf 1"],
@@ -63,11 +83,11 @@ CONTEXT_MAP = {
         "enter": ["router ospfv3 1"],
         "exit": ["no router ospfv3 1"],
     },
-    # NM-16ESW switch port (c3725 slot 1). c7200 has no switch ports so
-    # context entry will fail on c7200 — all commands auto-fail there.
+    # IOSvL2: GigabitEthernet1/0 is a switchport (in slot 1).
+    # IOSv/CSR1000v have no switchports — context entry fails automatically.
     "interface-switch": {
-        "enter": ["interface FastEthernet1/0"],
-        "exit": ["interface FastEthernet1/0", "no switchport"],
+        "enter": ["interface GigabitEthernet1/0"],
+        "exit": ["interface GigabitEthernet1/0", "no switchport"],
     },
 }
 
@@ -85,21 +105,70 @@ CONTEXT_DEPS = {
     "af-ipv4-bgp": "router-bgp",
 }
 
+# Platform → which YAML column to write results to
+# Maps each active platform to its group column in ios-compatibility.yaml
+PLATFORM_COLUMN_MAP = {
+    "iosv":     "ios-classic",
+    "iosvl2":   "ios-l2",
+    "csr1000v": "ios-xe",
+    "iol_l3":   "ios-classic",
+    "iol_l2":   "ios-l2",
+    # Legacy Dynamips columns (still present in YAML, preserved for history)
+    "c7200":    "c7200",
+    "c3725":    "c3725",
+}
+
 
 def has_error(output):
     return any(indicator in output for indicator in ERROR_INDICATORS)
 
 
-def make_device(port):
+def make_device(host, port, use_ssh=False, username="admin", password="eve"):
+    """Build Netmiko device dict for EVE-NG console (telnet) or SSH."""
+    if use_ssh:
+        return {
+            "device_type": "cisco_ios",
+            "host": host,
+            "port": port,
+            "username": username,
+            "password": password,
+            "global_delay_factor": 2,
+        }
     return {
         "device_type": "cisco_ios_telnet",
-        "host": "127.0.0.1",
+        "host": host,
         "port": port,
         "username": "",
         "password": "",
         "secret": "",
         "global_delay_factor": 2,
     }
+
+
+def discover_ports_via_api(host, lab_path, username="admin", password="eve"):
+    """Query EVE-NG REST API to get node telnet ports. Returns {node_name: port}."""
+    try:
+        import requests
+        session = requests.Session()
+        r = session.post(f"http://{host}/api/auth/login",
+                         json={"username": username, "password": password})
+        r.raise_for_status()
+        r2 = session.get(f"http://{host}/api/labs/{lab_path}/nodes")
+        r2.raise_for_status()
+        nodes = r2.json().get("data", {})
+        result = {}
+        for node in nodes.values():
+            name = node.get("name", "")
+            url = node.get("url", "")
+            if url and ":" in url:
+                try:
+                    result[name] = int(url.split(":")[-1])
+                except ValueError:
+                    pass
+        return result
+    except Exception as e:
+        print(f"[!] REST API port discovery failed: {e}")
+        return {}
 
 
 def safe_cleanup(conn, exit_cmds):
@@ -128,16 +197,17 @@ def test_command(conn, context, command):
     return "fail" if has_error(output) else "pass"
 
 
-def run_platform_tests(platform_key, port, entries):
+def run_platform_tests(platform_key, host, port, entries, use_ssh=False):
     """
     Connect to one platform and test all entries.
     Returns dict: command_string → 'pass' | 'fail'.
     On connection failure, returns empty dict (entries stay unknown).
     """
-    print(f"\n[{platform_key}] Connecting on port {port}...")
+    col = PLATFORM_COLUMN_MAP.get(platform_key, platform_key)
+    print(f"\n[{platform_key} → column:{col}] Connecting to {host}:{port}...")
     results = {}
     try:
-        with ConnectHandler(**make_device(port)) as conn:
+        with ConnectHandler(**make_device(host, port, use_ssh)) as conn:
             conn.enable()
             print(f"[{platform_key}] Connected.")
 
@@ -180,54 +250,102 @@ def load_yaml(path):
     return yaml.safe_load(Path(path).read_text())
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Verify IOS command compatibility on EVE-NG nodes")
+    parser.add_argument("cmds_file", nargs="?", help="Optional YAML file with new commands to test")
+    parser.add_argument("--host", default="127.0.0.1",
+                        help="EVE-NG host IP (default: 127.0.0.1 for legacy GNS3 mode)")
+    parser.add_argument("--lab", help="EVE-NG lab path (e.g. 'verify_lab.unl') for API port discovery")
+    parser.add_argument("--ports", nargs="*",
+                        help="Manual port overrides: iosv=32768 iosvl2=32769")
+    parser.add_argument("--platforms", nargs="*",
+                        default=["iosv", "iosvl2"],
+                        help="Platforms to test (default: iosv iosvl2)")
+    parser.add_argument("--ssh", action="store_true",
+                        help="Use SSH instead of telnet for connections")
+    parser.add_argument("--legacy", action="store_true",
+                        help="Legacy GNS3 mode: use 127.0.0.1 with c7200 (port 5001) and c3725 (port 5002)")
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     data = load_yaml(YAML_PATH)
     all_commands = data["commands"]
-    platforms = data["platforms"]
+    platforms_yaml = data["platforms"]
 
-    # If input file provided: add any new entries; mark existing entries for re-test
-    if len(sys.argv) > 1:
-        extra = load_yaml(sys.argv[1])
+    # Legacy GNS3 mode
+    if args.legacy:
+        print("[legacy] GNS3 mode: testing c7200 (5001) and c3725 (5002) on localhost")
+        args.host = "127.0.0.1"
+        args.platforms = ["c7200", "c3725"]
+        port_map = {"c7200": 5001, "c3725": 5002}
+    else:
+        port_map = {}
+
+    # Parse manual port overrides
+    if args.ports:
+        for pair in args.ports:
+            k, v = pair.split("=")
+            port_map[k.strip()] = int(v.strip())
+
+    # Discover ports via REST API if lab specified
+    if args.lab and not args.legacy:
+        discovered = discover_ports_via_api(args.host, args.lab)
+        if discovered:
+            print(f"[API] Discovered ports: {discovered}")
+            port_map.update(discovered)
+
+    # If input file provided: add any new entries or reset existing for re-test
+    if args.cmds_file:
+        extra = load_yaml(args.cmds_file)
         existing_cmds = {e["command"] for e in all_commands}
         for entry in extra["commands"]:
             if entry["command"] not in existing_cmds:
-                all_commands.append({
+                new_entry = {
                     "command": entry["command"],
                     "context": entry["context"],
-                    "c7200": "unknown",
-                    "c3725": "unknown",
+                    "ios-classic": "unknown",
+                    "ios-l2": "unknown",
+                    "ios-xe": "unknown",
                     "notes": entry.get("notes", ""),
-                })
+                }
+                # Preserve legacy columns if present in YAML
+                if any("c7200" in e for e in all_commands):
+                    new_entry["c7200"] = "unknown"
+                    new_entry["c3725"] = "unknown"
+                all_commands.append(new_entry)
                 print(f"[+] New entry: {entry['command']!r}")
             else:
-                # Reset to unknown so they get re-tested
                 for e in all_commands:
                     if e["command"] == entry["command"]:
-                        e["c7200"] = "unknown"
-                        e["c3725"] = "unknown"
+                        for platform in args.platforms:
+                            col = PLATFORM_COLUMN_MAP.get(platform, platform)
+                            e[col] = "unknown"
                         break
 
-    # Gather unknown entries per platform
-    unknown_c7200 = [e for e in all_commands if e.get("c7200") == "unknown"]
-    unknown_c3725 = [e for e in all_commands if e.get("c3725") == "unknown"]
+    # For each active platform: collect unknown entries and test
+    for platform in args.platforms:
+        if platforms_yaml.get(platform, {}).get("deprecated") and not args.legacy:
+            print(f"[skip] {platform} is deprecated — use --legacy to test Dynamips platforms")
+            continue
 
-    if not unknown_c7200 and not unknown_c3725:
-        print("Nothing to test — no 'unknown' entries in the compatibility record.")
-        _print_report(all_commands)
-        return
+        col = PLATFORM_COLUMN_MAP.get(platform, platform)
+        unknown_entries = [e for e in all_commands if e.get(col) == "unknown"]
 
-    # Run tests
-    if unknown_c7200 and not platforms["c7200"].get("deprecated"):
-        results = run_platform_tests("c7200", platforms["c7200"]["console_port"], unknown_c7200)
+        if not unknown_entries:
+            print(f"[{platform}] Nothing to test — no 'unknown' entries for column '{col}'")
+            continue
+
+        port = port_map.get(platform)
+        if port is None:
+            print(f"[{platform}] No port configured — skipping. Use --ports {platform}=<port> or --lab to discover.")
+            continue
+
+        results = run_platform_tests(platform, args.host, port, unknown_entries, use_ssh=args.ssh)
         for entry in all_commands:
             if entry["command"] in results:
-                entry["c7200"] = results[entry["command"]]
-
-    if unknown_c3725:
-        results = run_platform_tests("c3725", platforms["c3725"]["console_port"], unknown_c3725)
-        for entry in all_commands:
-            if entry["command"] in results:
-                entry["c3725"] = results[entry["command"]]
+                entry[col] = results[entry["command"]]
 
     # Write updated YAML
     YAML_PATH.write_text(
@@ -240,12 +358,13 @@ def main():
 
 def _print_report(commands):
     print("\n=== IOS Compatibility Report ===")
-    print(f"{'Command':<50} {'Context':<22} {'c7200':<8} c3725")
-    print("-" * 100)
+    print(f"{'Command':<50} {'Context':<22} {'ios-classic':<13} {'ios-l2':<10} ios-xe")
+    print("-" * 110)
     for e in commands:
-        c7 = e.get("c7200", "?")
-        c3 = e.get("c3725", "?")
-        print(f"{e['command']:<50} {e['context']:<22} {c7:<8} {c3}")
+        ic  = e.get("ios-classic", "?")
+        il2 = e.get("ios-l2", "?")
+        xe  = e.get("ios-xe", "?")
+        print(f"{e['command']:<50} {e['context']:<22} {ic:<13} {il2:<10} {xe}")
 
 
 if __name__ == "__main__":

@@ -130,23 +130,36 @@ checks passed but the scripts would silently do nothing when run.
 
 ---
 
-## Netmiko / GNS3 Automation
+## Netmiko / EVE-NG Automation
 
-### ⚡ Pattern: Telnet connections to GNS3 consoles
+### ⚡ Pattern: Telnet connections to EVE-NG consoles
 
 ```python
 ConnectHandler(
     device_type="cisco_ios_telnet",
-    host="127.0.0.1",
-    port=5001,
-    username="",    # Must be present but empty — do NOT omit
-    password="",    # Same
-    secret="",      # Same
+    host="<eve-ng-ip>",   # EVE-NG server IP — not 127.0.0.1
+    port=32768,           # Dynamic port from EVE-NG web UI / Console Access Table
+    username="",          # Must be present but empty — do NOT omit
+    password="",          # Same
+    secret="",            # Same
     timeout=10,
 )
 ```
 
 Omitting `username`, `password`, or `secret` causes `TypeError` in some Netmiko versions.
+
+**Key difference from GNS3:** EVE-NG ports are dynamic — there is no static `500N` convention. Always read ports from the Console Access Table in `workbook.md` Section 3 or discover via the EVE-NG REST API.
+
+### ⚡ Pattern: EVE-NG interface naming differs from GNS3 Dynamips
+
+| Old (Dynamips) | New (EVE-NG) | Platform |
+|----------------|-------------|---------|
+| `FastEthernet0/0` | `GigabitEthernet0/0` | IOSv |
+| `FastEthernet1/0` | `GigabitEthernet1/0` | IOSvL2 (switchport) |
+| `GigabitEthernet3/0` | `GigabitEthernet1` | CSR1000v |
+| `FastEthernet0/0` | `Ethernet0/0` | IOL L3 |
+
+Never use `FastEthernet` in new EVE-NG labs unless using a legacy Dynamips image.
 
 ---
 

@@ -9,7 +9,8 @@ Quick reference for all skills in this repository.
 | `lab-workbook-creator` | Generating a single lab | `workbook.md`, configs, `setup_lab.py`, `topology.drawio` |
 | `fault-injector` | Creating automated troubleshooting scenario scripts | `inject_scenario_0N.py`, `apply_solution.py` |
 | `drawio` | Creating or fixing topology diagrams | `topology.drawio` |
-| `gns3` | Reference for platform capabilities and constraints | (reference only) |
+| `eve-ng` | Reference for EVE-NG platform capabilities and constraints (QEMU/IOL/Dynamips) | (reference only) |
+| `gns3` | **DEPRECATED** — Legacy GNS3/Apple Silicon reference (read-only archive) | (archived) |
 | `cisco-troubleshooting-1` | Systematically diagnosing a network fault | Structured resolution report |
 
 ## Typical Workflow for a New Chapter

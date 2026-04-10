@@ -1,9 +1,14 @@
 ---
 name: gns3
-description: GNS3 hardware constraints and platform reference for Apple Silicon (Dynamips only). Use when generating lab configs, creating baseline.yaml topology definitions, selecting router platforms, assigning interfaces, or any time GNS3 platform constraints (c7200 vs c3725, interface slots, console ports) must be verified for Apple M1/M2/M3 compatibility.
+description: "DEPRECATED — use eve-ng/SKILL.md instead. GNS3/Apple Silicon archive (Dynamips only: c7200, c3725). Read-only reference for legacy GNS3 labs."
+deprecated: true
 ---
 
-# GNS3 Lab Skill (Apple Silicon)
+> **DEPRECATED:** This skill applies to the GNS3/Apple Silicon environment (Dynamips only).
+> For EVE-NG labs on Windows/Intel, use `eve-ng/SKILL.md` instead.
+> This file is kept as a read-only archive.
+
+# GNS3 Lab Skill (Apple Silicon — ARCHIVED)
 
 Hardware reference and constraint guide for the GNS3 environment running on Apple M1/M2/M3. All lab generation must comply with these constraints.
 

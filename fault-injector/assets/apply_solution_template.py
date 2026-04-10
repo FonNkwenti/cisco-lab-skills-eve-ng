@@ -12,11 +12,14 @@ correct configuration from the lab solutions.
 from netmiko import ConnectHandler
 import sys
 
-# Device Console Mappings
+# EVE-NG server IP — update to match your environment
+EVE_NG_HOST = "192.168.x.x"
+
+# Device Console Mappings — ports are dynamic (from EVE-NG web UI / Console Access Table)
 DEVICES = {
-    "R1": {"host": "127.0.0.1", "port": 5001},
-    "R2": {"host": "127.0.0.1", "port": 5002},
-    "R3": {"host": "127.0.0.1", "port": 5003},
+    "R1": {"host": EVE_NG_HOST, "port": 32768},
+    "R2": {"host": EVE_NG_HOST, "port": 32769},
+    "R3": {"host": EVE_NG_HOST, "port": 32770},
 }
 
 # Correct EIGRP Configuration per Device
@@ -82,7 +85,7 @@ def restore_device(device_name, config):
 
     except ConnectionRefusedError:
         print(f"[!] Error: Could not connect to {device_name} at {host}:{port}")
-        print(f"[!] Make sure GNS3 is running and {device_name} is started.")
+        print(f"[!] Make sure the EVE-NG lab is running and {device_name} is started.")
         return False
     except Exception as e:
         print(f"[!] Error on {device_name}: {e}")
@@ -108,7 +111,7 @@ def main():
     print("="*60)
 
     if fail_count > 0:
-        print("[!] Some devices could not be restored. Check GNS3 and try again.")
+        print("[!] Some devices could not be restored. Verify EVE-NG lab is running and try again.")
         sys.exit(1)
     else:
         print("[+] All devices restored to correct configuration!")

@@ -1,16 +1,16 @@
 # Phase III: Diagnostic Execution — Full Reference
 
-## Connecting to GNS3 Routers via Netmiko
+## Connecting to EVE-NG Routers via Netmiko
 
-Use this pattern to connect to any router. Console ports come from the workbook's Console Access Table.
+Use this pattern to connect to any router. Console ports are dynamic — read from the workbook's Console Access Table (populated from EVE-NG web UI after lab creation).
 
 ```python
 from netmiko import ConnectHandler
 
 conn = ConnectHandler(
-    device_type="cisco_ios_telnet",
-    host="127.0.0.1",
-    port=5001,          # Console port from workbook
+    device_type="cisco_ios_telnet",  # or "cisco_ios" for SSH
+    host="<eve-ng-ip>",              # EVE-NG server IP
+    port=32768,                      # dynamic port from Console Access Table
     username="",
     password="",
     secret="",
