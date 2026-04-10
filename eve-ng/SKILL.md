@@ -297,6 +297,45 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
    ```
 8. **VPC config files use `.vpc` extension** — never `.cfg`. Place in `initial-configs/`.
 
+--# 7. Installed Image Inventory
+
+> **Last verified:** 2026-04-10. This table reflects images confirmed on disk at
+> `C:\Users\Nkwenti\Documents\EVE-NG\eve images\Cisco`. Add a row when you upload a new image.
+
+### Installed — Confirmed on Disk
+
+| Platform | Image Filename | Version | EVE-NG Node Type | Status |
+|----------|---------------|---------|-----------------|--------|
+| IOSv | vios-adventerprisek9-m.SPA.159-3.M6 | 15.9(3)M6 | `vios` | Installed |
+| IOSvL2 | viosl2-adventerprisek9-m.ssa.high_iron_20200929 | 15.x (2020) | `viosl2` | Installed |
+| CSR1000v | csr1000vng-universalk9.17.03.05-serial | 17.03.05 | `csr1000vng` | Installed |
+| IOS-XRv 9000 | xrv9k-fullk9-x.vrr.vga-7.1.1.qcow2 | 7.1.1 | `xrv9k` | Installed |
+| IOS-XRv classic | xrv-k9-demo-6.3.1 | 6.3.1 | `xrv` | Installed (demo/limited) |
+| NX-OSv 9000 | nxosv9k-9500-9.3.5 | 9.3.5 | `nxosv9k` | Installed |
+| ASAv | asav-961-001 | 9.6.1 | `asav` | Installed |
+| IOL L3 | i86bi_LinuxL3-AdvEnterpriseK9-M2_157_3_May_2018.bin | 15.7(3)M | `iol` | Installed |
+| IOL L2 | i86bi_linux_l2-adventerprisek9-ms.SSA.high_iron_20190423.bin | 15.x (2019) | `iol` | Installed |
+| Catalyst 9000v | cat9kv-17.10.01-prd7 | 17.10.01 | `cat9kv` | Installed |
+| Cisco 8000v | c8000v-17.06.03 | 17.06.03 | `c8000v` | Installed |
+| Linux (Ubuntu Server) | linux-ubuntu-server-20.04 | 20.04 LTS | `linux` | Installed |
+
+### Not Installed — Commonly Needed
+
+| Image / Tool | Purpose | Notes |
+|---|---|---|
+| Linux VM (Ubuntu 22.04) | Newer LTS for automation labs | Optional upgrade from 20.04 — 20.04 is sufficient for all current exam objectives |
+| SD-WAN (vManage, vBond, vSmart, vEdge) | SD-WAN topology simulation | Heavy (4+ VMs per pod). v20.x+ required for current Cisco SD-WAN exams; v19.2 is outdated |
+| WLC (Catalyst Wireless LAN Controller) | Wireless controller labs | EVE-NG does not support RF simulation — wireless labs require physical APs or dedicated wireless lab platforms |
+| Catalyst Center (DNA Center) | Campus automation, SD-Access | Requires 56+ GB RAM per instance — impractical in EVE-NG; use dCloud or physical for this feature |
+| ISE (Identity Services Engine) | 802.1X, TACACS+, RADIUS, TrustSec | Very heavy (~12 GB RAM). Viable in EVE-NG but not yet installed |
+
+### Image Gap Notes
+
+- **Linux VM** (Ubuntu 20.04) is installed — automation labs (Ansible, Python, NETCONF, YANG, telemetry) are unblocked.
+- **SD-WAN** requires a dedicated image set; not substitutable with CSR1000v in an SD-WAN topology.
+- **Wireless and DNA Center** gaps cannot be closed in EVE-NG — plan to use Cisco dCloud or physical gear for those objectives.
+- Exam-specific image requirements (which platforms each exam needs, versions, and quantities) belong in the individual exam repo, not here.
+
 -# Common Issues
 
 --# QEMU node fails to start

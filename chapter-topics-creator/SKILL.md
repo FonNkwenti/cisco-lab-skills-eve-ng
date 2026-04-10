@@ -13,7 +13,13 @@ Generates the strategic plan for a lab chapter, ensuring all exam objectives are
 
 Confirm the following before generating:
 1. **Technology** — e.g., EIGRP, OSPF, BGP, Redistribution
-2. **Exam Objectives** — list the ENARSI blueprint bullets to cover (see `specs/[chapter]/chapter-spec.md`)
+2. **Exam Objectives** — read from `specs/[chapter]/chapter-spec.md`. This file MUST contain
+   the **current official blueprint bullets** for the exam and chapter, copied directly from
+   Cisco's exam page (https://www.cisco.com/c/en/us/training-events/training-certifications/exams.html).
+   Cisco updates blueprints periodically — do NOT use bullets from memory or prior versions.
+   If `chapter-spec.md` does not exist or the user has not confirmed its source, STOP and ask:
+   > "Please paste the current blueprint bullets for this chapter from Cisco's official exam page,
+   > or confirm that `specs/[chapter]/chapter-spec.md` already contains the current version."
 3. **Target Lab Count** — determined by blueprint coverage. Minimum labs = what is needed to cover all objectives progressively. The last 2 labs are ALWAYS Capstone I and Capstone II.
 4. **Progression** — Foundation → Intermediate → Advanced → Capstone I → Capstone II
 
