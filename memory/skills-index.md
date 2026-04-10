@@ -4,52 +4,64 @@ Quick reference for all skills in this repository.
 
 | Skill | When to Use | Key Output |
 |-------|-------------|------------|
-| `chapter-topics-creator` | Starting a new chapter from scratch | `baseline.yaml`, chapter `README.md` |
-| `chapter-builder` | Generating multiple labs at once with config chaining | All lab artifacts for a chapter |
-| `lab-workbook-creator` | Generating a single lab | `workbook.md`, configs, `setup_lab.py`, `topology.drawio` |
+| `exam-planner` | Starting a new exam — reads full blueprint, groups into topics | `specs/topic-plan.yaml`, empty `labs/<topic>/` folders |
+| `spec-creator` (in `chapter-topics-creator/`) | Creating specs for a single topic after exam-planner | `labs/<topic>/spec.md`, `baseline.yaml` |
+| `lab-workbook-creator` | Generating a single lab from a topic spec | `workbook.md`, configs, `setup_lab.py`, `topology.drawio` |
+| `chapter-builder` | Generating multiple labs at once with config chaining | All lab artifacts for a topic |
 | `fault-injector` | Creating automated troubleshooting scenario scripts | `inject_scenario_0N.py`, `apply_solution.py` |
+| `mega-capstone-creator` | Final cross-topic capstone after all topic labs complete | Multi-domain capstone lab package |
 | `drawio` | Creating or fixing topology diagrams | `topology.drawio` |
 | `eve-ng` | Reference for EVE-NG platform capabilities and constraints (QEMU/IOL/Dynamips) | (reference only) |
 | `gns3` | **DEPRECATED** — Legacy GNS3/Apple Silicon reference (read-only archive) | (archived) |
 | `cisco-troubleshooting-1` | Systematically diagnosing a network fault | Structured resolution report |
 
-## Typical Workflow for a New Chapter
+## Three-Phase Workflow
 
 ### Prerequisites (exam repo, not skills repo)
 Before invoking any skill, the exam repo must have:
-- `specs/[chapter]/chapter-spec.md` — **current** blueprint bullets for this chapter, copied
-  directly from the official Cisco exam page. Cisco revises blueprints periodically (e.g.,
-  ENCOR 350-401 was updated in 2025). If the user has not confirmed the blueprint source,
-  stop and ask them to paste the current bullets before proceeding.
-- `labs/[chapter]/` directory (created by chapter-topics-creator)
+- `blueprint/<exam-code>/blueprint.md` — **current** blueprint bullets, copied directly
+  from the official Cisco exam page. Cisco revises blueprints periodically. If the user
+  has not confirmed the blueprint source, stop and ask them to paste the current bullets.
 
 ### Step-by-step
 
 ```
-1. Write specs/[chapter]/chapter-spec.md   (exam blueprint bullets — manual)
+1. Upload blueprint to blueprint/<exam-code>/blueprint.md   (manual)
         │
         ▼
-2. chapter-topics-creator
-        │  reads: chapter-spec.md
-        │  writes: labs/[chapter]/baseline.yaml
+2. exam-planner                              ← Phase 1
+        │  reads: blueprint.md
+        │  writes: specs/topic-plan.yaml + empty labs/<topic>/ folders
+        │  (review once)
         ▼
-3. lab-workbook-creator  (one lab at a time, recommended)
-   OR chapter-builder    (all labs at once, for batch generation)
-        │  reads: baseline.yaml + chapter-spec.md
+3. spec-creator  (one topic at a time)       ← Phase 2
+        │  reads: topic-plan.yaml + blueprint.md
+        │  writes: labs/<topic>/spec.md + baseline.yaml
+        │  creates: empty lab-NN-<slug>/ folders
+        │  (review after each topic)
+        ▼
+4. lab-workbook-creator  (one lab at a time) ← Phase 3
+   OR chapter-builder    (all labs at once)
+        │  reads: spec.md + baseline.yaml
         │  writes: workbook.md, initial-configs/, solutions/,
         │          topology.drawio, setup_lab.py
         │  invokes: fault-injector (per lab) → scripts/fault-injection/
         │  invokes: drawio (per lab) → topology.drawio
+        │  (review after each lab)
         ▼
-4. EVE-NG: create lab, add nodes (platform from baseline.yaml),
+5. EVE-NG: create lab, add nodes (platform from baseline.yaml),
    connect links, start nodes, discover console ports (web UI or REST API)
         │
         ▼
-5. python setup_lab.py --host <eve-ng-ip>
+6. python setup_lab.py --host <eve-ng-ip>
         │  pushes initial-configs/ to all devices via Netmiko telnet
         ▼
-6. Open workbook.md — work through tasks
+7. Open workbook.md — work through tasks
    Use scripts/fault-injection/inject_scenario_0N.py for troubleshooting practice
+        │
+        ▼
+8. mega-capstone-creator  (after all topics complete)
+        │  generates: labs/mega-capstone/ — multi-domain final capstone
 ```
 
 ### Platform selection from baseline.yaml

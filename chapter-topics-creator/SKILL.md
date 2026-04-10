@@ -1,75 +1,135 @@
 ---
-name: chapter-topics-creator
-description: Generates a chapter blueprint and baseline.yaml from exam objectives, ensuring complete blueprint coverage and progressive lab difficulty. Use when the user asks to "plan a chapter", "create chapter topics", "start a new chapter", "what labs should I build for [technology]", "generate baseline.yaml", or "how should I structure the [technology] labs".
+name: spec-creator
+description: Generates detailed lab specs and baseline.yaml for a single topic from the topic-plan.yaml. Creates progressive lab sequences with blueprint coverage, shared topology, and folder structure. Phase 2 of the workflow (exam-planner -> spec-creator -> lab-builder). Use when the user asks to "create specs for [topic]", "plan labs for [topic]", "generate baseline for [topic]", or after exam-planner has produced topic-plan.yaml.
 ---
 
-# Chapter Topics Creator Skill
+# Spec Creator Skill (Phase 2)
 
-Generates the strategic plan for a lab chapter, ensuring all exam objectives are covered through a progressive series of labs. Also creates the **baseline.yaml** file that defines shared topology and enables lab chaining continuity.
+Generates the detailed lab specification and baseline.yaml for a single topic from the
+topic plan. Runs once per topic with a review gate after each. This is Phase 2 of the
+three-phase workflow: exam-planner -> **spec-creator** -> lab-builder.
 
 -# Instructions
 
---# Step 1: Gather Inputs
+--# Step 1: Read Topic Plan and Blueprint
 
-Confirm the following before generating:
-1. **Technology** — e.g., EIGRP, OSPF, BGP, Redistribution
-2. **Exam Objectives** — read from `specs/[chapter]/chapter-spec.md`. This file MUST contain
-   the **current official blueprint bullets** for the exam and chapter, copied directly from
-   Cisco's exam page (https://www.cisco.com/c/en/us/training-events/training-certifications/exams.html).
-   Cisco updates blueprints periodically — do NOT use bullets from memory or prior versions.
-   If `chapter-spec.md` does not exist or the user has not confirmed its source, STOP and ask:
-   > "Please paste the current blueprint bullets for this chapter from Cisco's official exam page,
-   > or confirm that `specs/[chapter]/chapter-spec.md` already contains the current version."
-3. **Target Lab Count** — determined by blueprint coverage. Minimum labs = what is needed to cover all objectives progressively. The last 2 labs are ALWAYS Capstone I and Capstone II.
-4. **Progression** — Foundation → Intermediate → Advanced → Capstone I → Capstone II
+Read in parallel:
+1. `specs/topic-plan.yaml` — find the target topic entry (topic_id, blueprint_refs,
+   estimated_labs, scope_notes, dependencies)
+2. `blueprint/<exam-code>/blueprint.md` — extract the full text of each blueprint bullet
+   listed in the topic's `blueprint_refs`
 
---# Step 2: Generate Chapter Blueprint
+If `specs/topic-plan.yaml` does not exist, STOP and ask:
+> "No topic plan found. Please run the exam-planner skill first to generate
+> `specs/topic-plan.yaml` from the exam blueprint."
 
-Design the lab series with:
-- Full coverage of all provided exam objectives (no bullet left uncovered)
-- Progressive difficulty across labs
-- Real-world enterprise scenarios
-- Time estimates: 45–120 minutes per lab
-- Each lab explicitly declares which devices are active
-- **Topology size**: minimum 3 devices, maximum 15 devices total across core + optional
+If the user specifies a topic that is not in the plan, STOP and ask whether to add it
+to the plan or whether they meant a different topic.
 
---# Step 2b: Capstone Design Rules
+--# Step 2: Design the Lab Sequence
 
-Every chapter ends with exactly 2 capstone labs. These are always the last 2 labs in the series:
+Design a progressive lab series for this topic. Rules:
 
-**Capstone I — Full Protocol Configuration Challenge**
-- `type: capstone_i`
-- `clean_slate: true` (initial-configs from `core_topology` IP addressing only, NOT chained from previous lab)
-- All blueprint bullets for the chapter must be addressed in a single challenge
-- Difficulty: Advanced, time_minutes: 120
-- Devices: all core + all optional that have been introduced
-- Section 5 (Challenge): "Configure the complete [Protocol] solution from scratch. No step-by-step guidance. All blueprint bullets must be addressed."
+**Progression and continuity:**
+1. Labs are numbered starting from `00` (introduction/foundation)
+2. Each lab builds on the previous — solutions become the next lab's initial-configs
+3. Topology and IP addressing remain consistent across all labs in the topic
+4. Only add configuration between labs, never remove
+5. Labs that cannot flow progressively from the sequence go at the **end**, just before
+   the capstones, and are tagged `standalone: true`
 
-**Capstone II — Comprehensive Troubleshooting**
-- `type: capstone_ii`
-- `clean_slate: true` (initial-configs from `core_topology` IP addressing only, NOT chained from previous lab)
-- 5+ concurrent faults spanning all blueprint bullets; students diagnose from a broken network
-- Difficulty: Advanced, time_minutes: 120
-- Devices: all core + all optional that have been introduced
-- Section 5 (Challenge): "The network is pre-broken. Diagnose and resolve 5+ concurrent faults spanning all blueprint bullets."
+**Lab folder naming:**
+- Each lab folder includes a descriptive slug: `lab-00-introduction`,
+  `lab-01-classic-adjacency`, `lab-02-named-mode`, etc.
+- Slug must be lowercase kebab-case, max 40 characters
+- The slug should describe the lab's primary focus
 
---# Step 3: Write baseline.yaml
+**Difficulty progression:**
+- Foundation (labs 00-01): basic concepts, simple topology
+- Intermediate (labs 02-04): deeper features, more devices
+- Advanced (labs 05+): complex scenarios, edge cases, optimisation
+- Capstone I (second-to-last): full protocol configuration from scratch
+- Capstone II (last): comprehensive troubleshooting with 5+ concurrent faults
 
-Write `labs/[chapter]/baseline.yaml` using this schema:
+**Blueprint coverage:**
+- Every blueprint bullet in the topic's `blueprint_refs` must be covered by at least
+  one lab
+- Each lab declares which `blueprint_refs` it addresses
+
+**Lab count:**
+- Use the `estimated_labs` from topic-plan.yaml as a starting point
+- Adjust if needed (more bullets = more labs), but confirm with the user if deviating
+  by more than +/- 2 from the estimate
+- The last 2 labs are ALWAYS Capstone I and Capstone II
+
+--# Step 3: Design Shared Topology
+
+Design the topology that all labs in this topic will share:
+
+1. **Core devices** — present in ALL labs (minimum 3, maximum 15 total)
+2. **Optional devices** — introduced in later labs for advanced scenarios
+3. **Links** — all connections with pre-reserved subnets
+4. **IP addressing** — fully pre-planned for all devices (core + optional), even if
+   optional devices are not active in early labs
+
+Platform selection: consult `eve-ng/SKILL.md` for valid platforms. Default to `iosv`
+for routing, `iosvl2` for switching, `csr1000v` for IOS-XE features.
+
+--# Step 4: Write spec.md
+
+Write `labs/<topic>/spec.md`:
+
+```markdown
+# [Topic Name] — Lab Specification
+
+## Exam Reference
+- **Exam:** [Exam Name] ([Exam Code])
+- **Blueprint Bullets:**
+  - [bullet ID]: [full bullet text]
+  - [bullet ID]: [full bullet text]
+
+## Topology Summary
+[2-3 lines describing the topology: device count, roles, link structure]
+
+## Lab Progression
+
+| # | Folder | Title | Difficulty | Time | Type | Blueprint Refs | Devices |
+|---|--------|-------|-----------|------|------|----------------|---------|
+| 00 | lab-00-introduction | [Title] | Foundation | 45m | progressive | 3.1 | R1, R2, R3 |
+| 01 | lab-01-classic-adjacency | [Title] | Foundation | 60m | progressive | 3.2.a | R1, R2, R3 |
+| ... | | | | | | | |
+| N-1 | lab-N-1-capstone-config | [Protocol] Capstone I | Advanced | 120m | capstone_i | all | all |
+| N | lab-N-capstone-troubleshooting | [Protocol] Capstone II | Advanced | 120m | capstone_ii | all | all |
+
+## Blueprint Coverage Matrix
+
+| Blueprint Bullet | Description | Covered In |
+|-----------------|-------------|------------|
+| 3.1 | [description] | lab-00, lab-01 |
+| 3.2.a | [description] | lab-01, lab-02 |
+
+## Design Decisions
+- [Any notable grouping, ordering, or topology decisions and their rationale]
+```
+
+--# Step 5: Write baseline.yaml
+
+Write `labs/<topic>/baseline.yaml`:
 
 ```yaml
-chapter: [TECHNOLOGY]
+topic: [topic_id]
+topic_name: "[Topic Name]"
+exam: "[Exam Code]"
 version: 1.0
 
 meta:
   created:
     date: "[YYYY-MM-DD]"
     agent: claude-sonnet-4-6
-    skill: chapter-topics
+    skill: spec-creator
     skill_version: "[date of .agent/skills HEAD]"  # run: git -C .agent/skills log --format='%ci' -1
   updated: []
 
-# Core devices — present in ALL labs
 core_topology:
   devices:
     - name: R1
@@ -83,14 +143,13 @@ core_topology:
       target: [Device:Interface]
       subnet: [network/mask]
 
-# Optional devices — added for specific labs
 optional_devices:
   - name: R4
     platform: iosv|iosvl2|csr1000v|iol_l3|iol_l2
     role: [role]
     loopback0: [IP/mask]
     console_port: null   # Dynamic
-    available_from: [lab number]
+    available_from: lab-02-[slug]
     purpose: [why needed]
 
 optional_links:
@@ -98,101 +157,162 @@ optional_links:
     source: [Device:Interface]
     target: [Device:Interface]
     subnet: [network/mask]
-    available_from: [lab number]
+    available_from: lab-02-[slug]
 
-# Lab progression
 labs:
-  - number: 1
-    title: [Lab Title]
-    difficulty: Foundation|Intermediate|Advanced
-    time_minutes: [45-120]
+  - number: 0
+    folder: lab-00-introduction
+    title: "[Lab Title]"
+    difficulty: Foundation
+    type: progressive
+    time_minutes: 45
     devices: [R1, R2, R3]
+    blueprint_refs: ["3.1"]
     objectives:
       - [objective 1]
       - [objective 2]
-  - number: 2
-    title: [Lab Title]
+
+  - number: 1
+    folder: lab-01-classic-adjacency
+    title: "[Lab Title]"
+    difficulty: Foundation
+    type: progressive
+    time_minutes: 60
     devices: [R1, R2, R3]
-    extends: 1
-  # ... objective labs ...
+    extends: lab-00-introduction
+    blueprint_refs: ["3.2.a"]
+    objectives:
+      - [objective 1]
+
+  # ... progressive labs ...
+
+  # Standalone labs (if any) go here, before capstones
+  - number: N-2
+    folder: lab-N-2-[slug]
+    title: "[Lab Title]"
+    difficulty: Advanced
+    type: standalone
+    time_minutes: 90
+    devices: [R1, R2, R3, R4]
+    blueprint_refs: ["3.5"]
+    objectives:
+      - [objective — does not depend on previous lab state]
+
+  # Capstones — always last two
   - number: N-1
+    folder: lab-N-1-capstone-config
     title: "[Protocol] Full Protocol Mastery — Capstone I"
     type: capstone_i
     clean_slate: true
     difficulty: Advanced
     time_minutes: 120
-    blueprint: all
+    blueprint_refs: all
     devices: [all active devices]
     objectives:
       - [comprehensive config objectives covering all blueprint bullets]
+
   - number: N
+    folder: lab-N-capstone-troubleshooting
     title: "[Protocol] Comprehensive Troubleshooting — Capstone II"
     type: capstone_ii
     clean_slate: true
     difficulty: Advanced
     time_minutes: 120
-    blueprint: all
+    blueprint_refs: all
     devices: [all active devices]
     objectives:
       - [5+ concurrent fault diagnosis objectives spanning all blueprint bullets]
 ```
 
---# Step 4: Backfill chapter-spec.md
+--# Step 6: Create Lab Folder Structure
 
-After generating baseline.yaml, write the plan back into `specs/[chapter]/chapter-spec.md` under the `## Generated Plan` section. Include:
-1. **Topology summary** — devices, roles, platforms, link structure (1-3 lines of prose)
-2. **Lab Progression table** — number, title, difficulty, time, blueprint bullets, devices
-3. **Blueprint Coverage table** — each exam bullet mapped to the lab(s) that cover it
+Create empty lab subdirectories under `labs/<topic>/`:
 
-This makes the spec a human-readable record of what was generated. If the user filled in `## Preferences`, note which preferences were honored.
+```
+labs/<topic>/
+  lab-00-introduction/
+  lab-01-classic-adjacency/
+  lab-02-named-mode/
+  ...
+  lab-N-1-capstone-config/
+  lab-N-capstone-troubleshooting/
+```
 
---# Step 5: Validate
+Do NOT generate lab content (workbooks, configs, scripts) — that is the lab-builder
+skill's job in Phase 3.
 
-Before finishing, confirm:
-- [ ] Every exam objective provided is covered by at least one lab
+--# Step 7: Validate
+
+Before presenting to the user, confirm:
+- [ ] Every blueprint bullet in the topic's `blueprint_refs` is covered by at least one lab
 - [ ] Total device count is between 3 (minimum) and 15 (maximum) across core + optional
-- [ ] All console ports follow the convention: RN = 500N
-- [ ] Platform choices respect EVE-NG constraints — select from `iosv`, `iosvl2`, `csr1000v`, `iol_l3`, `iol_l2`, `xrv9k`, `nxosv9k`, `asav` (see `eve-ng` skill)
-- [ ] IP addresses are pre-reserved for all optional devices even if not active in early labs
-- [ ] The last 2 labs are Capstone I (`type: capstone_i`) and Capstone II (`type: capstone_ii`), both with `clean_slate: true`
+- [ ] Platform choices respect EVE-NG constraints (see `eve-ng/SKILL.md`)
+- [ ] IP addresses are pre-reserved for all optional devices
+- [ ] The last 2 labs are Capstone I (`type: capstone_i`) and Capstone II (`type: capstone_ii`)
+- [ ] All progressive labs form a valid chain (each extends the previous)
+- [ ] Standalone labs (if any) come after all progressive labs and before capstones
+- [ ] Lab folder names are valid kebab-case and match the `folder` field in baseline.yaml
+- [ ] `spec.md` Blueprint Coverage Matrix has no gaps
 
---# Step 6: Update Progress & Mindmap
+--# Step 8: Pause for Review
 
-After `baseline.yaml` and the chapter-spec.md backfill are complete:
-1. Update `memory/progress.md` — set the baseline row for this chapter to "Approved" (baseline is immediately usable for lab generation).
-2. Update the `README.md` mindmap — add the chapter branch with `✓ baseline.yaml` and all planned labs as `○ Lab NN <name>`.
+Present the spec and explicitly ask:
+
+> "Here is the lab specification for [Topic Name] ([N] labs).
+>
+> Please review:
+> 1. Does the lab progression make sense?
+> 2. Are the blueprint bullets correctly assigned?
+> 3. Is the topology appropriate for these labs?
+> 4. Any labs to add, remove, or reorder?
+>
+> Once approved, I'll move to the next topic: [next topic from build_order],
+> or if all topics are done, we can start Phase 3 (lab-builder)."
+
+Do NOT proceed to the next topic or to Phase 3 until the user approves.
 
 -# Continuity Rules
 
-1. **Core devices** maintain consistent IPs across ALL labs
-2. **Optional devices** are pre-reserved with IPs but only activated when declared in `labs[N].devices`
-3. **Each lab extends the previous** — solutions become the next lab's initial-configs
-4. **Config chaining rule:** only add commands between labs, never remove
+1. **Core devices** maintain consistent IPs across ALL labs in the topic
+2. **Optional devices** are pre-reserved with IPs but only activated when declared
+3. **Progressive labs** chain: solutions become the next lab's initial-configs
+4. **Standalone labs** start from baseline topology (IP only, no protocol config)
+5. **Capstones** always start from clean slate (IP addressing only)
+6. **Config chaining rule (progressive only):** only add commands between labs, never remove
 
 -# Common Issues
 
---# Exam objectives list is incomplete
-- **Cause:** User did not provide a full list, or `specs/[chapter]/chapter-spec.md` has unfilled sections.
-- **Solution:** Read `reference-docs/300-410-ENARSI-v1.1-7-2025 exam topics.md` for the full ENARSI 300-410 blueprint and cross-reference the chapter section. Ask the user to confirm before generating.
+--# topic-plan.yaml not found
+- **Cause:** exam-planner skill has not been run.
+- **Solution:** Stop. Ask the user to run the exam-planner skill first.
 
---# baseline.yaml already exists
-- **Cause:** A previous baseline was generated for this chapter.
-- **Solution:** Stop and ask the user whether to overwrite or extend the existing file. Do not silently overwrite.
+--# Topic has too many blueprint bullets for estimated lab count
+- **Cause:** The exam-planner underestimated lab count for this topic.
+- **Solution:** Propose an increased count and explain which bullets need additional labs.
+  Update `specs/topic-plan.yaml` with the revised count after user approval.
 
---# Too few labs to cover all objectives
-- **Cause:** Target lab count is too low for the number of objectives.
-- **Solution:** Propose increasing the count, or explain which objectives will be combined into a single lab and why.
+--# baseline.yaml already exists for this topic
+- **Cause:** A previous spec was generated for this topic.
+- **Solution:** Stop and ask: overwrite, extend, or skip? Do not silently overwrite.
 
---# Platform selection unclear
-- **Cause:** Lab requires features not available on the default platform (e.g., IOS-XE features on IOSv, or switching features on a routing-only node).
-- **Solution:** See `eve-ng/SKILL.md` Platform Selection Guide. Use `iosvl2` for switching labs, `csr1000v` for IOS-XE features, `xrv9k` for IOS-XR. Default to `iosv` for general routing.
+--# Dependency topic not yet spec'd
+- **Cause:** This topic depends on another (e.g., Redistribution depends on EIGRP + OSPF)
+  that hasn't been through spec-creator yet.
+- **Solution:** Warn the user but allow proceeding. The dependency is for build order
+  (lab generation), not spec creation. Note: "Specs for [dependency] should be approved
+  before building labs for this topic."
 
 -# Examples
 
-User: "Plan the OSPF chapter for ENARSI. Cover all OSPF blueprint topics."
+User: "Create specs for EIGRP" (after exam-planner has run)
 
 Actions:
-1. Read `specs/ospf/chapter-spec.md` for the exam bullets.
-2. Design 8–10 labs with Foundation → Advanced progression.
-3. Write `labs/ospf/baseline.yaml` with 3 core routers (R1, R2, R3) + optional R4, R7.
-4. Write `labs/ospf/README.md` with blueprint coverage matrix.
+1. Read `specs/topic-plan.yaml` — find the eigrp topic entry.
+2. Read `blueprint/350-410/blueprint.md` — extract EIGRP-related bullets.
+3. Design 7-lab sequence: introduction, classic adjacency, named mode, advanced features,
+   summarization-and-filtering, capstone-config, capstone-troubleshooting.
+4. Design shared topology: 3 core routers (R1 hub, R2/R3 branches) + optional R4 (stub).
+5. Write `labs/eigrp/spec.md` with progression table and coverage matrix.
+6. Write `labs/eigrp/baseline.yaml` with full topology and lab definitions.
+7. Create empty folders: `labs/eigrp/lab-00-introduction/`, etc.
+8. Present spec and pause for review.

@@ -11,6 +11,14 @@ Always read at the start of a lab generation session:
 1. `memory/progress.md` — current chapter and lab completion status
 2. `LESSONS_LEARNED.md` — bugs and patterns from prior development
 
+## Three-Phase Workflow
+
+1. **exam-planner** — reads full blueprint, creates `topic-plan.yaml` + empty `labs/<topic>/` folders
+2. **spec-creator** (in `chapter-topics-creator/`) — creates `spec.md` + `baseline.yaml` per topic (review after each)
+3. **lab-builder** (in `lab-workbook-creator/`) — builds one lab at a time from the spec (review after each)
+
+Blueprint location: `blueprint/<exam-code>/blueprint.md`
+
 ## How Skills Work
 
 Skills live at `.agent/skills/<skill-name>/SKILL.md`. Never discover them by listing

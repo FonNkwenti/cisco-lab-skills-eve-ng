@@ -31,7 +31,7 @@ if [ -d "$TARGET_DIR" ]; then
 fi
 
 echo "→ Creating directory structure..."
-mkdir -p "$TARGET_DIR"/{.agent,conductor/tracks,labs/common,tests,docs,.prompts}
+mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE",conductor/tracks,labs/common,tests,docs,.prompts}
 
 echo "→ Initializing git repo..."
 git -C "$TARGET_DIR" init
@@ -68,7 +68,7 @@ cat > "$TARGET_DIR/CLAUDE.md" << EOF
 
 - **Exam**: $CERT_NAME ($EXAM_CODE)
 - **Audience**: Network engineers preparing for the $EXAM_CODE exam
-- **Platform**: GNS3 on Apple Silicon (M1/M2/M3)
+- **Platform**: EVE-NG on Dell Latitude 5540 (Intel/Windows)
 
 ## Project Structure
 
@@ -81,12 +81,11 @@ cat > "$TARGET_DIR/CLAUDE.md" << EOF
 - See \`labs/\` for existing lab content
 - Run \`git submodule status\` to check skills version
 
-## How to Work on a Chapter
+## Three-Phase Workflow
 
-1. Create chapter directory: \`labs/[chapter]/\`
-2. Use \`chapter-topics-creator\` skill → \`baseline.yaml\` + README
-3. Use \`chapter-builder\` skill → all labs
-4. Drop a \`labs/[chapter]/CLAUDE.md\` for deep chapter context
+1. **Phase 1 — Plan:** Upload blueprint to \`blueprint/$EXAM_CODE/blueprint.md\`, then run \`exam-planner\` → \`specs/topic-plan.yaml\` + empty \`labs/<topic>/\` folders
+2. **Phase 2 — Spec:** Run \`spec-creator\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
+3. **Phase 3 — Build:** Run \`lab-workbook-creator\` one lab at a time → workbook, configs, topology, scripts (review after each)
 
 ## Common Commands
 
@@ -96,7 +95,7 @@ git submodule update --remote .agent/skills
 git add .agent/skills && git commit -m "chore: sync skills"
 
 # Run lab setup
-python3 labs/[chapter]/lab-NN-[name]/setup_lab.py
+python3 labs/<topic>/lab-NN-<slug>/setup_lab.py --host <eve-ng-ip>
 
 # Run tests
 pytest tests/ -v
@@ -118,7 +117,7 @@ A comprehensive set of hands-on labs for the $CERT_NAME ($EXAM_CODE) exam.
 
 1. Clone with submodules: \`git clone --recurse-submodules <repo-url>\`
 2. Install Python dependencies: \`pip install -r requirements.txt\`
-3. Set up GNS3 (see \`.agent/skills/gns3/SKILL.md\` for constraints)
+3. Set up EVE-NG (see \`.agent/skills/eve-ng/SKILL.md\` for constraints)
 4. Navigate to a lab and follow the workbook
 
 ## Lab Chapters

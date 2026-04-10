@@ -53,6 +53,7 @@ try {
     Write-Host "→ Creating directory structure..."
     $dirs = @(
         ".agent",
+        "blueprint/$ExamCode",
         "conductor/tracks",
         "labs/common",
         "tests",
@@ -117,12 +118,11 @@ try {
 - See \`labs/\` for existing lab content
 - Run \`git submodule status\` to check skills version
 
-## How to Work on a Chapter
+## Three-Phase Workflow
 
-1. Create chapter directory: \`labs/[chapter]/\`
-2. Use \`chapter-topics-creator\` skill → \`baseline.yaml\` + README
-3. Use \`chapter-builder\` skill → all labs
-4. Drop a \`labs/[chapter]/CLAUDE.md\` for deep chapter context
+1. **Phase 1 — Plan:** Upload blueprint to \`blueprint/$ExamCode/blueprint.md\`, then run \`exam-planner\` → \`specs/topic-plan.yaml\` + empty \`labs/<topic>/\` folders
+2. **Phase 2 — Spec:** Run \`spec-creator\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
+3. **Phase 3 — Build:** Run \`lab-workbook-creator\` one lab at a time → workbook, configs, topology, scripts (review after each)
 
 ## Common Commands
 
@@ -132,7 +132,7 @@ git submodule update --remote .agent/skills
 git add .agent/skills && git commit -m "chore: sync skills"
 
 # Run lab setup
-python setup_lab.py --host <eve-ng-ip>
+python labs/<topic>/lab-NN-<slug>/setup_lab.py --host <eve-ng-ip>
 
 # Run tests
 pytest tests/ -v

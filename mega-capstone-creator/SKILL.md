@@ -5,7 +5,13 @@ description: Generates a multi-domain Mega Capstone lab spanning all chapter dom
 
 # Mega Capstone Creator Skill
 
-Generates a single integrated multi-domain lab that validates mastery across all 7 ENARSI chapters simultaneously. This is the final deliverable of the entire lab series.
+Generates a single integrated multi-domain lab that validates mastery across all topics
+simultaneously. This is the final deliverable of the entire lab series.
+
+<!-- TODO: This skill is currently hardcoded to ENARSI with 7 specific chapter paths.
+     It needs to be updated to read topics dynamically from specs/topic-plan.yaml
+     instead of listing them explicitly. This will make it exam-agnostic.
+     See exam-planner/SKILL.md for the topic-plan.yaml schema. -->
 
 -# Instructions
 

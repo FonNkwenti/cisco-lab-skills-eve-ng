@@ -1,23 +1,28 @@
 ---
 name: lab-workbook-creator
-description: Creates a complete lab workbook, initial-configs, solutions, topology diagram, and setup_lab.py automation script for a single lab. Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "write a workbook", or when chapter-builder invokes it for each lab in a sequence.
+description: Creates a complete lab workbook, initial-configs, solutions, topology diagram, and setup_lab.py automation script for a single lab. Phase 3 of the workflow (exam-planner -> spec-creator -> lab-builder). Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "write a workbook", or when building labs sequentially from a topic spec.
 ---
 
 # Lab Workbook Creator Skill
 
-Converts a lab topic entry from `baseline.yaml` into a full DeepSeek Standard lab package. Prioritises theoretical context, copy-pasteable Cisco IOS configurations, and EVE-NG automation scripts.
+Converts a lab entry from `baseline.yaml` into a full lab package. Phase 3 of the
+three-phase workflow: exam-planner -> spec-creator -> **lab-builder**. Builds one lab
+at a time, pausing for review after each. Labs within a topic are built chronologically
+as each progressive lab continues from the previous one.
 
 -# Instructions
 
 --# Step 1: Read Inputs
 
 Before generating anything, read in parallel:
-1. `labs/[chapter]/baseline.yaml` — active devices, IPs, console ports, lab objectives
-2. `specs/[chapter]/chapter-spec.md` — exam bullet context for the lab's objectives
+1. `labs/<topic>/baseline.yaml` — active devices, IPs, console ports, lab objectives
+2. `labs/<topic>/spec.md` — exam bullet context, lab progression, and blueprint coverage
 
 Then, using the baseline you just read:
 3. Check `baseline.yaml labs[N].type` — if `capstone_i` or `capstone_ii`, set `clean_slate: true` for this lab
-4. Previous lab's `solutions/` (if this is not Lab 01 AND `clean_slate` is not true) — becomes this lab's `initial-configs/`
+4. Previous lab's `solutions/` (if `type: progressive` and not the first lab) — becomes
+   this lab's `initial-configs/`. If `type: standalone` or `clean_slate: true`, generate
+   from `baseline.yaml core_topology` IP addressing only.
 
 Identify which devices are active for this lab number from `baseline.yaml labs[N].devices`.
 
@@ -445,7 +450,7 @@ You are generating a topology.drawio diagram for a CCNP ENARSI EVE-NG lab.
 
 ## Task
 Write Draw.io XML to:
-  labs/[chapter]/[lab-path]/topology.drawio
+  labs/<topic>/lab-NN-<slug>/topology.drawio
 
 ## MANDATORY FIRST ACTION
 Read .agent/skills/drawio/SKILL.md in full — especially §4.2–§4.7.
@@ -453,8 +458,8 @@ Use the §4.7 reference XML snippets as your starting template.
 Never write topology XML from scratch.
 
 ## Read After drawio/SKILL.md
-1. labs/[chapter]/baseline.yaml — devices (IPs, roles, loopbacks) and links (subnets)
-2. labs/[chapter]/[lab-path]/workbook.md — Section 2 ASCII diagram as layout reference
+1. labs/<topic>/baseline.yaml — devices (IPs, roles, loopbacks) and links (subnets)
+2. labs/<topic>/lab-NN-<slug>/workbook.md — Section 2 ASCII diagram as layout reference
 
 ## Active Devices
 [fill from baseline.yaml labs[N].devices — e.g. R1 (Hub), R2 (Branch A), R3 (Branch B)]
@@ -510,14 +515,14 @@ You are generating fault injection scripts for a Cisco certification lab.
 
 ## Task
 Generate all fault injection scripts and supporting files in:
-  labs/[chapter]/[lab-path]/scripts/fault-injection/
+  labs/<topic>/lab-NN-<slug>/scripts/fault-injection/
 
 ## MANDATORY FIRST ACTION
 Read .agent/skills/fault-injector/SKILL.md in full.
 Follow it exactly — especially the template locations in assets/.
 
 ## Read After fault-injector/SKILL.md
-1. labs/[chapter]/[lab-path]/workbook.md — Section 9 (troubleshooting scenarios) and Section 3 (Console Access Table)
+1. labs/<topic>/lab-NN-<slug>/workbook.md — Section 9 (troubleshooting scenarios) and Section 3 (Console Access Table)
 
 ## Lab Context
 - Chapter: [chapter]
@@ -578,8 +583,8 @@ After `meta.yaml` is written:
 -# Common Issues
 
 --# baseline.yaml not found
-- **Cause:** Chapter has not been planned yet.
-- **Solution:** Stop. Ask the user to run the `chapter-topics` skill first to generate `labs/[chapter]/baseline.yaml`.
+- **Cause:** Topic has not been through spec-creator yet.
+- **Solution:** Stop. Ask the user to run the spec-creator skill first to generate `labs/<topic>/baseline.yaml` and `labs/<topic>/spec.md`.
 
 --# No previous lab solutions to chain from (Lab N > 1)
 - **Cause:** Lab (N-1) has not been generated yet.
@@ -603,14 +608,18 @@ After `meta.yaml` is written:
 
 -# Examples
 
-User: "Generate EIGRP Lab 06 for the ENARSI series."
+User: "Generate the next lab for EIGRP" (lab-03-summarization is next per spec.md)
 
 Actions:
-1. Read `labs/eigrp/baseline.yaml` — identify Lab 06 devices, objectives, console ports.
-2. Draft solution configs in memory; verify all commands against `.agent/skills/reference-data/ios-compatibility.yaml`; write verified configs to `solutions/`.
-3. Write `workbook.md` with all 10 required sections (commands and cheatsheets are now verified).
-4. Copy `labs/eigrp/lab-05-[name]/solutions/` as `initial-configs/` for Lab 06.
-5. Dispatch drawio subagent (Step 5) to write `topology.drawio`.
-6. Generate `setup_lab.py` in main context.
-7. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
-8. Write `meta.yaml` (Step 8) listing all created files.
+1. Read `labs/eigrp/baseline.yaml` — identify lab-03 devices, objectives, blueprint_refs.
+2. Read `labs/eigrp/spec.md` — confirm lab-03-summarization is `type: progressive`,
+   extends lab-02.
+3. Copy `labs/eigrp/lab-02-named-mode/solutions/` as `initial-configs/` for lab-03.
+4. Draft solution configs; verify against `reference-data/ios-compatibility.yaml`;
+   write to `solutions/`.
+5. Write `workbook.md` with all 10 required sections.
+6. Dispatch drawio subagent to write `topology.drawio`.
+7. Generate `setup_lab.py`.
+8. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
+9. Write `meta.yaml` listing all created files.
+10. Pause for review before proceeding to lab-04.
