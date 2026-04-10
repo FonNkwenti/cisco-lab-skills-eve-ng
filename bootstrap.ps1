@@ -86,12 +86,12 @@ try {
 
     # Generate product.md from template
     $productTmpl = Get-Content (Join-Path $HUB_DIR "conductor-template/product.md.tmpl") -Raw
-    $productContent = $productTmpl -replace '{{CERT_NAME}}', $CertName -replace '{{EXAM_CODE}}', $ExamCode -replace '{{SCOPE}}', 'TODO: Define scope of coverage'
+    $productContent = $productTmpl.Replace('{{CERT_NAME}}', $CertName).Replace('{{EXAM_CODE}}', $ExamCode).Replace('{{SCOPE}}', 'TODO: Define scope of coverage')
     Set-Content -Path (Join-Path $TARGET_DIR "conductor/product.md") -Value $productContent
 
     # Generate product-guidelines.md from template
     $guidelinesTmpl = Get-Content (Join-Path $HUB_DIR "conductor-template/product-guidelines.md.tmpl") -Raw
-    $guidelinesContent = $guidelinesTmpl -replace '{{CERT_NAME}}', $CertName -replace '{{EXAM_CODE}}', $ExamCode
+    $guidelinesContent = $guidelinesTmpl.Replace('{{CERT_NAME}}', $CertName).Replace('{{EXAM_CODE}}', $ExamCode)
     Set-Content -Path (Join-Path $TARGET_DIR "conductor/product-guidelines.md") -Value $guidelinesContent
 
     Write-Host "→ Creating CLAUDE.md..."
@@ -142,29 +142,30 @@ pytest tests/ -v
     Set-Content -Path $claudeMdPath -Value $claudeMdContent
 
     Write-Host "→ Creating README.md..."
-    $readmeMd = @"
+    $readmeMdPath = Join-Path $TARGET_DIR "README.md"
+    $readmeMdContent = @"
 # $CertName ($ExamCode) Lab Series
 
 A comprehensive set of hands-on labs for the $CertName ($ExamCode) exam.
 
 ## Getting Started
 
-1. Clone with submodules: \`git clone --recurse-submodules <repo-url>\`
-2. Install Python dependencies: \`pip install -r requirements.txt\`
-3. Set up EVE-NG (see \`.agent/skills/eve-ng/SKILL.md\` for constraints)
+1. Clone with submodules: git clone --recurse-submodules <repo-url>
+2. Install Python dependencies: pip install -r requirements.txt
+3. Set up EVE-NG (see .agent/skills/eve-ng/SKILL.md for constraints)
 4. Navigate to a lab and follow the workbook
 
 ## Lab Chapters
 
 | Chapter | Description |
 |---------|-------------|
-| *(Add chapters as they are built)* | |
+| (Add chapters as they are built) | |
 
 ## Development
 
-Lab creation uses skills in \`.agent/skills/\`. See [CLAUDE.md](CLAUDE.md) for context.
+Lab creation uses skills in .agent/skills/. See [CLAUDE.md](CLAUDE.md) for context.
 "@
-    Set-Content -Path (Join-Path $TARGET_DIR "README.md") -Value $readmeMd
+    Set-Content -Path $readmeMdPath -Value $readmeMdContent
 
     Write-Host "→ Initial commit..."
     & git -C $TARGET_DIR add -A
