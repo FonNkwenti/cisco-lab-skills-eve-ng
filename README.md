@@ -65,6 +65,17 @@ certification exam repo. ENCOR is used as the example — the same steps apply t
 
 ### 1. Create an exam repo and mount this skill library
 
+**Recommended: Use the bootstrap script**
+
+```powershell
+# Windows PowerShell
+.\bootstrap.ps1 -ProjectName "ccnp-encor-labs" -CertName "CCNP ENCOR" -ExamCode "350-401"
+```
+
+This creates the full directory structure, initializes git, adds the submodule, and generates all scaffolding files in one command.
+
+**Alternative: Manual setup**
+
 ```bash
 mkdir ccnp-encor-labs && cd ccnp-encor-labs
 git init
@@ -203,6 +214,15 @@ workbook.md             →  study + practice
 
 ## Adding to a new exam repo
 
+**Use bootstrap.ps1** (recommended):
+
+```powershell
+# From this repo (cisco-lab-skills-eve-ng/)
+.\bootstrap.ps1 -ProjectName "your-exam-repo" -CertName "CCNP EXAM" -ExamCode "XXX-XXX"
+```
+
+**Or manually:**
+
 ```bash
 cd /path/to/your-exam-repo
 git submodule add https://github.com/FonNkwenti/cisco-lab-skills-eve-ng.git .agent/skills
@@ -266,6 +286,17 @@ Fix a bug in lab-workbook-creator:
   2. Update ENARSI            → pins to commit B
   3. Update SPCOR when ready  → pins to commit B
 ```
+
+## Platform Info
+
+**Current Setup:** EVE-NG on Dell Latitude 5540 (Windows, Intel i7-1370P, 64 GB RAM)
+- **Emulation engine:** QEMU/KVM with Intel VT-x enabled
+- **Images:** IOSv, IOSvL2, CSR1000v, IOS-XRv, NX-OSv, ASAv, and more
+- **Access method:** Eve-NG Web UI at `http://<ip>` (default: admin/eve)
+
+**Note on WSL:** WSL1/WSL2 was intentionally removed to avoid conflicts with VMware's access to Intel VT-x. This setup runs natively on Windows without hypervisor interference. For scripting, use PowerShell or Python directly.
+
+See `eve-ng/SKILL.md` for full hardware constraints and platform selection guide.
 
 ## Scaffolding
 
