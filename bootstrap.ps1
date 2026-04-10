@@ -95,13 +95,14 @@ try {
     Set-Content -Path (Join-Path $TARGET_DIR "conductor/product-guidelines.md") -Value $guidelinesContent
 
     Write-Host "→ Creating CLAUDE.md..."
+    $fence = '```'
     $claudeMdPath = Join-Path $TARGET_DIR "CLAUDE.md"
     $claudeMdContent = @"
 # $CertName ($ExamCode) Lab Project
 
 ## Shared Context (Skills + Standards)
 
-See `.agent/skills/memory/CLAUDE.md` for the foundation skills repository context.
+See .agent/skills/memory/CLAUDE.md for the foundation skills repository context.
 
 ## This Certification
 
@@ -111,33 +112,33 @@ See `.agent/skills/memory/CLAUDE.md` for the foundation skills repository contex
 
 ## Project Structure
 
-See \`conductor/product.md\` and \`conductor/workflow.md\` for detailed documentation.
+See conductor/product.md and conductor/workflow.md for detailed documentation.
 
 ## Active Work
 
-- See \`conductor/tracks.md\` for the current chapter plan
-- See \`labs/\` for existing lab content
-- Run \`git submodule status\` to check skills version
+- See conductor/tracks.md for the current chapter plan
+- See labs/ for existing lab content
+- Run git submodule status to check skills version
 
 ## Three-Phase Workflow
 
-1. **Phase 1 — Plan:** Upload blueprint to \`blueprint/$ExamCode/blueprint.md\`, then run \`exam-planner\` → \`specs/topic-plan.yaml\` + empty \`labs/<topic>/\` folders
-2. **Phase 2 — Spec:** Run \`spec-creator\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
-3. **Phase 3 — Build:** Run \`lab-workbook-creator\` one lab at a time → workbook, configs, topology, scripts (review after each)
+1. Phase 1 - Plan: Upload blueprint to blueprint/$ExamCode/blueprint.md, then run exam-planner
+2. Phase 2 - Spec: Run spec-creator per topic (review after each)
+3. Phase 3 - Build: Run lab-workbook-creator one lab at a time (review after each)
 
 ## Common Commands
 
-\`\`\`bash
+${fence}bash
 # Update skills to latest
 git submodule update --remote .agent/skills
-git add .agent/skills && git commit -m "chore: sync skills"
+git add .agent/skills
 
 # Run lab setup
 python labs/<topic>/lab-NN-<slug>/setup_lab.py --host <eve-ng-ip>
 
 # Run tests
 pytest tests/ -v
-\`\`\`
+${fence}
 "@
     Set-Content -Path $claudeMdPath -Value $claudeMdContent
 
@@ -163,7 +164,7 @@ A comprehensive set of hands-on labs for the $CertName ($ExamCode) exam.
 
 ## Development
 
-Lab creation uses skills in .agent/skills/. See [CLAUDE.md](CLAUDE.md) for context.
+Lab creation uses skills in .agent/skills/. See CLAUDE.md for context.
 "@
     Set-Content -Path $readmeMdPath -Value $readmeMdContent
 
