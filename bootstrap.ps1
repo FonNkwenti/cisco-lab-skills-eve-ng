@@ -95,12 +95,13 @@ try {
     Set-Content -Path (Join-Path $TARGET_DIR "conductor/product-guidelines.md") -Value $guidelinesContent
 
     Write-Host "→ Creating CLAUDE.md..."
-    $claudeMd = @"
+    $claudeMdPath = Join-Path $TARGET_DIR "CLAUDE.md"
+    $claudeMdContent = @"
 # $CertName ($ExamCode) Lab Project
 
 ## Shared Context (Skills + Standards)
 
-@.agent/skills/memory/CLAUDE.md
+See `.agent/skills/memory/CLAUDE.md` for the foundation skills repository context.
 
 ## This Certification
 
@@ -110,8 +111,7 @@ try {
 
 ## Project Structure
 
-@conductor/product.md
-@conductor/workflow.md
+See \`conductor/product.md\` and \`conductor/workflow.md\` for detailed documentation.
 
 ## Active Work
 
@@ -139,7 +139,7 @@ python labs/<topic>/lab-NN-<slug>/setup_lab.py --host <eve-ng-ip>
 pytest tests/ -v
 \`\`\`
 "@
-    Set-Content -Path (Join-Path $TARGET_DIR "CLAUDE.md") -Value $claudeMd
+    Set-Content -Path $claudeMdPath -Value $claudeMdContent
 
     Write-Host "→ Creating README.md..."
     $readmeMd = @"
@@ -175,7 +175,7 @@ Lab creation uses skills in \`.agent/skills/\`. See [CLAUDE.md](CLAUDE.md) for c
     Write-Host "  ✅ Done! Project: $TARGET_DIR"
     Write-Host ""
     Write-Host "  Next steps:"
-    Write-Host "  1. Create GitHub repo and push: git remote add origin <url> && git push"
+    Write-Host "  1. Create GitHub repo and push: git remote add origin `<url`> `&`& git push"
     Write-Host "  2. Upload blueprint to blueprint/$ExamCode/blueprint.md, then run exam-planner"
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     Write-Host ""
