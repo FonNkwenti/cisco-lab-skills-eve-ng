@@ -132,6 +132,8 @@ ccnp-encor-labs/
 
 The bootstrap script creates the `blueprint/<exam-code>/` folder automatically.
 
+**Optional: Add supplementary references.** Blueprint bullets are often terse (e.g., "3.1.a Configure and verify EIGRP"). Drop any additional materials — OCG chapter outlines, study guide excerpts, course notes, vendor docs — into `blueprint/<exam-code>/references/`. The exam-planner reads these alongside the blueprint for richer topic grouping and lab count estimates.
+
 ### 3. Plan the exam — run exam-planner (Phase 1)
 
 Ask the agent: *"Plan the CCNP ENCOR exam labs from the blueprint"*

@@ -54,6 +54,7 @@ try {
     $dirs = @(
         ".agent",
         "blueprint/$ExamCode",
+        "blueprint/$ExamCode/references",
         "specs",
         "conductor/tracks",
         "labs",

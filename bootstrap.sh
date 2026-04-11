@@ -31,7 +31,7 @@ if [ -d "$TARGET_DIR" ]; then
 fi
 
 echo "→ Creating directory structure..."
-mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE",specs,conductor/tracks,labs,tests,docs,.prompts}
+mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE"/references,specs,conductor/tracks,labs,tests,docs,.prompts}
 
 echo "→ Initializing git repo..."
 git -C "$TARGET_DIR" init

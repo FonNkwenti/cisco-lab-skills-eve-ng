@@ -24,6 +24,12 @@ three-phase workflow: **exam-planner** -> spec-creator -> lab-builder.
    structure (e.g., "1.0 Architecture", "2.0 Virtualization", etc.).
 5. Extract: exam name, exam code, blueprint version/date if present, total domain count,
    total objective count.
+6. Check for supplementary references in `blueprint/<exam-code>/references/`. If the
+   folder exists and contains files (markdown, text, PDF, etc.), read them all. These are
+   additional materials the user has provided to enrich the terse blueprint bullets — OCG
+   chapter outlines, study guide excerpts, course notes, vendor documentation, etc. Use
+   them to inform topic grouping, scope_notes, and lab count estimates. References are
+   **optional** — the skill must work with just the blueprint alone.
 
 --# Step 2: Analyse and Group Objectives into Topics
 
