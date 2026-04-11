@@ -30,6 +30,39 @@ platforms:
     group: ios-l2
     console_port: null
     deprecated: false
+  # ─── SD-WAN (Viptela OS) — added 2026-04-11 ─────────────────────────────────
+  vmanage:
+    ios: "20.6.2"
+    type: qemu
+    group: sdwan
+    console_port: null
+    image: vtmgmt-20.6.2-001
+    role: management-controller
+    deprecated: false
+  vbond:
+    ios: "20.6.2"
+    type: qemu
+    group: sdwan
+    console_port: null
+    image: vtbond-20.6.2
+    role: orchestrator
+    deprecated: false
+  vsmart:
+    ios: "20.6.2"
+    type: qemu
+    group: sdwan
+    console_port: null
+    image: vtsmart-20.6.2
+    role: control-plane
+    deprecated: false
+  vedge:
+    ios: "20.6.2"
+    type: qemu
+    group: sdwan
+    console_port: null
+    image: vtedge-20.6.2
+    role: data-plane
+    deprecated: false
   # ─── Legacy Dynamips platforms (GNS3 / Apple Silicon era) ────────────────────
   c7200:
     ios: "15.3(3)XB12"
