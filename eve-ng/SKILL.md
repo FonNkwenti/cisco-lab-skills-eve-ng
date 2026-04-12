@@ -296,8 +296,73 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
    /opt/unetlab/wrappers/unl_wrapper -a fixpermissions
    ```
 8. **VPC config files use `.vpc` extension** — never `.cfg`. Place in `initial-configs/`.
+9. **Ship the EVE-NG `.unl` file.** Every lab MUST include a `topology/` directory
+   containing the exported `.unl` file alongside `topology.drawio` and a
+   `README.md` explaining the import process. See Section 7 for the standard.
 
---# 7. Installed Image Inventory
+--# 7. Shipping EVE-NG Lab Files (`.unl`)
+
+**Every lab MUST ship its EVE-NG `.unl` export.** The `.drawio` diagram is
+the *design reference*; the `.unl` is the *exact buildable artifact*. Without
+the `.unl`, students must rebuild the topology by hand from the diagram —
+error-prone, time-consuming, and produces subtly different link IDs that
+break the REST-API port-discovery contract.
+
+### Required structure per lab
+
+```
+labs/<topic>/lab-NN-<slug>/
+  topology/
+    topology.drawio                   # conceptual diagram (design)
+    lab-NN-<slug>.unl                 # EVE-NG native lab (buildable)
+    README.md                         # import instructions + manual fallback
+```
+
+Filename convention: `.unl` filename matches the lab folder name exactly
+(e.g. `lab-00-vlans-and-trunking.unl`). This becomes the `lab_path` arg for
+REST-API port discovery:
+
+```python
+discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
+```
+
+### topology/README.md must cover
+
+1. **What's in the folder** (table: `.drawio` vs `.unl` vs `README.md`)
+2. **Import steps** — navigate EVE-NG web UI, Add New Lab → Import, upload
+   `.unl`, Start all nodes
+3. **Lab path expectation** — where in EVE-NG's folder tree the lab should
+   live (the path `setup_lab.py` defaults to), and what `--lab-path` to pass
+   if the student imports it elsewhere
+4. **Manual fallback** — node list with platform types and full link table
+   (mirroring `baseline.yaml`) so the student can rebuild if the `.unl` is
+   missing, corrupted, or incompatible with their EVE-NG version
+
+### Export workflow (for lab authors)
+
+1. Build the topology in EVE-NG until all nodes start cleanly
+2. EVE-NG web UI: open the lab → **More actions → Export**
+3. Save the downloaded `.unl` into `labs/<topic>/<lab>/topology/`
+4. Commit `.unl` + `.drawio` + `README.md` together — they must stay in sync
+5. Update `meta.yaml` files block to reference all three:
+   ```yaml
+   files:
+     topology:
+       diagram: topology/topology.drawio
+       eve_ng_lab: topology/<lab-folder-name>.unl
+       readme: topology/README.md
+   ```
+
+### Never
+
+- Do not ship only the `.drawio` ("students can build it themselves") —
+  this is explicitly what this section exists to prevent
+- Do not generate a `.unl` programmatically — the format is EVE-NG internal
+  XML with node UUIDs that must be allocated by the running EVE-NG instance.
+  The only way to produce a working `.unl` is export from EVE-NG itself
+- Do not commit the `.unl` without testing that it re-imports and starts
+
+--# 8. Installed Image Inventory
 
 > **Last verified:** 2026-04-10. This table reflects images confirmed on disk at
 > `C:\Users\Nkwenti\Documents\EVE-NG\eve images\Cisco`. Add a row when you upload a new image.
