@@ -42,12 +42,19 @@ This section defines the canonical visual style for all topology diagrams. Every
 
 ### 4.2 Device Icons
 
-- Use official **Cisco Network Topology Icons** from the `mxgraph.cisco` shape library.
-- **Style Strings**:
-  - **Router**: `shape=mxgraph.cisco.routers.router;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;`
-  - **L3 Switch**: `shape=mxgraph.cisco.switches.layer_3_switch;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
-  - **L2 Switch**: `shape=mxgraph.cisco.switches.workgroup_switch;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
-  - **Cloud/Internet**: `shape=mxgraph.cisco.misc.cloud;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
+- Use the **Cisco 19** icon set (`mxgraph.cisco19`).
+- **Shape pattern**: All network devices share the base shape `mxgraph.cisco19.rect` with a `prIcon=` attribute selecting the icon. Workstations/PCs use a dedicated shape `mxgraph.cisco19.workstation`.
+- **Size**: Network devices **60×60** (square, `aspect=fixed`). Workstations **50×40**.
+- **Colors**: `fillColor=#FAFAFA;strokeColor=#005073` for all network devices. `fillColor=#005073;strokeColor=none` for workstations.
+
+| Device | `prIcon` / shape | Full style string |
+|--------|-----------------|-------------------|
+| **Router** | `prIcon=router` | `sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];verticalLabelPosition=bottom;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;` |
+| **L3 / Distribution Switch** | `prIcon=l3_switch` | `sketch=0;points=[[0.015,0.015,0],[0.985,0.015,0],[0.985,0.985,0],[0.015,0.985,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];verticalLabelPosition=bottom;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=l3_switch;fillColor=#FAFAFA;strokeColor=#005073;` |
+| **L2 / Access Switch** | `prIcon=workgroup_switch` | Same `points=` as L3 switch above, `prIcon=workgroup_switch` |
+| **Firewall** | `prIcon=firewall` | Same `points=` as L3 switch above, `prIcon=firewall` |
+| **Cloud / Internet** | `prIcon=generic_cloud` | Same `points=` as L3 switch above, `prIcon=generic_cloud` |
+| **PC / Workstation** | `shape=mxgraph.cisco19.workstation` | `points=[[0.03,0.03,0],[0.5,0,0],[0.97,0.03,0],[1,0.4,0],[0.97,0.745,0],[0.5,1,0],[0.03,0.745,0],[0,0.4,0]];verticalLabelPosition=bottom;sketch=0;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.workstation;fillColor=#005073;strokeColor=none;` |
 
 ### 4.3 Device Labels
 
@@ -61,15 +68,17 @@ Labels **must not overlap any connection lines**. Place the label on the side th
 
 | Condition | Placement |
 |-----------|-----------|
-| All physical neighbors are to the **LEFT** (`nx < device_x`) | Place label **RIGHT**: `label_x = device_x + 83` |
+| All physical neighbors are to the **LEFT** (`nx < device_x`) | Place label **RIGHT**: `label_x = device_x + 65` |
 | All physical neighbors are to the **RIGHT** (`nx > device_x`) | Place label **LEFT**: `label_x = device_x - 105` |
 | Neighbors on both sides (or same-column only) | Default **LEFT**: `label_x = device_x - 105` |
 
 - Y offset (all cases): `label_y = device_y - 7`
 - Label width: `100`, height: `60`
 
-**Examples from EIGRP Lab 08:**
-- **R2** is at x=500. All neighbors (R1 at x=400, R3 at x=400) are to the LEFT → label goes **RIGHT** (`label_x = 583`).
+> **Note:** Offsets above are for the standard 60×60 Cisco 19 icon. Right offset (+65) places the label just past the right edge of the icon with a 5px gap.
+
+**Examples from EIGRP Lab 08 (updated for Cisco 19 sizing):**
+- **R2** is at x=500. All neighbors (R1 at x=400, R3 at x=400) are to the LEFT → label goes **RIGHT** (`label_x = 565`).
 - **R6** is at x=200. Its neighbor R1 is at x=400, which is to the RIGHT → label goes **LEFT** (`label_x = 95`).
 
 ### 4.4 Connection Lines
@@ -113,10 +122,31 @@ Every diagram must include a legend box with the following properties:
 </mxCell>
 ```
 
-**Device Icon:**
+**Device Icon — Router (Cisco 19):**
 ```xml
-<mxCell id="R1" value="" style="shape=mxgraph.cisco.routers.router;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="1">
-  <mxGeometry x="400" y="200" width="78" height="53" as="geometry" />
+<mxCell id="R1" value="" style="sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];verticalLabelPosition=bottom;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;" vertex="1" parent="1">
+  <mxGeometry x="400" y="200" width="60" height="60" as="geometry" />
+</mxCell>
+```
+
+**Device Icon — L3/Distribution Switch (Cisco 19):**
+```xml
+<mxCell id="SW1" value="" style="sketch=0;points=[[0.015,0.015,0],[0.985,0.015,0],[0.985,0.985,0],[0.015,0.985,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];verticalLabelPosition=bottom;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=l3_switch;fillColor=#FAFAFA;strokeColor=#005073;" vertex="1" parent="1">
+  <mxGeometry x="400" y="350" width="60" height="60" as="geometry" />
+</mxCell>
+```
+
+**Device Icon — L2/Access Switch (Cisco 19):**
+```xml
+<mxCell id="SW2" value="" style="sketch=0;points=[[0.015,0.015,0],[0.985,0.015,0],[0.985,0.985,0],[0.015,0.985,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];verticalLabelPosition=bottom;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=workgroup_switch;fillColor=#FAFAFA;strokeColor=#005073;" vertex="1" parent="1">
+  <mxGeometry x="250" y="500" width="60" height="60" as="geometry" />
+</mxCell>
+```
+
+**Device Icon — PC / Workstation (Cisco 19):**
+```xml
+<mxCell id="PC1" value="" style="points=[[0.03,0.03,0],[0.5,0,0],[0.97,0.03,0],[1,0.4,0],[0.97,0.745,0],[0.5,1,0],[0.03,0.745,0],[0,0.4,0]];verticalLabelPosition=bottom;sketch=0;html=1;verticalAlign=top;aspect=fixed;align=center;pointerEvents=1;shape=mxgraph.cisco19.workstation;fillColor=#005073;strokeColor=none;" vertex="1" parent="1">
+  <mxGeometry x="260" y="660" width="50" height="40" as="geometry" />
 </mxCell>
 ```
 
