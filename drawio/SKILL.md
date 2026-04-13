@@ -83,11 +83,60 @@ Labels **must not overlap any connection lines**. Place the label on the side th
 
 ### 4.4 Connection Lines
 
-- **Color**: **White** (`#FFFFFF`). Never black.
-- **Style String**: `endArrow=none;html=1;strokeWidth=2;strokeColor=#FFFFFF;fillColor=#f5f5f5;`
-- **Dashed Links** (tunnels): `endArrow=none;html=1;strokeWidth=2;strokeColor=#FFFFFF;fillColor=#f5f5f5;dashed=1;`
-- **Edge Labels** (interface names + subnet): Centered on the link. 10pt. Include interface pair and subnet on separate lines.
-  - Example value: `Fa1/0 - Fa0/0\n10.12.0.0/30`
+Every link must have a **type** that determines its color, thickness, and dash pattern. Never use black. Use `endArrow=none` on all links — Cisco topology diagrams show connectivity, not direction.
+
+#### 4.4.1 Link Type Reference Table
+
+| Link Type | Color | Hex | Width | Dash | Typical use |
+|-----------|-------|-----|-------|------|-------------|
+| **Routed / physical (default)** | White | `#FFFFFF` | 2 | solid | Router-to-router, routed SVIs |
+| **Access port** | White | `#FFFFFF` | 1 | solid | Switch Gi → end host / VPC |
+| **Trunk (802.1Q)** | Gold | `#FFD700` | 2 | solid | Switch-to-switch trunk |
+| **EtherChannel bundle** | White | `#FFFFFF` | 5 | solid | Po1, LACP, PAgP, static |
+| **WAN serial / leased line** | Orange | `#FF8C00` | 2 | solid | Serial, T1, E1, leased WAN |
+| **Management / OOB** | Gray | `#888888` | 1 | long-dash `8 4` | Console, OOB mgmt network |
+| **OSPF virtual link** | Lavender | `#CE93D8` | 1 | dash `4 4` | Backbone continuity link |
+| **OSPF sham link** | Lavender | `#CE93D8` | 1 | dot-dash `1 4 4 4` | OSPF across MPLS VPN |
+
+#### 4.4.2 Style Strings
+
+```
+Routed (default):    endArrow=none;html=1;strokeWidth=2;strokeColor=#FFFFFF;
+Access port:         endArrow=none;html=1;strokeWidth=1;strokeColor=#FFFFFF;
+Trunk (802.1Q):      endArrow=none;html=1;strokeWidth=2;strokeColor=#FFD700;
+EtherChannel bundle: endArrow=none;html=1;strokeWidth=5;strokeColor=#FFFFFF;
+WAN serial:          endArrow=none;html=1;strokeWidth=2;strokeColor=#FF8C00;
+Management/OOB:      endArrow=none;html=1;strokeWidth=1;strokeColor=#888888;dashed=1;dashPattern=8 4;
+OSPF virtual link:   endArrow=none;html=1;strokeWidth=1;strokeColor=#CE93D8;dashed=1;dashPattern=4 4;
+OSPF sham link:      endArrow=none;html=1;strokeWidth=1;strokeColor=#CE93D8;dashed=1;dashPattern=1 4 4 4;
+```
+
+#### 4.4.3 EtherChannel / Dual-Link Pairs
+
+When two or more parallel physical links exist between the same pair of devices (EtherChannel members, redundant trunks), draw them as **two offset lines** that merge into one thick bundle line:
+
+- Draw individual member links first (stroke=1, white, offset by ±5px in the perpendicular axis) using explicit waypoints.
+- Then draw the PortChannel/bundle line (stroke=5, white) overlapping them in the center.
+- Label the bundle line with the PortChannel number and protocol: `Po1 (LACP)\nSW1 Gi0/1,Gi0/2 active\nSW2 Gi0/1,Gi0/2 passive`.
+
+When member links are too close to draw separately, use the thick bundle line alone (stroke=5) with the member interfaces listed in the label.
+
+#### 4.4.4 Edge Labels
+
+All links must carry an edge label. Label content varies by link type:
+
+| Link Type | Label content |
+|-----------|---------------|
+| Routed P2P | `IntfA - IntfB\n10.x.x.0/30` |
+| Trunk | `IntfA - IntfB\nTrunk (VLANs 10,20,99)` |
+| EtherChannel | `Po1 (LACP)\nSW1: Gi0/1,Gi0/2 active\nSW2: Gi0/1,Gi0/2 passive` |
+| Access port | `IntfA - IntfB\nAccess VLAN 10` |
+| WAN serial | `IntfA - IntfB\n10.x.x.0/30` |
+| Tunnel/overlay | See §4.9 |
+
+Label style: `edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#FFFFFF;fillColor=none;strokeColor=none;`
+
+For switch-to-switch links also add a **per-end interface label** at each device (source and destination separately), using `edgeLabel` cells with `x="-0.7"` (near source) and `x="0.7"` (near target).
 
 ### 4.5 IP Last Octet Labels
 
@@ -107,11 +156,12 @@ Every diagram must include a legend box with the following properties:
 - **Font Color**: White (`#FFFFFF`).
 - **Border**: Rounded, white stroke.
 - **Style**: `rounded=1;whiteSpace=wrap;html=1;fillColor=#000000;strokeColor=#FFFFFF;fontColor=#FFFFFF;fontSize=10;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;`
-- **Content**: Key information for reading the diagram:
-  - OSPF Area designations (if applicable)
-  - Link type indicators (solid = physical, dashed = tunnel)
-  - Any cost or metric annotations
-  - Protocol identifiers (OSPF Process ID, EIGRP AS, etc.)
+- **Content**: Always include every visual encoding used in the diagram. Minimum set:
+  - **Link types**: list each color/thickness used (e.g. `─── Trunk (gold)`, `═══ EtherChannel`, `--- GRE+IPsec (orange)`)
+  - **Tunnel types**: one line per overlay color with label (e.g. `....... GRE/IPsec (orange)`)
+  - **Zone / site colors**: one line per zone or site type present
+  - **Protocol identifiers**: OSPF process ID, EIGRP AS number, BGP AS, VLANs defined
+  - **Cost / metric annotations** if present
 
 ### 4.7 Reference XML Snippets
 
@@ -229,16 +279,23 @@ Tunnel overlays represent **logical connections** that run on top of the physica
 | Entry point | Top center of target: `entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
 | Curve | `curved=1;` |
 
-#### 4.9.2 Color Coding by Tunnel Type
+#### 4.9.2 Color Coding by Tunnel/Overlay Type
 
-| Tunnel Type | Color | Hex |
-|-------------|-------|-----|
-| GRE | White | `#FFFFFF` |
-| MPLS | Orange | `#FF6600` |
-| IPsec VPN | Red | `#FF0000` |
-| VXLAN | Cyan | `#00AAFF` |
-| L2TP | Purple | `#AA00FF` |
-| Other/Unknown | Yellow | `#FFFF00` |
+All overlay lines use `strokeWidth=1` (thinner than physical `2`), `dashed=1;dashPattern=1 4;` (tiny dots, wide gaps), `curved=1`, and `endArrow=none`. They arc above the physical topology (see §4.9.3).
+
+| Tunnel / Overlay | Color | Hex | Notes |
+|-----------------|-------|-----|-------|
+| **GRE (bare)** | White | `#FFFFFF` | Plain GRE, no encryption |
+| **IPsec (tunnel or transport mode)** | Red | `#F44336` | Encrypted, no GRE wrapper |
+| **GRE over IPsec** | Orange | `#FF6D00` | Most common site VPN — GRE for routing + IPsec for encryption |
+| **DMVPN (hub-to-spoke / spoke-to-spoke)** | Orange | `#FF6D00` | Same color as GRE/IPsec; label distinguishes (DMVPN Phase I/II/III) |
+| **MPLS LSP** | Amber | `#FF6600` | Label-switched path in provider core |
+| **VXLAN** | Cyan | `#00AAFF` | Overlay in DC fabrics |
+| **L2TP** | Purple | `#AA00FF` | L2 tunnel |
+| **SD-WAN / vEdge overlay** | Teal | `#00BCD4` | Cisco SD-WAN data plane |
+| **Other / Unknown** | Yellow | `#FFFF00` | Temporary; replace once type is known |
+
+> **GRE vs GRE+IPsec distinction**: White dashed arc = pure GRE (unencrypted, lab/internal). Orange dashed arc = GRE+IPsec (production VPN, encrypted). This is a common CCNP scenario — always label arcs with tunnel interface names and the encapsulation type so the legend can be read unambiguously.
 
 #### 4.9.3 Arc Routing — Curving Over Intermediate Devices
 
@@ -454,6 +511,93 @@ Since Draw.io legend cells are plain text, describe colors in words or use Unico
 | VRF / MPLS                        | One ellipse per VRF or MPLS domain if topologically relevant |
 | Single-protocol flat topology     | Zone shapes optional but recommended for clarity        |
 
+### 4.11 Site / Location Containers
+
+Site containers group devices by **physical or organizational location** — HQ, branch, data center, ISP network, internet. They are distinct from protocol domain zones (§4.10): zones show routing boundaries, containers show where equipment lives. Both can be present simultaneously.
+
+#### 4.11.1 Drawing Order
+
+Site containers must appear **before** zone ellipses and **before** all device cells in the XML. Draw.io renders in document order — deepest background first:
+
+```
+XML order (top to bottom):
+  1. Site containers (§4.11)  ← background layer
+  2. Protocol domain zones (§4.10)
+  3. Device cells + link cells
+```
+
+#### 4.11.2 Container Style
+
+Site containers use a **solid-border rounded rectangle** (vs the dashed ellipse used for zones):
+
+```
+Base style:
+rounded=1;whiteSpace=wrap;html=1;
+strokeWidth=2;opacity=20;
+fontSize=13;fontStyle=1;fontColor=#FFFFFF;
+verticalAlign=top;spacingTop=6;
+```
+
+`opacity=20` keeps the fill subtle so devices inside remain readable.
+
+#### 4.11.3 Color Table by Site Type
+
+| Site Type | strokeColor | fillColor | Label example |
+|-----------|-------------|-----------|---------------|
+| **HQ / Headquarters** | `#1565C0` | `#0D2137` | `HQ — Chicago` |
+| **Branch / Remote site** | `#2E7D32` | `#0D2110` | `Branch — Dallas` |
+| **Data Center** | `#6A1B9A` | `#1A0933` | `Data Center` |
+| **Service Provider / MPLS cloud** | `#00695C` | `#00201C` | `ISP — MPLS Core` |
+| **Internet / WAN cloud** | `#546E7A` | `#1A2226` | `Internet` |
+| **Campus / Building** | `#E65100` | `#2D1200` | `Campus A` |
+
+#### 4.11.4 Reference XML Snippets
+
+**HQ site container:**
+```xml
+<mxCell id="site_hq" value="HQ — Chicago"
+  style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1565C0;strokeWidth=2;
+         fillColor=#0D2137;opacity=20;fontSize=13;fontStyle=1;
+         fontColor=#FFFFFF;verticalAlign=top;spacingTop=6;"
+  vertex="1" parent="1">
+  <mxGeometry x="20" y="40" width="500" height="400" as="geometry"/>
+</mxCell>
+```
+
+**Branch / Remote site container:**
+```xml
+<mxCell id="site_branch" value="Branch — Dallas"
+  style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2E7D32;strokeWidth=2;
+         fillColor=#0D2110;opacity=20;fontSize=13;fontStyle=1;
+         fontColor=#FFFFFF;verticalAlign=top;spacingTop=6;"
+  vertex="1" parent="1">
+  <mxGeometry x="600" y="40" width="400" height="300" as="geometry"/>
+</mxCell>
+```
+
+**Internet / WAN cloud container:**
+```xml
+<mxCell id="site_internet" value="Internet"
+  style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#546E7A;strokeWidth=2;
+         fillColor=#1A2226;opacity=20;fontSize=13;fontStyle=1;
+         fontColor=#FFFFFF;verticalAlign=top;spacingTop=6;dashed=1;dashPattern=8 4;"
+  vertex="1" parent="1">
+  <mxGeometry x="300" y="200" width="300" height="200" as="geometry"/>
+</mxCell>
+```
+
+> The Internet/WAN container uses a long-dash border (`8 4`) to signal it is outside the operator's control, unlike solid-border managed sites.
+
+#### 4.11.5 When to Apply Site Containers
+
+| Diagram scenario | Containers to draw |
+|------------------|--------------------|
+| Hub-and-spoke WAN / DMVPN | HQ + one container per spoke site |
+| SD-WAN topology | HQ, branches, data center, internet |
+| Campus + DC | Campus container + Data Center container |
+| Single flat lab (all devices co-located) | None — omit containers, keep diagram clean |
+| Multi-site OSPF / BGP | One container per site; zone ellipses overlay them |
+
 --# 5. Workflow
 
 ### Creating a New Diagram
@@ -461,19 +605,26 @@ Since Draw.io legend cells are plain text, describe colors in words or use Unico
 2.  Create the diagram following the Visual Style Guide (Section 4).
 3.  **Validation Checklist**:
     - [ ] Title is at the top center, bold, 16pt.
-    - [ ] All connection lines are **white** (`#FFFFFF`), strokeWidth=2.
-    - [ ] Device labels are positioned on the **empty side** of the icon (no connection lines on that side). See Section 4.3.1.
+    - [ ] Device labels are on the **empty side** of the icon (no connection lines on that side). See §4.3.1.
     - [ ] Every device has a hostname, role, and Loopback IP.
+    - [ ] Every link uses the correct **type, color, and thickness** from §4.4.1:
+      - [ ] Trunk links are gold (`#FFD700`), stroke=2.
+      - [ ] EtherChannel bundles are white, stroke=5.
+      - [ ] Access ports are white, stroke=1.
+      - [ ] Management/OOB links are gray dashed.
+      - [ ] OSPF virtual links are lavender dashed.
     - [ ] Every link has interface names on BOTH ends.
-    - [ ] Every interface has a **last octet** label (`.1`, `.2`) near the router.
-    - [ ] Subnet ID is visible on every link (centered edge label).
-    - [ ] **No link visually crosses through an intermediate device** (see Section 4.8).
-    - [ ] **Tunnel overlays** use thin colored dotted lines and arc above physical devices (see Section 4.9).
-    - [ ] **Tunnel endpoint octets** (`.1` / `.2`) are placed near the top of source/target devices (see Section 4.9.4).
-    - [ ] **Protocol domain zones** (OSPF areas, BGP AS, VRFs) drawn as dashed semi-transparent ellipses — placed FIRST in XML so they render behind routers and links (see Section 4.10).
-    - [ ] Each zone uses the correct color from the §4.10.3 table (blue=backbone, green=normal, orange=stub, teal=BGP local AS, etc.).
-    - [ ] Zone ellipses fully enclose their member devices with ≥20px padding; overlapping zones are correct at ABR/ASBR boundaries.
-    - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists zone types and tunnel colors where applicable.
+    - [ ] Every router interface has a **last octet** label (`.1`, `.2`) near the device. See §4.5.
+    - [ ] Subnet ID is visible on every routed link.
+    - [ ] **No link visually crosses through an intermediate device**. See §4.8.
+    - [ ] **Tunnel overlays** arc above physical topology, use thin colored dotted lines. See §4.9.
+      - [ ] GRE+IPsec is orange (`#FF6D00`), not the same white as bare GRE.
+      - [ ] Tunnel endpoint octets (`.1`/`.2`) are placed near the top of source/target devices.
+    - [ ] **Protocol domain zones** (OSPF areas, BGP AS, VRFs) are dashed semi-transparent ellipses placed FIRST in XML. See §4.10.
+      - [ ] Each zone uses the correct color from §4.10.3.
+      - [ ] Zone ellipses fully enclose members with ≥20px padding; ABR/ASBR overlaps are expected.
+    - [ ] **Site containers** (HQ, branch, DC, internet) are solid rounded rectangles placed BEFORE zone ellipses in XML. See §4.11.
+    - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists: link type colors, tunnel colors, zone/site key. See §4.6.
 4.  Save the editable file as `.drawio` in the appropriate subdirectory.
 
 ### Updating a Diagram
