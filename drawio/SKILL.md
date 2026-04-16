@@ -246,8 +246,46 @@ Edge labels are parented to their edge cell:
 ### 4.5 IP Last Octet Labels
 
 - **Required**: Every router interface endpoint should have a small label showing the **last octet** of its IP address (e.g., `.1`, `.2`).
-- **Position**: Near the router's side of the connection line, close to the interface.
-- **Style**: `edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;`
+- **Style**: `edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;labelBackgroundColor=#1a1a2e;fontColor=#FFFFFF;`
+
+#### 4.5.1 Placement Geometry (MANDATORY — do not default to midpoint)
+
+Octet labels anchor **close to the device endpoint**, not at the edge midpoint. The `relative` attribute on `<mxGeometry>` is the along-edge position as a fraction of the edge length starting from the edge's **source** node (`0.0` = source end, `1.0` = target end).
+
+| Endpoint | `relative` value | Meaning |
+|---|---|---|
+| Source-side device (edge `source=`) | `0.05` – `0.10` | 5–10% from source — hugs the source router/interface |
+| Target-side device (edge `target=`) | `0.90` – `0.95` | 90–95% from source = 5–10% from target |
+| Subnet / interface name label | `0.50` | Midpoint of the edge |
+
+Reference XML — **source-side** `.1` octet, anchored near the source router:
+```xml
+<mxCell id="lbl_L1_src" value=".1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#FFFFFF;labelBackgroundColor=none;" vertex="1" connectable="0" parent="link_L1">
+  <mxGeometry relative="0.08" as="geometry"/>
+</mxCell>
+```
+
+Reference XML — **target-side** `.2` octet, anchored near the target router:
+```xml
+<mxCell id="lbl_L1_dst" value=".2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#FFFFFF;labelBackgroundColor=none;" vertex="1" connectable="0" parent="link_L1">
+  <mxGeometry relative="0.92" as="geometry"/>
+</mxCell>
+```
+
+Reference XML — **midpoint** subnet / interface label:
+```xml
+<mxCell id="lbl_L1_mid" value="Gi0/1&#xa;10.12.0.0/30" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#FFFFFF;labelBackgroundColor=none;" vertex="1" connectable="0" parent="link_L1">
+  <mxGeometry relative="0.5" as="geometry">
+    <mxPoint x="-30" y="0" as="offset"/>
+  </mxGeometry>
+</mxCell>
+```
+
+**Rules:**
+- Use **`relative` ≤ 0.10** for source-side octets and **`relative` ≥ 0.90** for target-side octets so the label sits visibly adjacent to its interface. Anything in `[0.15, 0.85]` drifts toward the midpoint and gets hard to associate with a specific endpoint.
+- Default to **no `<mxPoint as="offset"/>`** on octet labels — the `relative` value alone does the placement. Only add a small perpendicular offset (`x` or `y` ≤ 15px) if the label collides with the link line or another label. Never use offset to shift further along the edge.
+- **`parent` must be the edge cell's id** (e.g., `parent="link_L1"`), not `"1"`. Octet labels are children of the edge they describe so they track the edge if it moves.
+- Subnet labels stay at `relative="0.5"`. Only per-endpoint octets hug the device.
 
 ### 4.6 Legend Box
 
@@ -405,7 +443,7 @@ Use two waypoints above both endpoints:
 
 ### 4.10 Protocol Domain Zones (Area / AS Overlays)
 
-Domain zones are drawn as **dashed, semi-transparent colored ellipses** placed visually behind all routers and links.
+Domain zones are drawn as **dashed, semi-transparent colored rounded rectangles** placed visually behind all routers and links.
 
 #### 4.10.1 Drawing Order — Zones First
 
@@ -414,7 +452,7 @@ Zone shapes **must be placed before** all device cells and link cells in the XML
 #### 4.10.2 Zone Shape Style
 
 ```
-ellipse;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;opacity=35;
+rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;opacity=35;
 fontSize=12;fontStyle=1;fontColor=#ffffff;
 strokeColor=<COLOR>;fillColor=<DARK_FILL>;
 verticalAlign=<top|bottom>;
@@ -437,29 +475,29 @@ verticalAlign=<top|bottom>;
 
 #### 4.10.4 Zone Sizing and Positioning
 
-- Ellipses must **fully enclose** all member devices with ≥20px padding on every side.
+- Zone shapes must **fully enclose** all member devices with ≥20px padding on every side.
 - Zones sharing a device (ABR in Area 0 and Area 1) will **overlap** — this is correct.
-- Use `verticalAlign=top` when devices occupy the bottom of the ellipse; `verticalAlign=bottom` otherwise.
+- Use `verticalAlign=top` when devices occupy the bottom of the zone; `verticalAlign=bottom` otherwise.
 
 #### 4.10.5 Reference XML Snippets
 
 **OSPF Area 0 (Backbone):**
 ```xml
-<mxCell id="zone_area0" value="Area 0&#xa;(Backbone)" style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#1565C0;strokeWidth=2;fillColor=#1a3a5c;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+<mxCell id="zone_area0" value="Area 0&#xa;(Backbone)" style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#1565C0;strokeWidth=2;fillColor=#1a3a5c;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
   <mxGeometry x="10" y="80" width="555" height="260" as="geometry"/>
 </mxCell>
 ```
 
 **OSPF Area 1 (Normal/Stub):**
 ```xml
-<mxCell id="zone_area1" value="Area 1&#xa;(Stub)" style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2E7D32;strokeWidth=2;fillColor=#1b3d27;opacity=35;fontSize=12;fontStyle=1;verticalAlign=bottom;fontColor=#FFFFFF;" vertex="1" parent="1">
+<mxCell id="zone_area1" value="Area 1&#xa;(Stub)" style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2E7D32;strokeWidth=2;fillColor=#1b3d27;opacity=35;fontSize=12;fontStyle=1;verticalAlign=bottom;fontColor=#FFFFFF;" vertex="1" parent="1">
   <mxGeometry x="55" y="290" width="510" height="380" as="geometry"/>
 </mxCell>
 ```
 
 **BGP AS (local):**
 ```xml
-<mxCell id="as65001" value="AS 65001&#xa;(iBGP)" style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#00838F;strokeWidth=2;fillColor=#003d45;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+<mxCell id="as65001" value="AS 65001&#xa;(iBGP)" style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#00838F;strokeWidth=2;fillColor=#003d45;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
   <mxGeometry x="20" y="55" width="420" height="340" as="geometry"/>
 </mxCell>
 ```
@@ -493,7 +531,7 @@ strokeColor=<SITE_COLOR>;fillColor=<DARK_FILL>;
 
 Place site containers **first in the XML** (before zones, devices, and links):
 1. Site containers (deepest background)
-2. Protocol zone ellipses
+2. Protocol zone boxes
 3. Cloud / Internet icon
 4. Device icons
 5. Physical link edges
@@ -524,7 +562,7 @@ Place site containers **first in the XML** (before zones, devices, and links):
 ### Creating a New Diagram
 
 1. Set canvas background to `#1a1a2e` in `mxGraphModel`.
-2. Lay out XML in order: site containers → zone ellipses → cloud icon → devices → physical links → tunnel overlays → legend.
+2. Lay out XML in order: site containers → zone boxes → cloud icon → devices → physical links → tunnel overlays → legend.
 3. Apply the **Empty Side Rule** (§4.3.1) for every device label.
 4. Align PC/endpoint positions so switch→PC links are perfectly vertical (center-X must match).
 5. **Validation Checklist**:
@@ -543,9 +581,9 @@ Place site containers **first in the XML** (before zones, devices, and links):
     - [ ] OSPF Virtual Link = lavender `#CE93D8` w=1, `dashPattern=4 4`.
     - [ ] **No link visually crosses through an intermediate device** (see §4.8).
     - [ ] Tunnel overlays: thin (`w=1`) dotted curved arcs; GRE+IPsec = orange `#FF6D00`; bare GRE = white.
-    - [ ] Protocol domain zones drawn as dashed semi-transparent ellipses — placed FIRST in XML (before devices).
+    - [ ] Protocol domain zones drawn as dashed semi-transparent rounded rectangles (`rounded=1;arcSize=5`) — placed FIRST in XML (before devices).
     - [ ] Each zone uses the correct color from §4.10.3.
-    - [ ] Site containers placed BEFORE zone ellipses in XML (deepest layer).
+    - [ ] Site containers placed BEFORE zone boxes in XML (deepest layer).
     - [ ] Legend box present (black fill, white text, bottom-right, arcSize=3).
 
 ### Updating a Diagram
@@ -555,6 +593,21 @@ Place site containers **first in the XML** (before zones, devices, and links):
 3. Validate against the checklist above.
 4. Save the `.drawio` file.
 
+### Reusing a Diagram From Another Lab
+
+Copying an existing `topology.drawio` is a valid shortcut **only if the source already
+follows the current style**. Older labs may pre-date the Cisco 19 migration and use the
+deprecated `mxgraph.cisco.*` library.
+
+**Pre-copy check (mandatory):**
+
+1. `grep -c "mxgraph.cisco19" <source>/topology.drawio` — must be > 0.
+2. `grep -c "mxgraph.cisco\." <source>/topology.drawio` (note the trailing dot) — must be 0.
+
+If either check fails, **do not copy**. Regenerate the diagram from scratch using the
+style strings in §4.2.1 and the validation checklist above. After copying, re-run the
+checklist on the destination file — reuse does not exempt you from validation.
+
 -# Common Issues
 
 --# Devices show as blue fallback boxes instead of Cisco icons
@@ -562,7 +615,7 @@ Place site containers **first in the XML** (before zones, devices, and links):
 - **Cause:** Wrong shape library — using old `mxgraph.cisco.routers.router` paths, or wrong `prIcon` name.
 - **Solution:** Use `shape=mxgraph.cisco19.rect;prIcon=<correct_icon>`. Confirmed working icons: `router`, `l3_switch`, `workgroup_switch`, `firewall`. Cloud uses its own dedicated shape: `shape=mxgraph.cisco19.cloud`.
 
---# Zone ellipses cover (obscure) routers and links
+--# Zone boxes cover (obscure) routers and links
 
 - **Cause:** Zone shape cells were placed after router and link cells in the XML.
 - **Solution:** Move all zone `mxCell` elements before the first device cell.
