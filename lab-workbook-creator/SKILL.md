@@ -472,18 +472,19 @@ Never write topology XML from scratch.
 [fill: e.g. Triangle — R1 top center, R2 bottom-left, R3 bottom-right]
 
 ## Pre-Write Checklist
-- [ ] drawio/SKILL.md §4.2-§4.7 read; §4.7 XML snippets in context
+- [ ] drawio/SKILL.md §4.2-§4.7 read; §4.5.1 (octet placement geometry) and §4.7 XML snippets in context
 - [ ] Router shape: mxgraph.cisco.routers.router — NOT a rectangle
 - [ ] Device labels: separate text cells — NOT embedded in router cell value=
 - [ ] Connection lines: strokeColor=#FFFFFF — NOT default black
-- [ ] IP last-octet labels: separate edgeLabel cells parented to "1"
+- [ ] IP last-octet labels: separate edgeLabel cells parented to the **edge cell id** (e.g. `parent="link_L1"`), NOT to `"1"`
+- [ ] Octet labels use `relative="0.05"–"0.10"` (source-side) or `relative="0.90"–"0.95"` (target-side) — NEVER `0.15`–`0.85` (that drifts toward midpoint)
 - [ ] Legend box: fillColor=#000000, fontColor=#FFFFFF, bottom-right
 
 ## Post-Write Checklist (fix before confirming done)
 - [ ] Every router cell uses mxgraph.cisco.routers.router shape
 - [ ] Every router has a separate label cell
 - [ ] Every edge has strokeColor=#FFFFFF
-- [ ] Every interface endpoint has a standalone .N octet cell
+- [ ] Every interface endpoint has a standalone .N octet cell anchored close to its device (source-side `relative ≤ 0.10`, target-side `relative ≥ 0.90`)
 - [ ] Legend present at bottom-right with black fill
 
 ## Output Confirmation
