@@ -206,12 +206,12 @@ devices:
   - name: PC1
     type: vpc
     interfaces:
-      - name: e0
+      - name: eth0    # EVE-NG VPCS uses 'eth0', not 'e0' (GNS3-style). Match the EVE-NG name.
         ip: 192.168.10.2/24
         gateway: 192.168.10.1
 
 links:
-  - "PC1:e0 ↔ R1:GigabitEthernet0/1"
+  - "PC1:eth0 ↔ R1:GigabitEthernet0/1"
 ```
 
 VPC config files use `.vpc` extension, placed in `initial-configs/PC1.vpc`.
@@ -297,8 +297,10 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
    ```
 8. **VPC config files use `.vpc` extension** — never `.cfg`. Place in `initial-configs/`.
 9. **Ship the EVE-NG `.unl` file.** Every lab MUST include a `topology/` directory
-   containing the exported `.unl` file alongside `topology.drawio` and a
-   `README.md` explaining the import process. See Section 7 for the standard.
+   containing the `.unl` file alongside `topology.drawio` and a `README.md`
+   explaining the import process. **The `.unl` is produced by the lab operator
+   via EVE-NG's native Export** — not by automation. See Section 7 for the
+   shipping standard and the deferred `gen_unl.py` tooling.
 
 --# 7. Shipping EVE-NG Lab Files (`.unl`)
 
@@ -307,6 +309,20 @@ the *design reference*; the `.unl` is the *exact buildable artifact*. Without
 the `.unl`, students must rebuild the topology by hand from the diagram —
 error-prone, time-consuming, and produces subtly different link IDs that
 break the REST-API port-discovery contract.
+
+### Current policy: operator-provided `.unl`
+
+The **lab operator exports the `.unl` manually** from EVE-NG after building
+and smoke-testing the topology. Lab-builder agents do NOT run `gen_unl.py`.
+
+- **Default path:** *Export workflow* below.
+- **Deferred:** *Generate workflow* (`gen_unl.py`) is retained for possible
+  future refinement but must not be invoked as part of routine lab builds.
+  The tooling lives at `labs/common/tools/gen_unl.py` and
+  `labs/common/tools/eve_platforms.py`.
+- **Why:** generator output drifted from hand-built EVE-NG topologies
+  (interface ordering, link IDs, canvas layout); operator export is the
+  canonical source of truth.
 
 ### Required structure per lab
 
@@ -338,7 +354,12 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
    (mirroring `baseline.yaml`) so the student can rebuild if the `.unl` is
    missing, corrupted, or incompatible with their EVE-NG version
 
-### Export workflow (for lab authors)
+### Export workflow (DEFAULT — operator-provided)
+
+The lab operator builds the topology in EVE-NG and exports the `.unl`
+manually. Lab-builder agents stop at `topology.drawio` + `topology/README.md`
+and wait for the operator to drop the exported `.unl` into
+`labs/<topic>/<lab>/topology/`.
 
 1. Build the topology in EVE-NG until all nodes start cleanly
 2. EVE-NG web UI: open the lab → **More actions → Export**
@@ -353,14 +374,45 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
        readme: topology/README.md
    ```
 
+### Generate workflow (DEFERRED — `gen_unl.py`, do not use)
+
+> **Status:** deferred. This tooling is retained for possible future
+> refinement but is **not part of the current lab-build workflow**. Do not
+> invoke `gen_unl.py` when building a lab. The operator export path above
+> is the source of truth. The notes below exist so the generator can be
+> picked back up later without re-discovering its contract.
+
+A repo-local generator consumes `labs/<topic>/baseline.yaml` and emits one
+`.unl` per lab (plus a `.zip` for EVE-NG import, which only accepts zipped
+uploads). Startup configs from `initial-configs/<node>.cfg|.vpc` are
+base64-embedded in the `.unl` so `Start all nodes` boots the lab pre-configured.
+
+```bash
+# (Deferred — do not run as part of a build)
+python labs/common/tools/gen_unl.py switching
+python labs/common/tools/gen_unl.py switching --only lab-02-rstp-and-enhancements
+python labs/common/tools/gen_unl.py switching --no-embed-configs
+```
+
+Outputs (when re-enabled):
+- `labs/<topic>/<lab>/topology/<lab>.unl` — buildable lab file
+- `labs/<topic>/<lab>/topology/<lab>.zip` — upload this to EVE-NG
+
+Platform → EVE-NG attributes live in `labs/common/tools/eve_platforms.py`.
+Add a new platform by exporting one node of that type from EVE-NG and
+copying its attributes into the `PLATFORMS` dict.
+
+Node placement on the canvas is computed by `compute_layout()` in
+`gen_unl.py` — a tiered default (routers top, switches middle, hosts bottom)
+works for most labs. Reposition manually in EVE-NG if the auto-layout is
+ugly for a specific topology.
+
 ### Never
 
 - Do not ship only the `.drawio` ("students can build it themselves") —
   this is explicitly what this section exists to prevent
-- Do not generate a `.unl` programmatically — the format is EVE-NG internal
-  XML with node UUIDs that must be allocated by the running EVE-NG instance.
-  The only way to produce a working `.unl` is export from EVE-NG itself
 - Do not commit the `.unl` without testing that it re-imports and starts
+  (zip the file and import via EVE-NG web UI → Add new object → Import)
 
 --# 8. Installed Image Inventory
 
