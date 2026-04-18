@@ -34,6 +34,9 @@ This EVE-NG environment runs on **KVM/QEMU** (full virtualisation). Intel VT-x i
 | Campus switching / IOS-XE features | `cat9kv` (Catalyst 9000v) | `iosvl2` | Very heavyweight; prefer IOSvL2 for basic switching |
 | Lightweight routing (resource-constrained) | `iol_l3` (IOL L3) | `iosv` | Fastest boot, lowest RAM (~256 MB) |
 | Lightweight switching | `iol_l2` (IOL L2) | `iosvl2` | Fastest boot for L2 labs |
+| Multicast sender / traffic generator | `linux-alpine-3.18.4` (Alpine) | `linux-ubuntu-server-20.04` | Alpine ships `apk` — install `iperf`, `mcjoin`, `smcroute`. VPC cannot generate multicast. |
+| Multicast receiver / IGMP joiner | `linux-tinycore-17.0` (TinyCore) | `linux-alpine-3.18.4` | TinyCore is the lightest way to drive `ip maddr add <group> dev eth0` so the PIM-DR sees an `(*,G)` join. |
+| Generic Linux end-host (DHCP/DNS/HTTP client) | `linux-alpine-3.18.4` (Alpine) | `linux-tinycore-17.0` | Use when a VPC is not enough (need a real TCP/UDP stack, TLS, or a package manager). |
 
 > **Default rule:** Use `iosv` for routing labs and `iosvl2` for switching labs unless the certification blueprint explicitly requires a different platform (e.g., NX-OS for DC tracks, IOS-XR for SP tracks).
 
@@ -154,6 +157,43 @@ Same interface naming as IOL L3 (`Ethernet0/0` through `Ethernet1/3`), but ports
 - **ASA Version:** 9.6.1
 - **EVE-NG node type:** `asav`
 
+### Alpine Linux (linux-alpine-3.18.4)
+
+| Interface | Type | Notes |
+|-----------|------|-------|
+| eth0 | Ethernet | First NIC — default |
+| eth1 | Ethernet | Add more NICs at node-create time (EVE-NG: *Ethernets* field) |
+| ethN | Ethernet | Up to 10 interfaces supported by the generic `linux` template |
+
+- **RAM:** 256 MB recommended (128 MB minimum)
+- **vCPU:** 1
+- **Disk:** ~150 MB qcow2
+- **EVE-NG node type:** `linux` (image = `linux-alpine-3.18.4`)
+- **Login:** `root` / `alpine` (or configured at first boot)
+- **Why use it:**
+  - Full `musl`-based Linux with `apk` package manager — `apk add iperf mcjoin tcpdump socat ethtool iproute2`
+  - Real TCP/UDP/IGMP stack — unlike VPC, it can send/receive multicast, run iperf servers, issue IGMPv2/v3 joins
+  - Suitable for multicast-sender labs, DHCP client tests, HTTP/S clients, automation targets (Ansible, SSH)
+- **Typical multicast role:** source or sender (`iperf -c 239.1.1.1 -u -T 32 -t 60 -b 1M`)
+
+### TinyCore Linux (linux-tinycore-17.0)
+
+| Interface | Type | Notes |
+|-----------|------|-------|
+| eth0 | Ethernet | First NIC — default |
+| ethN | Ethernet | Up to 10 interfaces via the `linux` template |
+
+- **RAM:** 128 MB recommended (64 MB minimum for Core edition)
+- **vCPU:** 1
+- **Disk:** ~50 MB qcow2
+- **EVE-NG node type:** `linux` (image = `linux-tinycore-17.0`)
+- **Login:** `tc` (no password by default)
+- **Why use it:**
+  - Lightest real Linux end-host in the inventory — RAM/disk budget that lets you scatter many receivers across a topology without starving Cisco nodes
+  - Packages via `tce-load -wi <pkg>` (e.g. `tce-load -wi iperf`); network tools `ip`, `ping`, `traceroute`, `iperf` available
+  - Perfect for "multicast receiver" roles where all you need is an IGMP join and a UDP socket
+- **Typical multicast role:** receiver / IGMP joiner (`ip maddr add 239.1.1.1 dev eth0` + `iperf -s -u -B 239.1.1.1`)
+
 --# 4. VPC Nodes (End-Host Simulation)
 
 EVE-NG includes a built-in **VPC** node (Virtual PC) — equivalent to GNS3's VPCS.
@@ -165,8 +205,10 @@ EVE-NG includes a built-in **VPC** node (Virtual PC) — equivalent to GNS3's VP
 | Verify routing reachability end-to-end | yes |
 | Test DHCP client behaviour | yes |
 | Source pings/traceroutes from a host address | yes |
-| Simulate a server or application workload | no — use a router loopback instead |
+| Simulate a server or application workload | no — use a router loopback or a Linux end-host (§4b) |
 | Any L3 routing function | no — VPC has no routing stack |
+| Send or receive multicast (IGMP join, iperf UDP to 239.x.x.x) | **no** — VPC has no multicast stack. Use Alpine or TinyCore from §4b. |
+| Generate real TCP/UDP traffic (iperf, curl, scripted flows) | no — use a Linux end-host (§4b) |
 
 ### VPC hardware profile
 
@@ -215,6 +257,97 @@ links:
 ```
 
 VPC config files use `.vpc` extension, placed in `initial-configs/PC1.vpc`.
+
+---
+
+--# 4b. Linux End-Host Nodes (Alpine / TinyCore)
+
+Use a Linux end-host whenever a scenario needs a **real IP stack**: multicast senders/receivers, IGMPv2/v3 joiners, iperf traffic generators, DHCP/DNS/HTTP clients, or automation targets (Ansible/Netmiko over SSH). VPC nodes cannot fill these roles.
+
+### When to use which
+
+| Role in the lab | Image | Why |
+|-----------------|-------|-----|
+| Multicast source / traffic generator | `linux-alpine-3.18.4` | Full `apk` repo; `iperf`, `mcjoin`, `smcroute`, `socat` all one command away |
+| Multicast receiver / IGMP joiner | `linux-tinycore-17.0` | 128 MB RAM footprint — scatter 4-6 receivers without starving Cisco nodes |
+| DHCP / DNS / HTTP client | either | Alpine if you want `curl`/`wget` + TLS by default; TinyCore if RAM is tight |
+| SSH automation target (Ansible/Netmiko) | `linux-alpine-3.18.4` | OpenSSH server via `apk add openssh`; persistent root creds |
+
+### Referencing a Linux end-host in baseline.yaml
+
+```yaml
+devices:
+  - name: H1
+    type: linux                 # EVE-NG generic Linux template
+    image: linux-alpine-3.18.4  # folder name under /opt/unetlab/addons/qemu/
+    ram: 256                    # MB
+    ethernets: 1                # NICs exposed by EVE-NG
+    interfaces:
+      - name: eth0
+        ip: 10.10.10.2/24
+        gateway: 10.10.10.1
+
+  - name: H2
+    type: linux
+    image: linux-tinycore-17.0
+    ram: 128
+    ethernets: 1
+    interfaces:
+      - name: eth0
+        ip: 10.10.20.2/24
+        gateway: 10.10.20.1
+
+links:
+  - "H1:eth0 ↔ R1:GigabitEthernet0/1"
+  - "H2:eth0 ↔ R3:GigabitEthernet0/1"
+```
+
+### Startup configuration (no `.linux` extension)
+
+EVE-NG does not inject Cisco-style text configs into Linux nodes. Two options:
+
+1. **Golden image (preferred):** build the image once with the packages and a boot-time script, re-export as the qcow2 under `/opt/unetlab/addons/qemu/<image>/`. Every node that uses that image starts ready.
+2. **Cloud-init / first-boot script:** attach a small CD-ROM ISO per node containing `/etc/network/interfaces` and a `rc.local` that runs the multicast join/send command. Ship the ISO under `initial-configs/<hostname>.iso` and document it in the workbook.
+
+For lab builds where students type commands themselves (recommended for learning multicast), skip startup automation and put the commands in the workbook's verification section.
+
+### Multicast command reference (paste into the workbook)
+
+Commands the workbook should teach students to run on the Linux end-hosts:
+
+```bash
+# --- RECEIVER (TinyCore or Alpine) ---
+# 1. Join an ASM group via the kernel (IGMPv2/v3 report goes out eth0)
+ip maddr add 239.1.1.1 dev eth0
+ip maddr show dev eth0                      # verify join is programmed
+
+# 2. Open a UDP socket on the group so datagrams are actually consumed
+iperf -s -u -B 239.1.1.1 -i 1               # Alpine: apk add iperf
+                                             # TinyCore: tce-load -wi iperf
+
+# 3. Leave the group
+ip maddr del 239.1.1.1 dev eth0
+
+# --- SOURCE (Alpine) ---
+# 4. Send a 1 Mbps UDP stream to the group, TTL 32 so it crosses PIM hops
+iperf -c 239.1.1.1 -u -T 32 -t 60 -b 1M
+
+# --- DIAGNOSTICS ---
+tcpdump -ni eth0 igmp or 'udp and dst net 224.0.0.0/4'
+ethtool -S eth0 | grep -i multicast
+```
+
+On the **router side** the workbook should then verify:
+
+```
+show ip igmp groups              # receiver's join populates this
+show ip mroute 239.1.1.1         # (*,G) entry appears with OIL pointing toward H2
+show ip mroute 239.1.1.1 count   # packet/byte counters increment while iperf runs
+```
+
+### Resource budget when scattering Linux hosts
+
+Typical multicast lab = 4-6 routers + 1 source + 2-3 receivers. With Alpine source (256 MB) + three TinyCore receivers (128 MB each), total host overhead is ~640 MB — comfortably inside the 64 GB budget even with 6 IOSv routers (3 GB) and an IOSvL2 (768 MB) in the same lab.
 
 ---
 
@@ -291,6 +424,8 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
    | CSR1000v | 3072 MB | 8 |
    | XRv 9000 | 4096 MB | 6 |
    | NX-OSv 9000 | 4096 MB | 6 |
+   | Alpine Linux | 256 MB | 40 |
+   | TinyCore Linux | 128 MB | 60 |
 7. **Image permissions:** After uploading any image to EVE-NG, always run:
    ```bash
    /opt/unetlab/wrappers/unl_wrapper -a fixpermissions
@@ -435,6 +570,8 @@ ugly for a specific topology.
 | Catalyst 9000v | cat9kv-17.10.01-prd7 | 17.10.01 | `cat9kv` | Installed |
 | Cisco 8000v | c8000v-17.06.03 | 17.06.03 | `c8000v` | Installed |
 | Linux (Ubuntu Server) | linux-ubuntu-server-20.04 | 20.04 LTS | `linux` | Installed |
+| Alpine Linux | linux-alpine-3.18.4 | 3.18.4 | `linux` | Installed — multicast sender, iperf/mcjoin host, general end-host |
+| TinyCore Linux | linux-tinycore-17.0 | 17.0 | `linux` | Installed — multicast receiver, IGMP joiner, minimal end-host |
 
 ### Not Installed — Commonly Needed
 
@@ -449,6 +586,7 @@ ugly for a specific topology.
 ### Image Gap Notes
 
 - **Linux VM** (Ubuntu 20.04) is installed — automation labs (Ansible, Python, NETCONF, YANG, telemetry) are unblocked.
+- **Alpine 3.18.4 + TinyCore 17.0** are installed — multicast labs (IGMP joins, PIM-SM/SSM/BIDIR forwarding verification with real source/receiver traffic) are unblocked. Previously these labs could only *configure* multicast; now they can *observe traffic flow*.
 - **SD-WAN** requires a dedicated image set; not substitutable with CSR1000v in an SD-WAN topology.
 - **Wireless and DNA Center** gaps cannot be closed in EVE-NG — plan to use Cisco dCloud or physical gear for those objectives.
 - Exam-specific image requirements (which platforms each exam needs, versions, and quantities) belong in the individual exam repo, not here.
