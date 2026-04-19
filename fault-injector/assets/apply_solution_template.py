@@ -1,121 +1,121 @@
 #!/usr/bin/env python3
 """
-Solution Restoration Script Template
+Solution Restoration: [Lab Title]
 
-Restores all devices to their correct EIGRP configuration,
-removing all injected faults from troubleshooting scenarios.
+Pushes the full solution configs from ../../solutions/ to all devices,
+overwriting any injected faults and restoring the lab to a known-good state.
 
-This script connects to all active devices and applies the
-correct configuration from the lab solutions.
+Usage:
+    python3 apply_solution.py --host <eve-ng-ip>
+    python3 apply_solution.py --host <eve-ng-ip> --reset   # erase first (guaranteed clean slate)
 """
 
-from netmiko import ConnectHandler
+from __future__ import annotations
+
+import argparse
 import sys
+from pathlib import Path
 
-# EVE-NG server IP — update to match your environment
-EVE_NG_HOST = "192.168.x.x"
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR.parents[3] / "common" / "tools"))
+from eve_ng import EveNgError, connect_node, discover_ports, erase_device_config, require_host  # noqa: E402
 
-# Device Console Mappings — ports are dynamic (from EVE-NG web UI / Console Access Table)
-DEVICES = {
-    "R1": {"host": EVE_NG_HOST, "port": 32768},
-    "R2": {"host": EVE_NG_HOST, "port": 32769},
-    "R3": {"host": EVE_NG_HOST, "port": 32770},
-}
 
-# Correct EIGRP Configuration per Device
-CONFIGS = {
-    "R1": [
-        "no router eigrp 200",  # Remove any wrong AS
-        "router eigrp 100",
-        "eigrp router-id 1.1.1.1",
-        "network 1.1.1.1 0.0.0.0",
-        "network 10.0.12.0 0.0.0.3",
-        "passive-interface Loopback0",
-        "no auto-summary",
-    ],
-    "R2": [
-        "no router eigrp 200",  # Remove any wrong AS
-        "router eigrp 100",
-        "eigrp router-id 2.2.2.2",
-        "network 2.2.2.2 0.0.0.0",
-        "network 10.0.12.0 0.0.0.3",
-        "network 10.0.23.0 0.0.0.3",
-        "passive-interface Loopback0",
-        "no auto-summary",
-    ],
-    "R3": [
-        "router eigrp 100",
-        "no passive-interface default",  # Remove passive default
-        "eigrp router-id 3.3.3.3",
-        "network 3.3.3.3 0.0.0.0",
-        "network 10.0.23.0 0.0.0.3",
-        "passive-interface Loopback0",
-        "no auto-summary",
-    ],
-}
+DEFAULT_LAB_PATH = "ccnp-encor/[chapter]/[lab-slug].unl"
+DEVICES = ["R1", "R2", "R3"]
+SOLUTIONS_DIR = SCRIPT_DIR.parents[1] / "solutions"
 
-def restore_device(device_name, config):
-    """Restore a single device to correct configuration."""
-    host = DEVICES[device_name]["host"]
-    port = DEVICES[device_name]["port"]
 
-    print(f"\n[*] Restoring {device_name} ({host}:{port})...")
+def load_commands(cfg_path: Path) -> list[str]:
+    lines: list[str] = []
+    for raw in cfg_path.read_text().splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("!") or stripped == "end":
+            continue
+        lines.append(raw)
+    return lines
+
+
+def restore(host: str, name: str, port: int) -> bool:
+    cfg_path = SOLUTIONS_DIR / f"{name}.cfg"
+    if not cfg_path.exists():
+        print(f"[!] {name}: solution file not found at {cfg_path}")
+        return False
+
+    print(f"\n[*] {name}: restoring via {host}:{port} ...")
+    try:
+        conn = connect_node(host, port)
+    except Exception as exc:
+        print(f"[!] {name}: connection failed -- {exc}")
+        return False
 
     try:
-        conn = ConnectHandler(
-            device_type="cisco_ios_telnet",
-            host=host,
-            port=port,
-            username="",
-            password="",
-            secret="",
-            timeout=10,
-        )
-        print(f"[+] Connected to {device_name}")
-
-        output = conn.send_config_set(config)
-        print(output)
-
-        output = conn.save_config()
-        print(output)
-
-        print(f"[+] {device_name} restored successfully!")
-        conn.disconnect()
+        conn.send_config_set(load_commands(cfg_path), cmd_verify=False)
+        conn.save_config()
+        print(f"[+] {name}: solution applied.")
         return True
-
-    except ConnectionRefusedError:
-        print(f"[!] Error: Could not connect to {device_name} at {host}:{port}")
-        print(f"[!] Make sure the EVE-NG lab is running and {device_name} is started.")
+    except Exception as exc:
+        print(f"[!] {name}: restore failed -- {exc}")
         return False
-    except Exception as e:
-        print(f"[!] Error on {device_name}: {e}")
-        return False
+    finally:
+        conn.disconnect()
 
-def main():
-    """Restore all devices to correct configuration."""
-    print("="*60)
-    print("Solution Restoration: Removing All Faults")
-    print("="*60)
 
-    success_count = 0
-    fail_count = 0
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Restore [lab title] to solution state")
+    parser.add_argument("--host", default="192.168.242.128",
+                        help="EVE-NG server IP (default: 192.168.242.128)")
+    parser.add_argument("--lab-path", default=DEFAULT_LAB_PATH,
+                        help=f"Lab .unl path (default: {DEFAULT_LAB_PATH})")
+    parser.add_argument("--reset", action="store_true",
+                        help="Erase device configs before pushing solution (guaranteed clean slate)")
+    args = parser.parse_args()
 
-    for device_name, config in CONFIGS.items():
-        if restore_device(device_name, config):
-            success_count += 1
-        else:
-            fail_count += 1
+    host = require_host(args.host)
 
-    print("\n" + "="*60)
-    print(f"Restoration Complete: {success_count} succeeded, {fail_count} failed")
-    print("="*60)
+    print("=" * 60)
+    print("Solution Restoration: [Lab Title]")
+    print("=" * 60)
 
-    if fail_count > 0:
-        print("[!] Some devices could not be restored. Verify EVE-NG lab is running and try again.")
-        sys.exit(1)
-    else:
-        print("[+] All devices restored to correct configuration!")
-        print("[+] Lab is ready for normal operation.")
+    try:
+        ports = discover_ports(host, args.lab_path)
+    except EveNgError as exc:
+        print(f"[!] {exc}", file=sys.stderr)
+        return 3
+
+    fail = 0
+
+    if args.reset:
+        print("\nPhase 1: Resetting devices...")
+        reset_fail = 0
+        for name in DEVICES:
+            port = ports.get(name)
+            if port is None:
+                print(f"[!] {name}: not found in lab {args.lab_path} — skipping reset")
+                reset_fail += 1
+                continue
+            if not erase_device_config(host, name, port):
+                reset_fail += 1
+        print(f"[=] Phase 1 complete: {len(DEVICES) - reset_fail} reset, {reset_fail} failed.")
+        fail += reset_fail
+        print(f"\nPhase 2: Pushing solution configs...")
+
+    for name in DEVICES:
+        port = ports.get(name)
+        if port is None:
+            print(f"[!] {name}: not found in lab {args.lab_path}")
+            fail += 1
+            continue
+        if not restore(host, name, port):
+            fail += 1
+
+    print("\n" + "=" * 60)
+    if fail:
+        print(f"[!] {fail} device(s) failed. Lab not fully restored.")
+        return 1
+    print("[+] All devices restored to solution state.")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

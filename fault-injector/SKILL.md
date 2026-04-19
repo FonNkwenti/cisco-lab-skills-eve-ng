@@ -37,6 +37,8 @@ Each script must:
 
 Use `assets/apply_solution_template.py` as the base template. Customise it to restore all affected devices to their correct configuration by pushing the relevant `solutions/[Device].cfg` content.
 
+The template includes a `--reset` flag that erases device configs before pushing the solution (two-phase: Phase 1 erase, Phase 2 push). This mirrors the `--reset` flag in `setup_lab.py` and guarantees a clean slate when stale fault config might otherwise linger after an additive push. Always include this flag — it is optional to the user at runtime but must be present in every generated script.
+
 --# Step 4: Generate scripts/fault-injection/README.md
 
 Use `assets/README_template.md` as the base. Fill in:
