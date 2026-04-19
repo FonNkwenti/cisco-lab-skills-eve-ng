@@ -86,16 +86,57 @@ See `references/diagnostic-commands.md` for the full CLI command library and evi
 
 --# Phase IV: Resolution & Reporting
 
-Generate a resolution report covering:
-1. Incident Summary (problem statement, lab, severity)
-2. Methodology Applied (selected approach + rationale)
-3. Diagnostic Log (chronological, timestamped)
-4. Root Cause Analysis (technical explanation + exam relevance)
-5. Resolution Actions (exact IOS commands used + verification)
-6. Testing & Verification (all symptoms confirmed resolved)
-7. Lessons Learned (exam trap, preventive notes)
+Write a permanent troubleshooting record by generating a resolution report from the template at `references/resolution-report-template.md`.
 
-See `references/resolution-report-template.md` for the full template.
+### Report Structure (7 Sections)
+
+1. **Incident Summary** — problem statement, lab path, severity, timeline
+2. **Methodology Applied** — selected approach + rationale
+3. **Diagnostic Log** — chronological commands + results (timestamped)
+4. **Root Cause Analysis** — technical explanation + exam relevance
+5. **Resolution Actions** — exact IOS commands applied + verification output
+6. **Testing & Verification** — all original symptoms confirmed resolved
+7. **Lessons Learned** — exam traps, preventive notes, design principles
+
+### Output Deliverable
+
+Save the report to disk in the lab directory:
+
+```
+labs/<topic>/lab-NN-<slug>/troubleshooting-reports/
+```
+
+**Filename Format:**
+```
+INC-<YYYYMMDD>-ticket-<N>.md
+```
+
+Examples:
+- `INC-20260419-ticket-001.md` — first fault in this session
+- `INC-20260419-ticket-002.md` — second fault (same day)
+
+### Incident ID
+
+Assign a unique incident ID in the format `INC-YYYYMMDD-ticket-<N>`:
+- **YYYYMMDD** = date of discovery
+- **ticket-<N>** = sequential counter (01, 02, ...) per day
+
+Populate the `Incident ID` field in the report summary.
+
+### Acceptance Criteria
+
+✓ Report file exists at `troubleshooting-reports/INC-*.md`
+✓ All 7 sections completed from template
+✓ Root Cause Analysis includes exam blueprint reference (e.g., "ENCOR 3.1.a")
+✓ Resolution Actions show exact commands executed
+✓ Testing & Verification confirms all symptoms resolved
+
+### Quick Reference
+
+| Resource | Path |
+|----------|------|
+| Report template | `references/resolution-report-template.md` |
+| Report directory | `labs/<topic>/lab-NN-<slug>/troubleshooting-reports/` |
 
 -# Common Issues
 
