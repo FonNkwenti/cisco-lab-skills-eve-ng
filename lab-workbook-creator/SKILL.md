@@ -439,7 +439,24 @@ For `capstone_ii`, Section 5 heading and opening must be:
 
 --# Step 5: Generate topology.drawio
 
+### Step 5a — Reuse gate (check before dispatching)
+
+Compare this lab's physical topology to the previous lab's:
+
+1. Read `baseline.yaml labs[N].devices` and `labs[N-1].devices` (if N > 0).
+2. Read the set of `core_topology.links` that apply to each lab (links whose endpoints are in the active device list for that lab).
+3. If the **device set** and the **link set** are identical between lab N and lab N-1:
+   - Copy `labs/<topic>/lab-(N-1)-<slug>/topology/topology.drawio` verbatim to `labs/<topic>/lab-NN-<slug>/topology/topology.drawio`.
+   - **Update the title:** find the `<mxCell id="title"` element and replace the lab number and name in its `value=` attribute to match the current lab (e.g., `Lab 01: Python Scripting and JSON Construction`). This is a single string replacement — the rest of the XML is untouched.
+   - Skip Step 5b entirely. Proceed to Step 6.
+
+Regenerating a topology that didn't change **risks style drift and wastes tokens**. Always copy when the topology is identical, but always update the title so the diagram header matches the lab it belongs to.
+
+### Step 5b — Generate fresh (only when the topology changed)
+
 Dispatch a **single subagent** (general-purpose) to write the topology diagram. This isolates the 328-line drawio/SKILL.md read from main context.
+
+**Before dispatching**, if a sibling lab exists with a similar topology (e.g. same layout plus one added device), tell the subagent to start from that sibling's `topology.drawio` and modify it, rather than building from scratch. This preserves style consistency across the topic.
 
 Fill in all [bracketed] placeholders before dispatching.
 
