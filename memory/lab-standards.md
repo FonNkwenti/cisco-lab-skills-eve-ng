@@ -82,6 +82,18 @@ Reference `lab-workbook-creator/SKILL.md` Section 5/7 format blocks for the exac
 - IP last-octet labels near each interface
 - Legend box: black fill, white text, bottom-right
 
+## Global Configuration Standards
+
+All Cisco router and switch initial configs must include these global commands immediately after `hostname`:
+
+```
+hostname <device-name>
+no ip domain-lookup
+!
+```
+
+These commands are required for all new labs and must appear in every initial config file for Cisco devices.
+
 ## Config Chaining Rules
 
 - Lab 00 (first progressive) `initial-configs/` = IP addressing only from `baseline.yaml`

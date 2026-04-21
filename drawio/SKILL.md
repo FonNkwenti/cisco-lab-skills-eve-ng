@@ -561,11 +561,12 @@ Place site containers **first in the XML** (before zones, devices, and links):
 
 ### Creating a New Diagram
 
-1. Set canvas background to `#1a1a2e` in `mxGraphModel`.
-2. Lay out XML in order: site containers → zone boxes → cloud icon → devices → physical links → tunnel overlays → legend.
-3. Apply the **Empty Side Rule** (§4.3.1) for every device label.
-4. Align PC/endpoint positions so switch→PC links are perfectly vertical (center-X must match).
-5. **Validation Checklist**:
+1. **Read the canonical reference first**: Read `style-guide-reference.drawio` at the project root. Use its legend cell and link/tunnel examples as the ground truth for colors, stroke widths, dash patterns, and legend format — not memory.
+2. Set canvas background to `#1a1a2e` in `mxGraphModel`.
+3. Lay out XML in order: site containers → zone boxes → cloud icon → devices → physical links → tunnel overlays → legend.
+4. Apply the **Empty Side Rule** (§4.3.1) for every device label.
+5. Align PC/endpoint positions so switch→PC links are perfectly vertical (center-X must match).
+6. **Validation Checklist**:
     - [ ] Title at top center, bold, 17pt, white.
     - [ ] Background `#1a1a2e`.
     - [ ] Device icons use **Cisco 19** shapes (`mxgraph.cisco19.rect;prIcon=...`).
@@ -585,13 +586,15 @@ Place site containers **first in the XML** (before zones, devices, and links):
     - [ ] Each zone uses the correct color from §4.10.3.
     - [ ] Site containers placed BEFORE zone boxes in XML (deepest layer).
     - [ ] Legend box present (black fill, white text, bottom-right, arcSize=3).
+    - [ ] Legend uses colored Unicode line characters (`━━━`, `──`, `. . .`) with `<font color>` tags — **not** prose descriptions like "White solid (w=2)". Match the pattern in `style-guide-reference.drawio`.
 
 ### Updating a Diagram
 
-1. Open the existing `.drawio` file.
-2. Make necessary modifications following the style guide.
-3. Validate against the checklist above.
-4. Save the `.drawio` file.
+1. **Read the canonical reference first**: Read `style-guide-reference.drawio` at the project root. Pay particular attention to the legend cell — its colored Unicode line characters (`━━━`, `──`, `. . .`) and `<font color>` tags define the exact legend format to match.
+2. Read the existing `.drawio` file.
+3. Make necessary modifications following the style guide.
+4. Validate against the checklist above.
+5. Save the `.drawio` file.
 
 ### Reusing a Diagram From Another Lab
 
