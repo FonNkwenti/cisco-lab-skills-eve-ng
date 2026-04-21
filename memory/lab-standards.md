@@ -102,6 +102,21 @@ These commands are required for all new labs and must appear in every initial co
 - Capstone I + II `initial-configs/` = IP addressing only from `baseline.yaml` (clean slate)
 - **Never remove** a config command between progressive labs — only add
 
+## Overlay Tunnel Design: Unique Loopback per Endpoint Type
+
+When a lab configures multiple tunnel types sharing the same router pair:
+
+- Plain GRE tunnels (`tunnel mode gre ip`, no protection) **must use a different source loopback** than IPsec tunnels (`tunnel mode ipsec ipv4` or `tunnel mode gre ip` + `tunnel protection`).
+- A VTI (`tunnel mode ipsec ipv4`) negotiates **wildcard traffic selectors** (`0.0.0.0/0 ↔ 0.0.0.0/0`) for its endpoint pair. Any unencrypted tunnel sharing those endpoints will have packets dropped with `%CRYPTO-4-RECVD_PKT_NOT_IPSEC`.
+- **Required loopback allocation when mixing plain and encrypted overlays:**
+
+  | Tunnel type | Source loopback | Address convention |
+  |-------------|-----------------|-------------------|
+  | Plain GRE (Tunnel0) | Loopback0 (router-id) | `X.X.X.X/32` |
+  | IPsec VTI + GRE-over-IPsec | **Loopback10** | `10.10.R.R/32` (R = router number) |
+
+- Reference incident: `labs/virtualization/lab-03-ipsec-and-gre-over-ipsec/troubleshooting-reports/INC-20260421-ticket-002.md`
+
 ## Troubleshooting Scenario Requirements
 
 Each of the 3+ scenarios must have:
