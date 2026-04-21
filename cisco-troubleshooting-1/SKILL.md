@@ -130,6 +130,7 @@ Populate the `Incident ID` field in the report summary.
 ✓ Root Cause Analysis includes exam blueprint reference (e.g., "ENCOR 3.1.a")
 ✓ Resolution Actions show exact commands executed
 ✓ Testing & Verification confirms all symptoms resolved
+✓ **Formatting:** incident summary is a table; methodology is a table; verification is a table; code blocks contain only IOS commands or verbatim output — never plain prose or lists; ASCII diagrams used where a concept is clearer visually; bullet points and headings used throughout
 
 ### Quick Reference
 
