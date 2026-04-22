@@ -4,6 +4,28 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ---
 
+## [2.1.0] — 2026-04-22
+
+### Automated Claude Code skill discovery
+
+**What changed:** Skills under `.agent/skills/<name>/SKILL.md` are now linked into
+`.claude/skills/<name>` so Claude Code can discover them as user-invocable skills.
+
+**New scripts:**
+- `scripts/link-skills.sh` — POSIX bash; uses directory junctions on Git Bash / MSYS
+  (no admin), symlinks on Linux/macOS. Idempotent.
+- `scripts/link-skills.ps1` — PowerShell equivalent using `New-Item -ItemType Junction`.
+
+**Bootstrap integration:**
+- `bootstrap.sh` / `bootstrap.ps1` invoke the link script after submodule setup so every
+  new exam repo has skills wired up before the initial commit.
+- `scaffolding/gitignore.template` now excludes `.claude/skills/` (derived content).
+
+**For existing exam repos:** run `.agent/skills/scripts/link-skills.sh` once, then add
+`.claude/skills/` to the repo's `.gitignore`.
+
+---
+
 ## [2.0.0] — 2026-04-10
 
 ### Skill Restructure — Three-Phase Workflow

@@ -169,6 +169,9 @@ Lab creation uses skills in .agent/skills/. See CLAUDE.md for context.
 "@
     Set-Content -Path $readmeMdPath -Value $readmeMdContent
 
+    Write-Host "→ Linking skills into .claude\skills\ for Claude Code discovery..."
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $TARGET_DIR ".agent\skills\scripts\link-skills.ps1") -ProjectRoot $TARGET_DIR
+
     Write-Host "→ Initial commit..."
     & git -C $TARGET_DIR add -A
     & git -C $TARGET_DIR commit -m "chore: bootstrap $ProjectName from cisco-lab-skills template"

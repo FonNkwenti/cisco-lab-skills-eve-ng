@@ -131,6 +131,9 @@ A comprehensive set of hands-on labs for the $CERT_NAME ($EXAM_CODE) exam.
 Lab creation uses skills in \`.agent/skills/\`. See [CLAUDE.md](CLAUDE.md) for context.
 EOF
 
+echo "→ Linking skills into .claude/skills/ for Claude Code discovery..."
+bash "$TARGET_DIR/.agent/skills/scripts/link-skills.sh" "$TARGET_DIR"
+
 echo "→ Initial commit..."
 git -C "$TARGET_DIR" add -A
 git -C "$TARGET_DIR" commit -m "chore: bootstrap $PROJECT_NAME from cisco-lab-skills template"
