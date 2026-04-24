@@ -38,41 +38,67 @@ This section defines the canonical visual style for all topology diagrams. Every
 
 ### 4.1 Canvas & Layout
 
-- **Background**: Default Draw.io canvas (assumed dark-theme friendly).
-- **Title**: Positioned at the **top center** of the canvas. Bold, 16pt.
+- **Background**: `#1a1a2e` (dark navy). Set in the `<mxGraphModel background="#1a1a2e">` attribute of the XML root element.
+- **Title**: Positioned at the **top center** of the canvas. Bold, 16pt, white text.
 - **Legend Box**: Required in every diagram. Positioned at the **bottom-right** corner. Black fill (`#000000`) with white text (`#FFFFFF`), rounded corners, 10pt font.
 
 ### 4.2 Device Icons
 
-- Use official **Cisco Network Topology Icons** from the `mxgraph.cisco` shape library.
-- **Style Strings**:
-  - **Router**: `shape=mxgraph.cisco.routers.router;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;`
-  - **L3 Switch**: `shape=mxgraph.cisco.switches.layer_3_switch;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
-  - **L2 Switch**: `shape=mxgraph.cisco.switches.workgroup_switch;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
-  - **Cloud/Internet**: `shape=mxgraph.cisco.misc.cloud;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;`
+- Use the **Cisco19** shape library (`mxgraph.cisco19`). Do NOT use the older `mxgraph.cisco` library.
+- All devices: `width="60" height="60"` (use `width="50" height="40"` for end hosts/workstations).
+- **Style Strings** (include `sketch=0;html=1;aspect=fixed;pointerEvents=1;` on every icon):
+
+  - **Router**:
+    ```
+    sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;
+    ```
+  - **L3 Switch**:
+    ```
+    sketch=0;points=[[0.015,0.015,0],[0.985,0.015,0],[0.985,0.985,0],[0.015,0.985,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=l3_switch;fillColor=#FAFAFA;strokeColor=#005073;
+    ```
+  - **L2 Switch**:
+    ```
+    sketch=0;points=[[0.015,0.015,0],[0.985,0.015,0],[0.985,0.985,0],[0.015,0.985,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=workgroup_switch;fillColor=#FAFAFA;strokeColor=#005073;
+    ```
+  - **Cloud/Internet**:
+    ```
+    sketch=0;points=[[0,0.64,0],[0.2,0.15,0],[0.4,0.01,0],[0.79,0.25,0],[1,0.65,0],[0.8,0.86,0],[0.41,1,0],[0.16,0.86,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.cloud;fillColor=#6B6B6B;strokeColor=none;
+    ```
+  - **Workstation/PC/VPC**:
+    ```
+    sketch=0;points=[[0.03,0.03,0],[0.5,0,0],[0.97,0.03,0],[1,0.4,0],[0.97,0.745,0],[0.5,1,0],[0.03,0.745,0],[0,0.4,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.workstation;fillColor=#005073;strokeColor=none;
+    ```
 
 ### 4.3 Device Labels
 
-- **Content**: Three lines — hostname, role, loopback IP.
-- **Style**: `text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1`
-- **Example**: `R1\nHub/ABR\n10.1.1.1/32`
+Labels are **embedded in the device cell `value`** as HTML — NOT as separate text cells.
+
+- **Format**: `<b style="color:#FFFFFF;">HOSTNAME</b><br><font color="#CCCCCC" style="font-size:10px;">ROLE<br>Lo0: IP/MASK</font>`
+- **Hostname**: white bold text.
+- **Role and Loopback**: `#CCCCCC` gray, 10px.
+
+Label **position** is controlled by adding these attributes to the device's style string:
+
+| Placement | Style attributes to append |
+|-----------|---------------------------|
+| **Below** (default) | `verticalLabelPosition=bottom;verticalAlign=top;align=center;labelPosition=center;` |
+| **Right** of icon | `verticalLabelPosition=middle;verticalAlign=middle;align=left;labelPosition=right;` |
+| **Left** of icon | `verticalLabelPosition=middle;verticalAlign=middle;align=right;labelPosition=left;` |
 
 #### 4.3.1 Smart Label Placement — Empty Side Rule
 
-Labels **must not overlap any connection lines**. Place the label on the side that has **no connections** exiting the device icon:
+Labels **must not overlap any connection lines**. Choose the placement based on which side has **no connections**:
 
 | Condition | Placement |
 |-----------|-----------|
-| All physical neighbors are to the **LEFT** (`nx < device_x`) | Place label **RIGHT**: `label_x = device_x + 83` |
-| All physical neighbors are to the **RIGHT** (`nx > device_x`) | Place label **LEFT**: `label_x = device_x - 105` |
-| Neighbors on both sides (or same-column only) | Default **LEFT**: `label_x = device_x - 105` |
-
-- Y offset (all cases): `label_y = device_y - 7`
-- Label width: `100`, height: `60`
+| All physical neighbors are **below** the device | Label **below** (`verticalLabelPosition=bottom`) |
+| All physical neighbors are to the **left** | Label **right** (`labelPosition=right`) |
+| All physical neighbors are to the **right** | Label **left** (`labelPosition=left`) |
+| Neighbors on both sides or above+below | Label **left** (default fallback) |
 
 **Examples from EIGRP Lab 08:**
-- **R2** is at x=500. All neighbors (R1 at x=400, R3 at x=400) are to the LEFT → label goes **RIGHT** (`label_x = 583`).
-- **R6** is at x=200. Its neighbor R1 is at x=400, which is to the RIGHT → label goes **LEFT** (`label_x = 95`).
+- **R2** is at x=500. All neighbors (R1 at x=400, R3 at x=400) are to the LEFT → label goes **RIGHT** (`labelPosition=right`).
+- **R6** is at x=200. Its neighbor R1 is at x=400, which is to the RIGHT → label goes **LEFT** (`labelPosition=left`).
 
 ### 4.4 Connection Lines
 
@@ -108,24 +134,39 @@ Every diagram must include a legend box with the following properties:
 
 ### 4.7 Reference XML Snippets
 
+**Canvas root (always set background):**
+```xml
+<mxGraphModel background="#1a1a2e">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <!-- zone shapes first, then devices, then links -->
+  </root>
+</mxGraphModel>
+```
+
 **Title Cell:**
 ```xml
-<mxCell id="title" value="Lab N: Title Here" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" vertex="1" parent="1">
-  <mxGeometry x="200" y="40" width="400" height="40" as="geometry" />
+<mxCell id="title" value="&lt;font style=&quot;font-size:16px;&quot; color=&quot;#FFFFFF&quot;&gt;&lt;b&gt;Lab N: Title Here&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+  <mxGeometry x="200" y="20" width="500" height="35" as="geometry" />
 </mxCell>
 ```
 
-**Device Icon:**
+**Router icon — label below (hub/top device):**
 ```xml
-<mxCell id="R1" value="" style="shape=mxgraph.cisco.routers.router;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="1">
-  <mxGeometry x="400" y="200" width="78" height="53" as="geometry" />
+<mxCell id="R1" value="&lt;b style=&quot;color:#FFFFFF;&quot;&gt;R1&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#CCCCCC&quot; style=&quot;font-size:10px;&quot;&gt;Hub Router&lt;br&gt;Lo0: 10.0.0.1/32&lt;/font&gt;"
+  style="sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelPosition=center;"
+  vertex="1" parent="1">
+  <mxGeometry x="400" y="200" width="60" height="60" as="geometry" />
 </mxCell>
 ```
 
-**Device Label (left of icon):**
+**Router icon — label to the right:**
 ```xml
-<mxCell id="R1_lbl" value="R1&#10;Hub/ABR&#10;10.1.1.1/32" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1" vertex="1" parent="1">
-  <mxGeometry x="300" y="193" width="100" height="60" as="geometry" />
+<mxCell id="R2" value="&lt;b style=&quot;color:#FFFFFF;&quot;&gt;R2&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#CCCCCC&quot; style=&quot;font-size:10px;&quot;&gt;Branch A&lt;br&gt;Lo0: 10.0.0.2/32&lt;/font&gt;"
+  style="sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;verticalLabelPosition=middle;verticalAlign=middle;align=left;labelPosition=right;"
+  vertex="1" parent="1">
+  <mxGeometry x="600" y="400" width="60" height="60" as="geometry" />
 </mxCell>
 ```
 
@@ -138,15 +179,15 @@ Every diagram must include a legend box with the following properties:
 
 **IP Last Octet Label:**
 ```xml
-<mxCell id="R1_Fa1_0_octet" value=".1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" vertex="1" connectable="0" parent="1">
-  <mxGeometry x="450" y="260" as="geometry" />
+<mxCell id="R1_Fa0_0_octet" value=".1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" vertex="1" connectable="0" parent="1">
+  <mxGeometry x="450" y="270" as="geometry" />
 </mxCell>
 ```
 
 **Legend Box:**
 ```xml
-<mxCell id="legend" value="Legend&#10;--- Physical Link&#10;- - - Tunnel Link&#10;OSPF Process ID: 1&#10;Area 0 (Backbone)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#000000;strokeColor=#FFFFFF;fontColor=#FFFFFF;fontSize=10;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;" vertex="1" parent="1">
-  <mxGeometry x="600" y="700" width="180" height="100" as="geometry" />
+<mxCell id="legend" value="&lt;b&gt;LEGEND&lt;/b&gt;&lt;br&gt;━━━  Physical Link&lt;br&gt;[blue box] Area 0 Backbone&lt;br&gt;OSPF Process ID: 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#000000;strokeColor=#FFFFFF;fontColor=#FFFFFF;fontSize=10;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+  <mxGeometry x="620" y="650" width="180" height="100" as="geometry" />
 </mxCell>
 ```
 
@@ -298,17 +339,18 @@ Zone shapes **must be placed before** (earlier in the XML than) all router cells
 All zone shapes share the same base style pattern:
 
 ```
-ellipse;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;opacity=35;
-fontSize=12;fontStyle=1;fontColor=#ffffff;
+rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;opacity=35;
+fontSize=12;fontStyle=1;fontColor=#FFFFFF;
 strokeColor=<COLOR>;fillColor=<DARK_FILL>;
-verticalAlign=<top|bottom>;
+verticalAlign=<top|bottom>;spacingTop=6;
 ```
 
+- `rounded=1;arcSize=5` — slightly rounded rectangle (NOT `ellipse`; `arcSize=5` gives barely-softened corners)
 - `dashed=1` — boundary is always dashed (never solid)
 - `opacity=35` — semi-transparent so routers and links show through
-- `fontColor=#ffffff` — white text so label reads against dark canvas
+- `fontColor=#FFFFFF` — white text so label reads against dark canvas
 - `fillColor` — a dark-tinted version of the stroke color (see table below)
-- `verticalAlign` — place label at `top` if devices occupy the bottom of the ellipse, `bottom` if devices are near the top
+- `verticalAlign` — place label at `top` if devices occupy the bottom of the zone, `bottom` if devices are near the top
 
 #### 4.10.3 Color Table by Domain Type
 
@@ -346,32 +388,26 @@ verticalAlign=<top|bottom>;
 **OSPF Area 0 (Backbone) — blue:**
 ```xml
 <!-- Draw zones FIRST — before any router or link cells -->
-<mxCell id="area0_shape" value="Area 0&#xa;(Backbone)"
-  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#1565C0;strokeWidth=2;
-         fillColor=#1a3a5c;opacity=35;fontSize=12;fontStyle=1;
-         verticalAlign=top;fontColor=#ffffff;"
+<mxCell id="area0_shape" value="Area 0&#10;(Backbone)"
+  style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#1565C0;strokeWidth=2;fillColor=#1a3a5c;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;spacingTop=6;"
   vertex="1" parent="1">
-  <mxGeometry x="20" y="55" width="540" height="380" as="geometry" />
+  <mxGeometry x="10" y="80" width="555" height="260" as="geometry" />
 </mxCell>
 ```
 
 **OSPF Area 1 (Normal) — green:**
 ```xml
 <mxCell id="area1_shape" value="Area 1"
-  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2E7D32;strokeWidth=2;
-         fillColor=#1b3d27;opacity=35;fontSize=12;fontStyle=1;
-         verticalAlign=bottom;fontColor=#ffffff;"
+  style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2E7D32;strokeWidth=2;fillColor=#1b3d27;opacity=35;fontSize=12;fontStyle=1;verticalAlign=bottom;fontColor=#FFFFFF;spacingTop=6;"
   vertex="1" parent="1">
-  <mxGeometry x="20" y="380" width="520" height="180" as="geometry" />
+  <mxGeometry x="55" y="290" width="510" height="400" as="geometry" />
 </mxCell>
 ```
 
 **OSPF Stub / Totally Stubby Area — orange:**
 ```xml
-<mxCell id="area2_shape" value="Area 2&#xa;(Totally Stubby)"
-  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#E65100;strokeWidth=2;
-         fillColor=#4a1e00;opacity=35;fontSize=12;fontStyle=1;
-         verticalAlign=top;fontColor=#ffffff;"
+<mxCell id="area2_shape" value="Area 2&#10;(Totally Stubby)"
+  style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#E65100;strokeWidth=2;fillColor=#4a1e00;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;spacingTop=6;"
   vertex="1" parent="1">
   <mxGeometry x="448" y="335" width="310" height="125" as="geometry" />
 </mxCell>
@@ -380,19 +416,15 @@ verticalAlign=<top|bottom>;
 **BGP Autonomous System — teal (local AS) and orange (peer AS):**
 ```xml
 <!-- Local AS -->
-<mxCell id="as65001_shape" value="AS 65001&#xa;(iBGP)"
-  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#00838F;strokeWidth=2;
-         fillColor=#003d45;opacity=35;fontSize=12;fontStyle=1;
-         verticalAlign=top;fontColor=#ffffff;"
+<mxCell id="as65001_shape" value="AS 65001&#10;(iBGP)"
+  style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#00838F;strokeWidth=2;fillColor=#003d45;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;spacingTop=6;"
   vertex="1" parent="1">
   <mxGeometry x="20" y="55" width="420" height="340" as="geometry" />
 </mxCell>
 
 <!-- Peer AS -->
 <mxCell id="as65002_shape" value="AS 65002"
-  style="ellipse;whiteSpace=wrap;html=1;dashed=1;strokeColor=#F57F17;strokeWidth=2;
-         fillColor=#4a2700;opacity=35;fontSize=12;fontStyle=1;
-         verticalAlign=top;fontColor=#ffffff;"
+  style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;strokeColor=#F57F17;strokeWidth=2;fillColor=#4a2700;opacity=35;fontSize=12;fontStyle=1;verticalAlign=top;fontColor=#FFFFFF;spacingTop=6;"
   vertex="1" parent="1">
   <mxGeometry x="500" y="55" width="280" height="240" as="geometry" />
 </mxCell>
@@ -432,9 +464,12 @@ Since Draw.io legend cells are plain text, describe colors in words or use Unico
 1.  Open Draw.io (Desktop or Web).
 2.  Create the diagram following the Visual Style Guide (Section 4).
 3.  **Validation Checklist**:
-    - [ ] Title is at the top center, bold, 16pt.
+    - [ ] Canvas background is `#1a1a2e` (set in `<mxGraphModel background="#1a1a2e">`).
+    - [ ] Title is at the top center, bold, 16pt, **white text**.
+    - [ ] All device icons use `mxgraph.cisco19.rect;prIcon=<type>` — NOT the old `mxgraph.cisco.routers.router` shapes.
+    - [ ] Device labels are **embedded in the device cell `value`** as HTML (white bold hostname + gray role/IP). No separate label cells.
+    - [ ] Label position uses `labelPosition=` / `verticalLabelPosition=` attributes, following the Empty Side Rule (Section 4.3.1).
     - [ ] All connection lines are **white** (`#FFFFFF`), strokeWidth=2.
-    - [ ] Device labels are positioned on the **empty side** of the icon (no connection lines on that side). See Section 4.3.1.
     - [ ] Every device has a hostname, role, and Loopback IP.
     - [ ] Every link has interface names on BOTH ends.
     - [ ] Every interface has a **last octet** label (`.1`, `.2`) near the router.
@@ -442,9 +477,9 @@ Since Draw.io legend cells are plain text, describe colors in words or use Unico
     - [ ] **No link visually crosses through an intermediate device** (see Section 4.8).
     - [ ] **Tunnel overlays** use thin colored dotted lines and arc above physical devices (see Section 4.9).
     - [ ] **Tunnel endpoint octets** (`.1` / `.2`) are placed near the top of source/target devices (see Section 4.9.4).
-    - [ ] **Protocol domain zones** (OSPF areas, BGP AS, VRFs) drawn as dashed semi-transparent ellipses — placed FIRST in XML so they render behind routers and links (see Section 4.10).
+    - [ ] **Protocol domain zones** (OSPF areas, BGP AS, VRFs) drawn as `rounded=1;arcSize=5` dashed semi-transparent boxes — placed FIRST in XML so they render behind routers and links (see Section 4.10). Do NOT use `ellipse`.
     - [ ] Each zone uses the correct color from the §4.10.3 table (blue=backbone, green=normal, orange=stub, teal=BGP local AS, etc.).
-    - [ ] Zone ellipses fully enclose their member devices with ≥20px padding; overlapping zones are correct at ABR/ASBR boundaries.
+    - [ ] Zone boxes fully enclose their member devices with ≥20px padding; overlapping zones are correct at ABR/ASBR boundaries.
     - [ ] **Legend box** is present (black fill, white text, bottom-right) and lists zone types and tunnel colors where applicable.
 4.  Save the editable file as `.drawio` in the appropriate subdirectory.
 
@@ -465,6 +500,14 @@ Since Draw.io legend cells are plain text, describe colors in words or use Unico
 
 - **Cause:** Ellipse geometry was sized for the routers but did not account for labels or link endpoints extending beyond the icon bounds.
 - **Solution:** Extend the ellipse by at least 20–30px beyond the outermost device icon on every side. Check that interface octet labels near the zone boundary are also inside the ellipse.
+
+--# Device icons look wrong (plain circle/router silhouette instead of Cisco19 style)
+- **Cause:** Old `mxgraph.cisco.routers.router` shape used instead of `mxgraph.cisco19.rect;prIcon=router`.
+- **Solution:** Replace the device style with the cisco19 string from §4.2. The cisco19 shapes render as a white/light rectangle with a teal border and an embedded icon — they do NOT look like the old blue-filled silhouettes.
+
+--# Zone shapes are ovals instead of boxes
+- **Cause:** `ellipse` style used instead of `rounded=1;arcSize=5`.
+- **Solution:** Replace `ellipse;` with `rounded=1;arcSize=5;` in the zone cell style. `arcSize=5` gives barely-softened rectangular corners — the shapes should look like boxes, not ovals.
 
 --# Connection lines are black instead of white
 - **Cause:** Default Draw.io line color was used without applying the style guide.
