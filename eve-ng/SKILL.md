@@ -383,6 +383,7 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
 | Catalyst 9000v | cat9kv-17.10.01-prd7 | 17.10.01 | `cat9kv` | Installed |
 | Cisco 8000v | c8000v-17.06.03 | 17.06.03 | `c8000v` | Installed |
 | Linux (Ubuntu Server) | linux-ubuntu-server-20.04 | 20.04 LTS | `linux` | Installed |
+| Linux (Alpine) | linux-alpine-3.18.4 | 3.18.4 | `linux` | Installed ⚠️ |
 
 ### Not Installed — Commonly Needed
 
@@ -396,7 +397,7 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
 
 ### Image Gap Notes
 
-- **Linux VM** (Ubuntu 20.04) is installed — automation labs (Ansible, Python, NETCONF, YANG, telemetry) are unblocked.
+- **Linux VM** (Ubuntu 20.04) is installed — automation labs (Ansible, Python, NETCONF, YANG, telemetry) are unblocked. **Alpine 3.18.4 is also available** as a resource-constrained alternative: use ONLY in large labs (10+ devices) where RAM is tight and only a minimal Linux server is needed for basic scripts or utilities. Default to Ubuntu for any lab with fewer than 10 devices or when standard tools are required.
 - **SD-WAN** requires a dedicated image set; not substitutable with CSR1000v in an SD-WAN topology.
 - **Wireless and DNA Center** gaps cannot be closed in EVE-NG — plan to use Cisco dCloud or physical gear for those objectives.
 - Exam-specific image requirements (which platforms each exam needs, versions, and quantities) belong in the individual exam repo, not here.
