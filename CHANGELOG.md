@@ -28,6 +28,38 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ## [Unreleased]
 
+### Migrated: fault-injector and lab-assembler to eve_ng.py shared library
+
+**What changed:** Replaced hardcoded `EVE_NG_HOST` / `CONSOLE_PORT` constants in all
+fault-injection and `setup_lab.py` templates with runtime port discovery via `discover_ports()`
+from the `common/tools/eve_ng.py` shared library.
+
+**fault-injector:**
+- All three `inject_scenario_0N_template.py` files rewritten: `require_host()`, `discover_ports()`,
+  `connect_node()`, pre-flight checks, structured exit codes (0/2/3/4)
+- `apply_solution_template.py` rewritten: reads `solutions/[Device].cfg` via `discover_ports()`,
+  supports `--reset` flag (`erase_device_config()`)
+- `README_template.md` updated: `--host <eve-ng-ip>` in all commands, exit codes table,
+  `.unl` import prerequisite note
+- `SKILL.md` updated: Step 1 documents runtime port discovery, Script Structure Reference
+  updated to `eve_ng.py` pattern, Exit Codes table added, validate checklist updated
+
+**lab-assembler:**
+- `setup_lab_template.py` rewritten: uses `discover_ports()` (`parents[1]` depth to `labs/`)
+- `SKILL.md` updated with six additions:
+  - Section 3: Device Inventory table format required
+  - Section 4: IS/NOT pre-loaded format (concept-level, no IOS syntax)
+  - Section 11: Appendix exit codes table added to TOC and section list
+  - `meta.yaml` schema: `exam` and `devices` fields added
+  - Step 5b: `topology/README.md` generation (EVE-NG import/export docs)
+  - Step 6b: root `README.md` quick-reference card generation
+
+**Constraint enforced:** `--lab-path` in all scripts is for REST API port discovery against
+an ALREADY-IMPORTED, ALREADY-RUNNING lab. It does not generate `.unl` files.
+
+**Affected projects:** After `git submodule update --remote .agent/skills`, delete and rebuild
+any in-progress labs that used the old hardcoded-port pattern (e.g. ccnp-spri ospf/lab-00).
+
 ### Renamed
 - `/status` command → `/project-status` to avoid conflict with Claude Code's built-in `/status` command.
 - `lab-workbook-creator/` → `lab-assembler/`. The skill always produced the full lab
