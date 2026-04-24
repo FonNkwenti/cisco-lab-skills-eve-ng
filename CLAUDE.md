@@ -15,7 +15,7 @@ Always read at the start of a lab generation session:
 
 1. **exam-planner** — reads full blueprint, creates `topic-plan.yaml` + empty `labs/<topic>/` folders
 2. **spec-creator** — creates `spec.md` + `baseline.yaml` per topic (review after each)
-3. **lab-builder** — builds one lab at a time from the spec (review after each)
+3. **lab-builder** — topic-level orchestrator that invokes `lab-assembler` for each lab, pausing for review between them. Invoke `lab-assembler` directly to build one lab without the loop.
 
 Blueprint location: `blueprint/<exam-code>/blueprint.md`
 
@@ -28,8 +28,8 @@ Skills that generate large output are dispatched as subagents to protect main co
 
 | Skill | Invoke as |
 |---|---|
-| `drawio` | Subagent (Step 5 in lab-workbook-creator) |
-| `fault-injector` | Subagent (Step 7 in lab-workbook-creator) |
+| `drawio` | Subagent (Step 5 in lab-assembler) |
+| `fault-injector` | Subagent (Step 7 in lab-assembler) |
 | All other skills | Inline (read SKILL.md, follow instructions) |
 
 ## Exam-Agnostic Design

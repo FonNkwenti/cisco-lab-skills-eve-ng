@@ -1,6 +1,6 @@
 ---
 name: fault-injector
-description: Generates Python fault-injection scripts for lab troubleshooting scenarios using Netmiko. Use when the user asks to "inject faults", "generate troubleshooting scripts", "create fault scenarios", "add troubleshooting practice", or automatically after lab-workbook-creator generates a workbook.
+description: Generates Python fault-injection scripts for lab troubleshooting scenarios using Netmiko. Use when the user asks to "inject faults", "generate troubleshooting scripts", "create fault scenarios", "add troubleshooting practice", or automatically after lab-assembler generates a workbook.
 ---
 
 # Fault Injector Skill
@@ -58,7 +58,7 @@ Use `assets/README_template.md` as the base. Fill in:
 
 Update provenance tracking for this lab.
 
-- **If `meta.yaml` already exists** (lab-workbook-creator wrote it): append to `updated[]`:
+- **If `meta.yaml` already exists** (lab-assembler wrote it): append to `updated[]`:
   ```yaml
   updated:
     - date: "[YYYY-MM-DD]"
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
 --# workbook.md has no troubleshooting scenarios
 - **Cause:** The workbook was generated without a Section 9, or scenarios were not written.
-- **Solution:** Stop. Ask the user to add at least 3 troubleshooting scenarios to `workbook.md` Section 9 before running this skill. Use `assets/troubleshooting_scenarios_template.md` (from the `lab-workbook-creator` assets) as a reference format.
+- **Solution:** Stop. Ask the user to add at least 3 troubleshooting scenarios to `workbook.md` Section 9 before running this skill. Use `assets/troubleshooting_scenarios_template.md` (from the `lab-assembler` assets) as a reference format.
 
 --# Console Access Table not found in workbook
 - **Cause:** Workbook was generated with a non-standard structure, or the user hasn't populated dynamic EVE-NG ports yet.

@@ -31,7 +31,7 @@ if [ -d "$TARGET_DIR" ]; then
 fi
 
 echo "→ Creating directory structure..."
-mkdir -p "$TARGET_DIR"/{.agent,blueprint/"$EXAM_CODE"/references,specs,conductor/tracks,labs,tests,docs,.prompts}
+mkdir -p "$TARGET_DIR"/{.agent,.claude/commands,blueprint/"$EXAM_CODE"/references,specs,conductor/tracks,labs,tests,docs,.prompts}
 
 echo "→ Initializing git repo..."
 git -C "$TARGET_DIR" init
@@ -43,6 +43,9 @@ echo "→ Copying scaffolding..."
 cp "$HUB_DIR/scaffolding/gitignore.template"  "$TARGET_DIR/.gitignore"
 cp "$HUB_DIR/scaffolding/requirements.txt"    "$TARGET_DIR/requirements.txt"
 cp -r "$HUB_DIR/scaffolding/labs-common/"     "$TARGET_DIR/labs/common/"
+
+echo "→ Copying slash commands..."
+cp -r "$HUB_DIR/scaffolding/.claude/commands/." "$TARGET_DIR/.claude/commands/"
 
 echo "→ Generating conductor files..."
 cp "$HUB_DIR/conductor-template/workflow.md"       "$TARGET_DIR/conductor/workflow.md"
@@ -81,11 +84,13 @@ cat > "$TARGET_DIR/CLAUDE.md" << EOF
 - See \`labs/\` for existing lab content
 - Run \`git submodule status\` to check skills version
 
-## Three-Phase Workflow
+## Three-Phase Workflow (slash commands)
 
-1. **Phase 1 — Plan:** Upload blueprint to \`blueprint/$EXAM_CODE/blueprint.md\`, then run \`exam-planner\` → \`specs/topic-plan.yaml\` + empty \`labs/<topic>/\` folders
-2. **Phase 2 — Spec:** Run \`spec-creator\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
-3. **Phase 3 — Build:** Run \`lab-workbook-creator\` one lab at a time → workbook, configs, topology, scripts (review after each)
+1. **Phase 1 — Plan:** Upload blueprint to \`blueprint/$EXAM_CODE/blueprint.md\`, then run \`/plan-exam\` → \`specs/topic-plan.yaml\` + empty \`labs/<topic>/\` folders
+2. **Phase 2 — Spec:** Run \`/create-spec <topic>\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
+3. **Phase 3 — Build:** Run \`/build-lab <topic>/<lab-id>\` one lab at a time → workbook, configs, topology, scripts (review after each)
+
+Additional commands: \`/build-capstone\`, \`/tag-lab\`, \`/sync-skills\`, \`/status\`. All commands live in \`.claude/commands/\` — inspect or customise them there. The commands are advisory: they warn on missing prerequisites but let you proceed.
 
 ## Common Commands
 
@@ -118,7 +123,31 @@ A comprehensive set of hands-on labs for the $CERT_NAME ($EXAM_CODE) exam.
 1. Clone with submodules: \`git clone --recurse-submodules <repo-url>\`
 2. Install Python dependencies: \`pip install -r requirements.txt\`
 3. Set up EVE-NG (see \`.agent/skills/eve-ng/SKILL.md\` for constraints)
-4. Navigate to a lab and follow the workbook
+4. Upload the blueprint to \`blueprint/$EXAM_CODE/blueprint.md\`
+5. Open this repo in Claude Code and run the workflow below
+
+## Workflow (slash commands)
+
+Run these inside Claude Code, in order:
+
+| Command | Does |
+|---|---|
+| \`/status\` | Show where you are and recommend the next command |
+| \`/plan-exam\` | Phase 1 — read the blueprint, produce \`specs/topic-plan.yaml\` |
+| \`/create-spec <topic>\` | Phase 2 — produce \`spec.md\` + \`baseline.yaml\` for one topic |
+| \`/build-lab <topic>/<lab-id>\` | Phase 3 — build one lab package |
+| \`/build-topic <topic>\` | Phase 3 — build every lab in a topic (review gate between each) |
+| \`/build-capstone <slug>\` | Build the cross-topic mega-capstone |
+| \`/tag-lab <topic>/<lab-id>\` | Tag a built lab with metadata |
+| \`/sync-skills\` | \`git submodule update --remote .agent/skills\` with a summary |
+
+All commands are advisory — they warn on missing prerequisites but let you proceed.
+
+## Running a built lab
+
+1. In EVE-NG: import the lab's \`.unl\` file (or create a new lab matching \`baseline.yaml\`), start nodes, note dynamic console ports.
+2. Push initial configs: \`python labs/<topic>/<lab-id>/setup_lab.py --host <eve-ng-ip>\`
+3. Open \`workbook.md\` and work through the tasks.
 
 ## Lab Chapters
 
@@ -144,5 +173,5 @@ echo "  ✅ Done! Project: $TARGET_DIR"
 echo ""
 echo "  Next steps:"
 echo "  1. Create GitHub repo and push: git remote add origin <url> && git push"
-echo "  2. Upload blueprint to blueprint/$EXAM_CODE/blueprint.md, then run exam-planner"
+echo "  2. Upload blueprint to blueprint/$EXAM_CODE/blueprint.md, then run /plan-exam"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,14 +1,17 @@
 ---
-name: lab-workbook-creator
-description: Creates a complete lab workbook, initial-configs, solutions, topology diagram, and setup_lab.py automation script for a single lab. Phase 3 of the workflow (exam-planner -> spec-creator -> lab-builder). Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "write a workbook", or when building labs sequentially from a topic spec.
+name: lab-assembler
+description: Assembles a complete lab package - workbook, initial-configs, solutions, topology diagram, setup_lab.py, meta.yaml, and fault-injection scripts - for a single lab. Inner builder called by lab-builder (topic orchestrator) during Phase 3 of the workflow (exam-planner -> spec-creator -> lab-builder -> lab-assembler). Use when the user asks to "create a lab", "generate lab N", "build [technology] lab", "assemble a lab package", or when building one lab directly from a topic spec.
 ---
 
-# Lab Workbook Creator Skill
+# Lab Assembler Skill
 
-Converts a lab entry from `baseline.yaml` into a full lab package. Phase 3 of the
-three-phase workflow: exam-planner -> spec-creator -> **lab-builder**. Builds one lab
-at a time, pausing for review after each. Labs within a topic are built chronologically
-as each progressive lab continues from the previous one.
+Converts a single lab entry from `baseline.yaml` into a full lab package (workbook,
+configs, solutions, topology, automation, fault-injection). Inner builder invoked by
+`lab-builder` (the topic-level orchestrator) during Phase 3 of the three-phase
+workflow: exam-planner -> spec-creator -> lab-builder -> **lab-assembler**. Can also be
+invoked directly to build a single lab without the orchestrator's review-gate loop.
+Labs within a topic are built chronologically so each progressive lab continues from the
+previous one.
 
 -# Instructions
 
@@ -557,7 +560,7 @@ chapter: [chapter]
 created:
   date: "[YYYY-MM-DD]"
   agent: claude-sonnet-4-6
-  skill: lab-workbook-creator
+  skill: lab-assembler
   skill_version: "[YYYY-MM-DD]"
   files:
     - workbook.md

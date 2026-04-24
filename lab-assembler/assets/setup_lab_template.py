@@ -68,7 +68,7 @@ class LabSetup:
         print("Lab Setup Complete.")
 
 # --- Device Mapping Area ---
-# This section is generated dynamically for each lab by lab-workbook-creator.
+# This section is generated dynamically for each lab by lab-assembler.
 # Ports are dynamic EVE-NG console ports — populate from the EVE-NG web UI
 # or the Console Access Table in workbook.md Section 3.
 #

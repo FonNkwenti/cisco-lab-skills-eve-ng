@@ -6,8 +6,8 @@ Quick reference for all skills in this repository.
 |-------|-------------|------------|
 | `exam-planner` | Starting a new exam — reads full blueprint, groups into topics | `specs/topic-plan.yaml`, empty `labs/<topic>/` folders |
 | `spec-creator` | Creating specs for a single topic after exam-planner | `labs/<topic>/spec.md`, `baseline.yaml` |
-| `lab-workbook-creator` | Generating a single lab from a topic spec | `workbook.md`, configs, `setup_lab.py`, `topology.drawio` |
-| `lab-builder` | Generating multiple labs at once with config chaining | All lab artifacts for a topic |
+| `lab-builder` | Generating multiple labs at once with config chaining (topic-level orchestrator) | All lab artifacts for a topic |
+| `lab-assembler` | Assembling a single lab package from a topic spec (inner builder) | `workbook.md`, configs, `setup_lab.py`, `topology.drawio`, `meta.yaml`, fault-injection scripts |
 | `fault-injector` | Creating automated troubleshooting scenario scripts | `inject_scenario_0N.py`, `apply_solution.py` |
 | `mega-capstone-creator` | Final cross-topic capstone after all topic labs complete | Multi-domain capstone lab package |
 | `drawio` | Creating or fixing topology diagrams | `topology.drawio` |
@@ -40,8 +40,8 @@ Before invoking any skill, the exam repo must have:
         │  creates: empty lab-NN-<slug>/ folders
         │  (review after each topic)
         ▼
-4. lab-workbook-creator  (one lab at a time) ← Phase 3
-   OR lab-builder        (all labs at once)
+4. lab-builder        (all labs at once, with review gate) ← Phase 3
+   OR lab-assembler   (one lab at a time, no loop)
         │  reads: spec.md + baseline.yaml
         │  writes: workbook.md, initial-configs/, solutions/,
         │          topology.drawio, setup_lab.py

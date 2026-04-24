@@ -53,6 +53,7 @@ try {
     Write-Host "→ Creating directory structure..."
     $dirs = @(
         ".agent",
+        ".claude/commands",
         "blueprint/$ExamCode",
         "blueprint/$ExamCode/references",
         "specs",
@@ -78,6 +79,11 @@ try {
     Copy-Item (Join-Path $HUB_DIR "scaffolding/gitignore.template") (Join-Path $TARGET_DIR ".gitignore") -Force
     Copy-Item (Join-Path $HUB_DIR "scaffolding/requirements.txt") (Join-Path $TARGET_DIR "requirements.txt") -Force
     Copy-Item (Join-Path $HUB_DIR "scaffolding/labs-common") (Join-Path $TARGET_DIR "labs/common") -Recurse -Force
+
+    Write-Host "-> Copying slash commands..."
+    $cmdSrc = Join-Path $HUB_DIR "scaffolding/.claude/commands"
+    $cmdDst = Join-Path $TARGET_DIR ".claude/commands"
+    Copy-Item (Join-Path $cmdSrc "*") $cmdDst -Recurse -Force
 
     Write-Host "→ Generating conductor files..."
     Copy-Item (Join-Path $HUB_DIR "conductor-template/workflow.md") (Join-Path $TARGET_DIR "conductor/workflow.md") -Force
@@ -121,11 +127,13 @@ See conductor/product.md and conductor/workflow.md for detailed documentation.
 - See labs/ for existing lab content
 - Run git submodule status to check skills version
 
-## Three-Phase Workflow
+## Three-Phase Workflow (slash commands)
 
-1. Phase 1 - Plan: Upload blueprint to blueprint/$ExamCode/blueprint.md, then run exam-planner
-2. Phase 2 - Spec: Run spec-creator per topic (review after each)
-3. Phase 3 - Build: Run lab-workbook-creator one lab at a time (review after each)
+1. Phase 1 - Plan: Upload blueprint to blueprint/$ExamCode/blueprint.md, then run /plan-exam
+2. Phase 2 - Spec: Run /create-spec <topic> per topic (review after each)
+3. Phase 3 - Build: Run /build-lab <topic>/<lab-id> one lab at a time (review after each)
+
+Additional commands: /build-capstone, /tag-lab, /sync-skills, /status. All commands live in .claude/commands/ - they warn on missing prerequisites but let you proceed (advisory gating).
 
 ## Common Commands
 
@@ -155,7 +163,31 @@ A comprehensive set of hands-on labs for the $CertName ($ExamCode) exam.
 1. Clone with submodules: git clone --recurse-submodules <repo-url>
 2. Install Python dependencies: pip install -r requirements.txt
 3. Set up EVE-NG (see .agent/skills/eve-ng/SKILL.md for constraints)
-4. Navigate to a lab and follow the workbook
+4. Upload the blueprint to blueprint/$ExamCode/blueprint.md
+5. Open this repo in Claude Code and run the workflow below
+
+## Workflow (slash commands)
+
+Run these inside Claude Code, in order:
+
+| Command | Does |
+|---------|------|
+| /status | Show where you are and recommend the next command |
+| /plan-exam | Phase 1 - read the blueprint, produce specs/topic-plan.yaml |
+| /create-spec <topic> | Phase 2 - produce spec.md + baseline.yaml for one topic |
+| /build-lab <topic>/<lab-id> | Phase 3 - build one lab package |
+| /build-topic <topic> | Phase 3 - build every lab in a topic (review gate between each) |
+| /build-capstone <slug> | Build the cross-topic mega-capstone |
+| /tag-lab <topic>/<lab-id> | Tag a built lab with metadata |
+| /sync-skills | git submodule update --remote .agent/skills with a summary |
+
+All commands are advisory - they warn on missing prerequisites but let you proceed.
+
+## Running a built lab
+
+1. In EVE-NG: import the lab's .unl file (or create a new lab matching baseline.yaml), start nodes, note dynamic console ports.
+2. Push initial configs: python labs/<topic>/<lab-id>/setup_lab.py --host <eve-ng-ip>
+3. Open workbook.md and work through the tasks.
 
 ## Lab Chapters
 
@@ -182,7 +214,7 @@ Lab creation uses skills in .agent/skills/. See CLAUDE.md for context.
     Write-Host ""
     Write-Host "  Next steps:"
     Write-Host "  1. Create GitHub repo and push: git remote add origin `<url`> `&`& git push"
-    Write-Host "  2. Upload blueprint to blueprint/$ExamCode/blueprint.md, then run exam-planner"
+    Write-Host "  2. Upload blueprint to blueprint/$ExamCode/blueprint.md, then run /plan-exam"
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     Write-Host ""
 }

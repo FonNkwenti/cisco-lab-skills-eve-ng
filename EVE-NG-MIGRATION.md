@@ -145,7 +145,7 @@ gh repo create cisco-lab-skills-eveng --public --source=. --push
 
 These directories are platform-agnostic and should be copied as-is:
 
-- `lab-workbook-creator/` — workbook generation skill
+- `lab-assembler/` — single-lab package builder (formerly `lab-workbook-creator`)
 - `drawio/` — diagram skill
 - `spec-creator/` — topic spec generation
 - `lab-builder/` — lab generation orchestrator

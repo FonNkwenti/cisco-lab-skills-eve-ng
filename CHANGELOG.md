@@ -26,6 +26,26 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ---
 
+## [Unreleased]
+
+### Renamed
+- `lab-workbook-creator/` → `lab-assembler/`. The skill always produced the full lab
+  package (workbook, initial-configs, solutions, topology, setup_lab.py, meta.yaml,
+  fault-injection scripts), not just the workbook. "Assembler" reflects that; "builder"
+  is reserved for the topic-level orchestrator (`lab-builder`).
+
+### Added
+- `scaffolding/.claude/commands/` — project-scoped slash commands copied into every
+  bootstrapped exam repo: `/plan-exam`, `/create-spec`, `/build-lab`, `/build-topic`,
+  `/build-capstone`, `/tag-lab`, `/sync-skills`, `/status`.
+
+### Migration for existing exam repos
+After `git submodule update --remote .agent/skills`, grep each exam repo for
+`lab-workbook-creator` and rewrite to `lab-assembler`. Likely hits: `CLAUDE.md`,
+any lab `meta.yaml` provenance blocks (the `skill:` field), `.prompts/*`.
+
+---
+
 ## [2.0.0] — 2026-04-10
 
 ### Skill Restructure — Three-Phase Workflow

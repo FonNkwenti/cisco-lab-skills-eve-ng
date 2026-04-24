@@ -72,7 +72,7 @@ Never put all commands in one monolithic code block. Always use named subsection
 2. Verification commands in a `Command | What to Look For` table (never a code block)
 3. End with a mask/wildcard reference table and a failure-causes table
 
-Reference `lab-workbook-creator/SKILL.md` Section 5/7 format blocks for the exact template.
+Reference `lab-assembler/SKILL.md` Section 5/7 format blocks for the exact template.
 
 ## Diagram Standards
 

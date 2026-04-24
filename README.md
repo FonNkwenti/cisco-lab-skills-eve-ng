@@ -12,13 +12,13 @@ One repo, shared across all exam series (ENARSI, SPCOR, ENCOR, etc.). Fix a skil
 |-------|-------|-------------|
 | 1 | `exam-planner` | Reads full blueprint, groups into technology topics, creates `topic-plan.yaml` + empty folders |
 | 2 | `spec-creator` | Creates detailed lab spec + `baseline.yaml` per topic (one at a time, with review) |
-| 3 | `lab-workbook-creator` | Builds a single lab package (workbook, configs, topology, scripts) per topic (one at a time, with review) |
+| 3 | `lab-builder` | Topic-level orchestrator — iterates every lab in `baseline.yaml`, invokes `lab-assembler` for each, and pauses for review between them |
+| 3 | `lab-assembler` | Inner builder — assembles a single lab package (workbook, configs, topology, scripts, meta) from the spec. Called by `lab-builder`; can also be invoked directly to build one lab |
 
 ### Supporting Skills
 
 | Skill | What It Does |
 |-------|-------------|
-| `lab-builder` | Generates all labs in a topic with config chaining |
 | `fault-injector` | Creates automated Netmiko fault injection scripts |
 | `mega-capstone-creator` | Generates the multi-domain final capstone spanning all topics |
 | `drawio` | Visual style guide + `generate_topo.py` for topology diagrams |
@@ -34,9 +34,9 @@ cisco-lab-skills/              ← submodule root (mounted at .agent/skills/)
 │   └── SKILL.md
 ├── spec-creator/              (Phase 2 — topic → spec + baseline)
 │   └── SKILL.md
-├── lab-builder/               (Phase 3 — orchestrates lab generation)
+├── lab-builder/               (Phase 3 — topic-level orchestrator)
 │   └── SKILL.md
-├── lab-workbook-creator/
+├── lab-assembler/             (Phase 3 — single-lab builder called by lab-builder)
 │   ├── SKILL.md
 │   └── assets/
 │       ├── setup_lab_template.py
@@ -134,11 +134,15 @@ The bootstrap script creates the `blueprint/<exam-code>/` folder automatically.
 
 **Optional: Add supplementary references.** Blueprint bullets are often terse (e.g., "3.1.a Configure and verify EIGRP"). Drop any additional materials — OCG chapter outlines, study guide excerpts, course notes, vendor docs — into `blueprint/<exam-code>/references/`. The exam-planner reads these alongside the blueprint for richer topic grouping and lab count estimates.
 
-### 3. Plan the exam — run exam-planner (Phase 1)
+### 3. Plan the exam — run `/plan-exam` (Phase 1)
 
-Ask the agent: *"Plan the CCNP ENCOR exam labs from the blueprint"*
+In Claude Code (inside the exam repo), run:
 
-The `exam-planner` skill reads the full blueprint and produces:
+```
+/plan-exam
+```
+
+This invokes the `exam-planner` skill, which reads the full blueprint and produces:
 - `specs/topic-plan.yaml` — technology-based topic breakdown with lab counts, blueprint
   coverage mapping, and suggested build order
 - Empty `labs/<topic>/` folders (e.g., `labs/eigrp/`, `labs/ospf/`, `labs/bgp/`)
@@ -148,11 +152,13 @@ domain order. Each blueprint bullet maps to exactly one topic.
 
 **Review gate:** The agent presents the topic plan and waits for approval before proceeding.
 
-### 4. Create specs per topic — run spec-creator (Phase 2)
+### 4. Create specs per topic — run `/create-spec <topic>` (Phase 2)
 
-Ask the agent: *"Create specs for EIGRP"*
+```
+/create-spec eigrp
+```
 
-The `spec-creator` skill reads `topic-plan.yaml` and the blueprint, then generates:
+This invokes the `spec-creator` skill, which reads `topic-plan.yaml` and the blueprint, then generates:
 - `labs/<topic>/spec.md` — lab progression table, blueprint coverage matrix, design decisions
 - `labs/<topic>/baseline.yaml` — shared topology, IP plan, device list for all labs in the topic
 - Empty lab folders with descriptive slugs (e.g., `lab-00-introduction/`, `lab-01-classic-adjacency/`)
@@ -161,14 +167,21 @@ Labs within a topic are progressive — each builds on the previous. Labs that d
 progression are tagged `standalone` and placed at the end, before the capstones. Every topic
 ends with Capstone I (full config challenge) and Capstone II (troubleshooting).
 
-**Review gate:** The agent presents each topic spec and waits for approval before moving
-to the next topic.
+**Review gate:** The spec-creator presents each topic spec and waits for approval before moving to the next topic.
 
-### 5. Build labs per topic — run lab-builder (Phase 3)
+### 5. Build labs per topic — run `/build-lab` or `/build-topic` (Phase 3)
 
-Ask the agent: *"Build the next lab for EIGRP"*
+Two entry points at different altitudes — pick based on how you want to work:
 
-The `lab-workbook-creator` skill builds one lab at a time from the spec:
+```
+/build-lab eigrp/lab-00-introduction     # one lab at a time (fast iteration)
+/build-topic eigrp                        # every lab in the topic, with review gates
+```
+
+- `/build-lab <topic>/<lab-id>` → `lab-assembler` skill. Builds exactly one lab package. Use this when iterating on a single lab or rebuilding one after a spec change.
+- `/build-topic <topic>` → `lab-builder` skill (orchestrator). Iterates every lab in `baseline.yaml` `labs[]`, invoking `lab-assembler` per lab and pausing for user approval between each.
+
+Either way, the underlying `lab-assembler` builds one lab at a time from the spec:
 - `workbook.md` — student workbook with theory, tasks, verification, troubleshooting
 - `initial-configs/*.cfg` — startup configs (chained from previous lab's solutions)
 - `solutions/*.cfg` — reference solution configs
@@ -211,7 +224,28 @@ python setup_lab.py --host <eve-ng-ip>
 ### 9. Capstones
 
 - **Per-topic capstones** are the last 2 labs in every topic (auto-generated in Phase 3)
-- **Mega-capstone** spans all topics — run `mega-capstone-creator` after all topic labs are complete
+- **Mega-capstone** spans all topics — run `/build-capstone <slug>` after all topic labs are complete
+
+### Slash-command reference
+
+Every bootstrapped exam repo ships with these project-scoped commands (under
+`.claude/commands/`). They are advisory: each checks prerequisites and warns if something
+looks off, but never blocks you from proceeding.
+
+| Command | Routes to | Purpose |
+|---|---|---|
+| `/status` | (read-only) | Print current phase, topic list, and per-topic completion |
+| `/plan-exam` | `exam-planner` | Phase 1 — read blueprint, write `topic-plan.yaml` |
+| `/create-spec <topic>` | `spec-creator` | Phase 2 — write `spec.md` + `baseline.yaml` for one topic |
+| `/build-lab <topic>/<lab-id>` | `lab-assembler` | Phase 3 — build one lab package |
+| `/build-topic <topic>` | `lab-builder` | Phase 3 — build every lab in a topic, review gate between each |
+| `/build-capstone <slug>` | `mega-capstone-creator` | Build the cross-topic mega-capstone |
+| `/tag-lab <topic>/<lab-id>` | `tag-lab` | Tag a built lab with metadata |
+| `/sync-skills` | (git only) | `git submodule update --remote .agent/skills` with summary diff |
+
+When in doubt about where you are, run `/status` — it reads `specs/topic-plan.yaml` and
+walks every topic, reporting per-topic whether the spec exists and how many labs are
+built. It prints a one-line recommendation for the next command.
 
 ### Summary
 
@@ -219,25 +253,26 @@ python setup_lab.py --host <eve-ng-ip>
 blueprint.md (you upload)
     │
     ▼
-exam-planner           →  topic-plan.yaml + empty labs/<topic>/ folders
+/plan-exam              →  specs/topic-plan.yaml + empty labs/<topic>/ folders
     │                      (review once)
     ▼
-spec-creator           →  labs/<topic>/spec.md + baseline.yaml
+/create-spec <topic>    →  labs/<topic>/spec.md + baseline.yaml
     │                      (review after each topic)
     ▼
-lab-builder            →  labs/<topic>/lab-NN-<slug>/
-    │                      (review after each lab)
-    ▼
-EVE-NG lab             →  create nodes, connect links, start
+/build-lab OR           →  labs/<topic>/lab-NN-<slug>/
+/build-topic               (review after each lab)
     │
     ▼
-setup_lab.py --host    →  push initial-configs to all devices
+EVE-NG lab              →  create nodes, connect links, start
     │
     ▼
-workbook.md            →  study + practice + troubleshooting
+setup_lab.py --host     →  push initial-configs to all devices
     │
     ▼
-mega-capstone          →  final cross-topic capstone
+workbook.md             →  study + practice + troubleshooting
+    │
+    ▼
+/build-capstone         →  final cross-topic capstone
 ```
 
 ---
@@ -273,9 +308,9 @@ git submodule update --init
 
 ```bash
 cd C:\Users\Nkwenti\Documents\Labs\Cisco\cisco-lab-skills-eve-ng
-# edit spec-creator/SKILL.md, lab-workbook-creator/SKILL.md, etc.
+# edit spec-creator/SKILL.md, lab-assembler/SKILL.md, etc.
 git add .
-git commit -m "fix(lab-workbook-creator): capstone clean-slate initial-config logic"
+git commit -m "fix(lab-assembler): capstone clean-slate initial-config logic"
 ```
 
 ### Step 2 — Pull the update into each exam repo
@@ -311,7 +346,7 @@ cisco-lab-skills (this repo)
     ├── .agent/skills/ ←── ccnp-spcor-labs       (pinned to commit A or B)
     └── .agent/skills/ ←── ccnp-labs-template    (pinned to commit A)
 
-Fix a bug in lab-workbook-creator:
+Fix a bug in lab-assembler:
   1. Commit fix here          → commit B
   2. Update ENARSI            → pins to commit B
   3. Update SPCOR when ready  → pins to commit B

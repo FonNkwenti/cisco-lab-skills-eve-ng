@@ -7,8 +7,8 @@
 
 @skills/exam-planner/SKILL.md
 @skills/spec-creator/SKILL.md            (Phase 2)
-@skills/lab-builder/SKILL.md             (Phase 3 orchestrator)
-@skills/lab-workbook-creator/SKILL.md    (single lab generator)
+@skills/lab-builder/SKILL.md             (Phase 3 topic orchestrator)
+@skills/lab-assembler/SKILL.md           (single lab builder)
 @skills/fault-injector/SKILL.md
 @skills/mega-capstone-creator/SKILL.md
 @skills/tag-lab/SKILL.md
@@ -30,7 +30,7 @@
 
 1. **exam-planner** — reads `blueprint/<exam-code>/blueprint.md`, produces `specs/topic-plan.yaml` + empty `labs/<topic>/` folders
 2. **spec-creator** — reads `topic-plan.yaml`, produces `labs/<topic>/spec.md` + `baseline.yaml` per topic, with pause-for-review
-3. **lab-builder** — builds labs one at a time from `baseline.yaml`, pauses after each for review
+3. **lab-builder** — orchestrates all labs for a topic, invoking `lab-assembler` per lab and pausing for review between them. Invoke `lab-assembler` directly to build a single lab without the loop.
 
 Lab directories use descriptive zero-indexed names: `lab-00-introduction`, `lab-01-classic-adjacency`.
 

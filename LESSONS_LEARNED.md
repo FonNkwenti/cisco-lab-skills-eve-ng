@@ -17,7 +17,7 @@ was violated: no Cisco icons, no white lines, no separate label cells, no last-o
 **Prevention:**
 - Before writing any `topology.drawio` XML, read `drawio/SKILL.md` §4.2–§4.7 in full
 - Always start from the §4.7 reference XML snippets — never write drawio XML from scratch
-- Run both the pre-write and post-write checklists in `lab-workbook-creator/SKILL.md` Step 5
+- Run both the pre-write and post-write checklists in `lab-assembler/SKILL.md` Step 5
 
 ---
 
@@ -112,7 +112,7 @@ checks passed but the scripts would silently do nothing when run.
 1. Represent CLI config as a Python `list` of strings, not a heredoc or f-string.
 2. After generating any Python script, validate: `python3 -m py_compile script.py`
 
-**Affected skills**: `fault-injector`, `lab-workbook-creator` (setup_lab.py)
+**Affected skills**: `fault-injector`, `lab-assembler` (setup_lab.py)
 
 ---
 
@@ -171,7 +171,7 @@ Solutions from Lab N become initial configs for Lab N+1. Never `no` a command be
 
 ### ⚡ Pattern: Always run `spec-creator` first
 
-Starting a topic by jumping to `lab-workbook-creator` for Lab 00 causes topology problems in later labs (interface exhaustion, no room for optional devices). `spec-creator` pre-reserves IPs and interfaces for all planned labs via `baseline.yaml`.
+Starting a topic by jumping to `lab-assembler` for Lab 00 causes topology problems in later labs (interface exhaustion, no room for optional devices). `spec-creator` pre-reserves IPs and interfaces for all planned labs via `baseline.yaml`.
 
 ### ⚡ Pattern: Console Access Table is required for fault-injector
 

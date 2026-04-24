@@ -43,11 +43,11 @@ For each lab in `baseline.yaml` `labs:` array, in order (number 0, 1, 2, ...):
 - New devices (introduced in this lab but not the previous) get initial-configs from
   `core_topology` or `optional_devices` IP addressing.
 
-**2c. Invoke lab-workbook-creator:**
+**2c. Invoke lab-assembler:**
 - Pass the lab entry from baseline.yaml (number, folder, title, objectives, devices, type).
 - The lab directory is `labs/<topic>/<folder>/` where `<folder>` is the `folder` field
   from baseline.yaml (e.g., `lab-00-introduction`).
-- `lab-workbook-creator` generates: `workbook.md`, `initial-configs/`, `solutions/`,
+- `lab-assembler` generates: `workbook.md`, `initial-configs/`, `solutions/`,
   `topology.drawio`, `setup_lab.py`, `meta.yaml`, `scripts/fault-injection/`.
 
 **2d. PAUSE for review:**
@@ -132,7 +132,7 @@ User: "Build the EIGRP labs" (after spec-creator has run for eigrp)
 Actions:
 1. Read `labs/eigrp/baseline.yaml` and `labs/eigrp/spec.md`.
 2. Build lab-00-introduction: IP-only initial-configs from core_topology, invoke
-   lab-workbook-creator. PAUSE — present summary, wait for approval.
+   lab-assembler. PAUSE — present summary, wait for approval.
 3. Build lab-01-classic-adjacency: copy lab-00 solutions as initial-configs. PAUSE.
 4. Build lab-02-named-mode: copy lab-01 solutions. PAUSE.
 5. Continue through all progressive labs...
