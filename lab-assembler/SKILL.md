@@ -104,6 +104,7 @@ per active device to `solutions/`. Do not write partial or unverified configs.
 8. [Solutions (Spoiler Alert!)](#8-solutions-spoiler-alert)
 9. [Troubleshooting Scenarios](#9-troubleshooting-scenarios)
 10. [Lab Completion Checklist](#10-lab-completion-checklist)
+11. [Appendix: Script Exit Codes](#11-appendix-script-exit-codes)
 
 ---
 ```
@@ -123,14 +124,53 @@ Write a complete workbook with all required sections:
       - Explain the protocol concept, not just the commands
    d. `**Skills this lab develops:**` table — Skill | Description (2 columns)
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
-3. **Hardware & Environment Specifications** — cabling table, Console Access Table
-4. **Base Configuration** — what is pre-configured in `initial-configs/`
+3. **Hardware & Environment Specifications** — Device Inventory table, cabling table, Console Access Table
+4. **Base Configuration** — what is pre-configured in `initial-configs/` (see IS/NOT format below)
 5. **Lab Challenge: Core Implementation** — objectives for the student (see format below)
 6. **Verification & Analysis** — expected `show` command outputs per objective, with inline `!` comments marking the specific lines or values the student must confirm
 7. **Verification Cheatsheet** — quick-reference commands for the entire lab (see format below)
 8. **Solutions (Spoiler Alert!)** — solution configs for lab objectives only, wrapped in `<details>` blocks
 9. **Troubleshooting Scenarios** — fault injection workflow + symptom-based tickets with `<details>` spoilers
 10. **Lab Completion Checklist** — two groups: Core Implementation and Troubleshooting
+11. **Appendix: Script Exit Codes** — exit code table for `setup_lab.py`, inject scripts, and `apply_solution.py`
+
+**Section 3 — Device Inventory table (REQUIRED):**
+
+Every workbook must include a Device Inventory table immediately before the cabling table in Section 3:
+
+```markdown
+| Device | Role | Platform | Image |
+|--------|------|----------|-------|
+| R1 | Hub Router | IOSv | vios-adventerprisek9-m.SPA.156-2.T |
+| R2 | Branch A | IOSv | vios-adventerprisek9-m.SPA.156-2.T |
+```
+
+Use the platform and image from `baseline.yaml core_topology.devices[N].platform` and `.image`. If not specified, use the EVE-NG default for that platform.
+
+**Section 4 — IS/NOT pre-loaded format (REQUIRED):**
+
+Section 4 must use an explicit two-column list — not prose — to describe what the student starts with:
+
+```markdown
+## 4. Base Configuration
+
+The following is **pre-loaded** via `setup_lab.py`:
+
+**IS pre-loaded:**
+- Hostnames
+- Interface IP addressing (all routed links and loopbacks)
+- `no ip domain-lookup`
+
+**IS NOT pre-loaded** (student configures this):
+- EIGRP routing process
+- Subnet advertisement
+- Neighbour authentication
+```
+
+Rules:
+- "IS pre-loaded" items describe features or concepts in plain English — never raw IOS syntax
+- "IS NOT pre-loaded" items describe the lab objectives at concept level — align with Section 5 tasks
+- Never mix IOS commands into either list (e.g. ❌ "`router eigrp 100`", ✅ "EIGRP routing process")
 
 **Section 5 — Tasks format (REQUIRED):**
 
@@ -336,6 +376,20 @@ python3 inject_scenario_03.py   # Ticket 3
 python3 apply_solution.py
 ```
 
+**Section 11 — Appendix: Script Exit Codes (REQUIRED):**
+
+```markdown
+## 11. Appendix: Script Exit Codes
+
+| Code | Meaning | Applies to |
+|------|---------|------------|
+| 0 | Success | All scripts |
+| 1 | Partial failure | `apply_solution.py` only |
+| 2 | `--host` not provided | All scripts |
+| 3 | EVE-NG connectivity error | All scripts |
+| 4 | Pre-flight check failed | Inject scripts only |
+```
+
 **ASCII Topology Diagram standard (required in Section 2):**
 
 Use Unicode box-drawing characters. Every diagram must include:
@@ -493,17 +547,45 @@ Never write topology XML from scratch.
 File path, line count, number of router cells, number of edge cells,
 confirmation both checklists pass.
 
+--# Step 5b: Generate topology/README.md
+
+After the drawio subagent completes, write `labs/<topic>/lab-NN-<slug>/topology/README.md`.
+This file documents the EVE-NG .unl import/export process for this specific lab — it is NOT
+auto-generated as part of the build; the .unl file is created manually in EVE-NG.
+
+Required content:
+1. **Lab topology summary** — brief description of the topology (device count, links, topology type)
+2. **EVE-NG import instructions** — step-by-step: navigate to File > Import, select the `.unl` file, where to find it
+3. **Node configuration reference** — table listing each device, its EVE-NG template (e.g. `Cisco IOSv`), RAM, and image name from `baseline.yaml`
+4. **Starting the lab** — start all nodes, wait for boot, note console port assignments
+5. **Exporting the lab** — how to export `.unl` after making topology changes in EVE-NG
+
+Keep the README concise — it supplements the EVE-NG web UI, not replaces it.
+
 --# Step 6: Generate setup_lab.py
 
-Use `assets/setup_lab_template.py` as the base template. Customise it for this lab's active devices and console ports from `baseline.yaml`.
+Use `assets/setup_lab_template.py` as the base template. Customise it for this lab's active devices. Ports are discovered at runtime via `discover_ports()` — do NOT hardcode ports.
 
 The script must:
-1. Use `device_type='cisco_ios_telnet'` to connect via EVE-NG console ports (telnet to `<eve-ng-ip>:<dynamic-port>`)
-2. Loop through each active device
-3. Load the corresponding `initial-configs/[Device].cfg`
-4. Log progress clearly per device
+1. Call `require_host(args.host)` to validate the `--host` argument
+2. Call `discover_ports(host, args.lab_path)` to get the device→port map via EVE-NG REST API
+3. For each active device, call `connect_node()` and push `initial-configs/[Device].cfg`
+4. Log progress clearly per device; return exit code 0 on full success, 1 on partial failure
 
 **Validate:** Run `python3 -m py_compile setup_lab.py` — fix any SyntaxError before proceeding.
+
+--# Step 6b: Generate root README.md
+
+Write `labs/<topic>/lab-NN-<slug>/README.md` — a quick-reference card for the lab.
+
+Required sections:
+1. **Lab title and one-line description**
+2. **Blueprint coverage** — list the `baseline.yaml labs[N].blueprint_refs` exam objectives
+3. **Prerequisites** — lab number this one chains from (if progressive), Python deps
+4. **Quick start** — three commands: import .unl, run setup_lab.py, open workbook.md
+5. **Files** — brief directory tree showing the key files in this lab package
+
+Keep it under 60 lines — it is a navigation aid, not documentation. Full detail lives in `workbook.md`.
 
 --# Step 7: Generate fault injection scripts
 
@@ -526,19 +608,21 @@ Read .agent/skills/fault-injector/SKILL.md in full.
 Follow it exactly — especially the template locations in assets/.
 
 ## Read After fault-injector/SKILL.md
-1. labs/<topic>/lab-NN-<slug>/workbook.md — Section 9 (troubleshooting scenarios) and Section 3 (Console Access Table)
+1. labs/<topic>/lab-NN-<slug>/workbook.md — Section 9 (troubleshooting scenarios)
 
 ## Lab Context
 - Chapter: [chapter]
-- Lab path: [lab-path]
+- Lab path: [lab-path]  ← used for DEFAULT_LAB_PATH in scripts (REST API port discovery)
 - Active devices: [list from baseline.yaml labs[N].devices — e.g. R1, R2, R3]
-- Console ports: [dynamic — populate from EVE-NG web UI after lab creation]
 - Number of troubleshooting scenarios: [count from workbook.md Section 9]
+
+Note: Console ports are discovered at runtime via discover_ports() — do NOT hardcode ports.
+The lab .unl must be ALREADY IMPORTED and nodes started before running the scripts.
 
 ## Pre-Write Checklist
 - [ ] fault-injector/SKILL.md read in full
-- [ ] Console Access Table extracted from workbook.md Section 3
-- [ ] Each scenario's fault type and target device identified from Section 9
+- [ ] Each scenario's fault type, target device, and fault/solution markers identified from Section 9
+- [ ] DEFAULT_LAB_PATH set to "[topic]/[lab-slug].unl" in all scripts
 - [ ] Template files in assets/ read before writing any inject script
 
 ## Output Confirmation
@@ -557,6 +641,11 @@ After the fault-injector skill completes, write `meta.yaml` in the lab directory
 # Auto-generated — do not edit manually. Use /tag-lab to stamp external agent runs.
 lab: [lab-dir-name]
 chapter: [chapter]
+exam: [exam-code]           # e.g. 300-410, 350-401
+devices:                    # active devices for this lab (from baseline.yaml labs[N].devices)
+  - name: [DEVICE_NAME]
+    platform: [iosv|iosvl2|csr1000v|xrv9000]
+    role: [Hub Router|Branch A|etc.]
 created:
   date: "[YYYY-MM-DD]"
   agent: claude-sonnet-4-6
@@ -565,7 +654,9 @@ created:
   files:
     - workbook.md
     - topology.drawio
+    - topology/README.md
     - setup_lab.py
+    - README.md
     - initial-configs/[Device].cfg   # one entry per device
     - solutions/[Device].cfg          # one entry per device
     - scripts/fault-injection/inject_scenario_01.py
@@ -621,9 +712,11 @@ Actions:
 3. Copy `labs/eigrp/lab-02-named-mode/solutions/` as `initial-configs/` for lab-03.
 4. Draft solution configs; verify against `reference-data/ios-compatibility.yaml`;
    write to `solutions/`.
-5. Write `workbook.md` with all 10 required sections.
+5. Write `workbook.md` with all 11 required sections (including Section 11 Appendix).
 6. Dispatch drawio subagent to write `topology.drawio`.
-7. Generate `setup_lab.py`.
-8. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
-9. Write `meta.yaml` listing all created files.
-10. Pause for review before proceeding to lab-04.
+7. Write `topology/README.md` with EVE-NG import/export instructions.
+8. Generate `setup_lab.py` using eve_ng.py shared library.
+9. Write root `README.md` quick-reference card.
+10. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
+11. Write `meta.yaml` listing all created files (including `exam` and `devices` fields).
+12. Pause for review before proceeding to lab-04.

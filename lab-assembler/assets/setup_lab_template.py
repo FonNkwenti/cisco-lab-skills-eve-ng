@@ -1,84 +1,102 @@
-from netmiko import ConnectHandler
-import sys
+#!/usr/bin/env python3
+"""
+Lab Setup — [LAB_TITLE]
+
+Pushes initial configs to all lab devices via EVE-NG console ports.
+Ports are discovered at runtime via the EVE-NG REST API — no hardcoded ports needed.
+
+Usage:
+    python3 setup_lab.py --host <eve-ng-ip>
+
+The lab .unl must already be imported into EVE-NG and all nodes started before
+running this script.
+"""
+
+from __future__ import annotations
+
 import argparse
-import os
+import sys
+from pathlib import Path
 
-# EVE-NG server IP — override with --host argument or set here
-DEFAULT_EVE_NG_HOST = "192.168.x.x"
+SCRIPT_DIR = Path(__file__).resolve().parent
+# Depth: lab-NN-<slug>/ -> <topic>/ -> labs/
+sys.path.insert(0, str(SCRIPT_DIR.parents[1] / "common" / "tools"))
+from eve_ng import EveNgError, connect_node, discover_ports, require_host  # noqa: E402
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Push initial configs to EVE-NG lab nodes")
-    parser.add_argument("--host", default=DEFAULT_EVE_NG_HOST,
-                        help="EVE-NG server IP (default: %(default)s)")
-    parser.add_argument("--ssh", action="store_true",
-                        help="Use SSH instead of telnet (requires management network on nodes)")
-    return parser.parse_args()
+INITIAL_CONFIGS_DIR = SCRIPT_DIR / "initial-configs"
 
-class LabSetup:
-    def __init__(self, devices, eve_ng_host, use_ssh=False):
-        self.devices = devices        # List of (name, port, config_path)
-        self.eve_ng_host = eve_ng_host
-        self.use_ssh = use_ssh
+# Path to the EXISTING, ALREADY-IMPORTED lab in EVE-NG — used only for port
+# discovery via the REST API. This does NOT create or modify the .unl file.
+DEFAULT_LAB_PATH = "[TOPIC]/[LAB_SLUG].unl"
 
-    def push_config(self, host, port, config_file):
-        device_type = "cisco_ios" if self.use_ssh else "cisco_ios_telnet"
-        print(f"Connecting to {host}:{port} ({device_type})...")
-        try:
-            if not os.path.exists(config_file):
-                print(f"  Error: Config file {config_file} not found.")
-                return False
+# Active devices for this lab (must match node names in EVE-NG).
+DEVICES = [
+    "[DEVICE_NAME_1]",
+    "[DEVICE_NAME_2]",
+]
 
-            conn_params = {
-                "device_type": device_type,
-                "host": host,
-                "port": port,
-                "timeout": 10,
-            }
-            if not self.use_ssh:
-                # Telnet to EVE-NG console — credentials typically empty
-                conn_params.update({"username": "", "password": "", "secret": ""})
 
-            conn = ConnectHandler(**conn_params)
+def push_config(host: str, name: str, port: int) -> bool:
+    cfg_file = INITIAL_CONFIGS_DIR / f"{name}.cfg"
+    if not cfg_file.exists():
+        print(f"  [!] Config file not found: {cfg_file}")
+        return False
 
-            # Read config lines, skipping blanks and comments
-            with open(config_file, 'r') as f:
-                commands = [
-                    line.strip() for line in f
-                    if line.strip() and not line.startswith('!')
-                ]
+    print(f"[*] Connecting to {name} on {host}:{port} ...")
+    try:
+        conn = connect_node(host, port)
+        commands = [
+            line.strip()
+            for line in cfg_file.read_text().splitlines()
+            if line.strip() and not line.startswith("!")
+        ]
+        conn.send_config_set(commands)
+        conn.save_config()
+        conn.disconnect()
+        print(f"[+] {name} configured.")
+        return True
+    except Exception as exc:
+        print(f"  [!] {name} failed: {exc}")
+        return False
 
-            # Push configuration commands
-            conn.send_config_set(commands)
 
-            # Save configuration
-            conn.send_command("write memory", read_timeout=10)
-            print(f"  Successfully loaded {config_file}")
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Push initial configs to lab nodes")
+    parser.add_argument("--host", default="192.168.x.x",
+                        help="EVE-NG server IP (required)")
+    parser.add_argument("--lab-path", default=DEFAULT_LAB_PATH,
+                        help=f"Lab .unl path in EVE-NG (default: {DEFAULT_LAB_PATH})")
+    args = parser.parse_args()
 
-            conn.disconnect()
-            return True
-        except Exception as e:
-            print(f"  Failed to connect or push config: {e}")
-            return False
+    host = require_host(args.host)
 
-    def run(self):
-        print(f"Starting Lab Setup Automation (EVE-NG host: {self.eve_ng_host})...")
-        for name, port, config in self.devices:
-            print(f"--- Setting up {name} ---")
-            self.push_config(self.eve_ng_host, port, config)
-        print("Lab Setup Complete.")
+    print("=" * 60)
+    print(f"Lab Setup: [LAB_TITLE] (EVE-NG: {host})")
+    print("=" * 60)
 
-# --- Device Mapping Area ---
-# This section is generated dynamically for each lab by lab-assembler.
-# Ports are dynamic EVE-NG console ports — populate from the EVE-NG web UI
-# or the Console Access Table in workbook.md Section 3.
-#
-# Example (replace with actual ports from your EVE-NG lab):
-# if __name__ == "__main__":
-#     args = parse_args()
-#     devices = [
-#         ("R1", 32768, "initial-configs/R1.cfg"),
-#         ("R2", 32769, "initial-configs/R2.cfg"),
-#         ("R3", 32770, "initial-configs/R3.cfg"),
-#     ]
-#     lab = LabSetup(devices, eve_ng_host=args.host, use_ssh=args.ssh)
-#     lab.run()
+    try:
+        ports = discover_ports(host, args.lab_path)
+    except EveNgError as exc:
+        print(f"[!] {exc}", file=sys.stderr)
+        return 3
+
+    success, failed = 0, 0
+    for name in DEVICES:
+        port = ports.get(name)
+        if port is None:
+            print(f"[!] {name} not found in lab — skipping.")
+            failed += 1
+            continue
+        if push_config(host, name, port):
+            success += 1
+        else:
+            failed += 1
+
+    print("=" * 60)
+    print(f"Setup complete: {success} succeeded, {failed} failed")
+    print("=" * 60)
+    return 0 if failed == 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
