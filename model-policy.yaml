@@ -1,0 +1,53 @@
+# Model policy for lab builds.
+# Owned by the skills submodule — one edit here propagates to every exam repo.
+#
+# Difficulty tiers come from baseline.yaml labs[N].difficulty.
+# Each tier lists the model IDs that are ALLOWED to run a build for that tier.
+# A build is REFUSED by /build-lab and /build-topic unless the running agent's
+# model ID is in the allowed list (or the user passed --force-model to the
+# slash command).
+#
+# See MODEL-POLICY.md for rationale and change-log guidance.
+
+version: 1
+updated: "2026-04-24"
+
+tiers:
+  Foundation:
+    # Foundation labs are low-stakes scaffolding; any model tier is acceptable.
+    allowed_models:
+      - claude-haiku-4-5-20251001
+      - claude-sonnet-4-6
+      - claude-opus-4-7
+    recommended: claude-sonnet-4-6
+    notes: "Sonnet is default; Haiku acceptable for drafts; Opus overkill."
+
+  Intermediate:
+    # Intermediate labs need Sonnet's pedagogical depth. Haiku is too thin.
+    allowed_models:
+      - claude-sonnet-4-6
+      - claude-opus-4-7
+    recommended: claude-sonnet-4-6
+    notes: "Sonnet is the production default for student-facing labs."
+
+  Advanced:
+    # Advanced/capstone labs demand Opus-level reasoning and reference depth.
+    allowed_models:
+      - claude-opus-4-7
+    recommended: claude-opus-4-7
+    notes: "Opus only — the complexity justifies the cost."
+
+# Effort-level guidance (advisory, not enforced — tracked in telemetry only).
+# The OSPF lab-01 comparison showed Medium-effort drops the adjacency-failure
+# table and per-subsection exam tips — fine for Foundation, not for student-
+# facing Intermediate/Advanced content.
+effort_guidance:
+  Foundation: medium
+  Intermediate: high
+  Advanced: high
+
+# Deprecation / migration notes — when rotating model IDs:
+# 1. Add the new model ID to allowed_models for each tier where it qualifies.
+# 2. Keep the old ID for one release cycle so in-flight builds don't break.
+# 3. After the cycle, remove the old ID and bump `version`.
+# 4. Append a "Change log" entry in MODEL-POLICY.md.
