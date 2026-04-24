@@ -31,7 +31,7 @@ if [ -d "$TARGET_DIR" ]; then
 fi
 
 echo "→ Creating directory structure..."
-mkdir -p "$TARGET_DIR"/{.agent,.claude/commands,blueprint/"$EXAM_CODE"/references,specs,conductor/tracks,labs,tests,docs,.prompts}
+mkdir -p "$TARGET_DIR"/{.agent,.claude/commands,blueprint/"$EXAM_CODE"/references,specs,conductor/tracks,labs,tests,docs,.prompts,tasks}
 
 echo "→ Initializing git repo..."
 git -C "$TARGET_DIR" init
@@ -58,6 +58,12 @@ sed "s/{{CERT_NAME}}/$CERT_NAME/g; s/{{EXAM_CODE}}/$EXAM_CODE/g; s/{{SCOPE}}/TOD
 
 sed "s/{{CERT_NAME}}/$CERT_NAME/g; s/{{EXAM_CODE}}/$EXAM_CODE/g" \
   "$HUB_DIR/conductor-template/product-guidelines.md.tmpl" > "$TARGET_DIR/conductor/product-guidelines.md"
+
+echo "→ Generating tasks/ files..."
+sed "s/{{CERT_NAME}}/$CERT_NAME/g; s/{{EXAM_CODE}}/$EXAM_CODE/g" \
+  "$HUB_DIR/scaffolding/tasks/lessons.md.tmpl" > "$TARGET_DIR/tasks/lessons.md"
+sed "s/{{CERT_NAME}}/$CERT_NAME/g; s/{{EXAM_CODE}}/$EXAM_CODE/g" \
+  "$HUB_DIR/scaffolding/tasks/todo.md.tmpl" > "$TARGET_DIR/tasks/todo.md"
 
 echo "→ Creating CLAUDE.md..."
 cat > "$TARGET_DIR/CLAUDE.md" << EOF

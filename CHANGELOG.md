@@ -36,6 +36,10 @@ All notable changes to the cisco-lab-skills hub are documented here.
   is reserved for the topic-level orchestrator (`lab-builder`).
 
 ### Added
+- `scaffolding/tasks/` — two starter templates now generated into every bootstrapped repo:
+  - `tasks/lessons.md` — exam-specific correction log; new entries at top; reviewed each session
+  - `tasks/todo.md` — session scratchpad only (current plan + outstanding decisions);
+    not a build tracker — use `/project-status` or `README.md § Lab Chapters` for that
 - `scaffolding/.claude/commands/` — project-scoped slash commands copied into every
   bootstrapped exam repo: `/plan-exam`, `/create-spec`, `/build-lab`, `/build-topic`,
   `/build-capstone`, `/tag-lab`, `/sync-skills`, `/project-status`.

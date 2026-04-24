@@ -61,7 +61,8 @@ try {
         "labs",
         "tests",
         "docs",
-        ".prompts"
+        ".prompts",
+        "tasks"
     )
 
     foreach ($dir in $dirs) {
@@ -100,6 +101,15 @@ try {
     $guidelinesTmpl = Get-Content (Join-Path $HUB_DIR "conductor-template/product-guidelines.md.tmpl") -Raw
     $guidelinesContent = $guidelinesTmpl.Replace('{{CERT_NAME}}', $CertName).Replace('{{EXAM_CODE}}', $ExamCode)
     Set-Content -Path (Join-Path $TARGET_DIR "conductor/product-guidelines.md") -Value $guidelinesContent
+
+    Write-Host "→ Generating tasks/ files..."
+    $lessonsTmpl = Get-Content (Join-Path $HUB_DIR "scaffolding/tasks/lessons.md.tmpl") -Raw
+    $lessonsContent = $lessonsTmpl.Replace('{{CERT_NAME}}', $CertName).Replace('{{EXAM_CODE}}', $ExamCode)
+    Set-Content -Path (Join-Path $TARGET_DIR "tasks/lessons.md") -Value $lessonsContent
+
+    $todoTmpl = Get-Content (Join-Path $HUB_DIR "scaffolding/tasks/todo.md.tmpl") -Raw
+    $todoContent = $todoTmpl.Replace('{{CERT_NAME}}', $CertName).Replace('{{EXAM_CODE}}', $ExamCode)
+    Set-Content -Path (Join-Path $TARGET_DIR "tasks/todo.md") -Value $todoContent
 
     Write-Host "→ Creating CLAUDE.md..."
     $fence = '```'
