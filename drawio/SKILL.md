@@ -34,6 +34,8 @@ The only required deliverable is:
 
 This section defines the canonical visual style for all topology diagrams. Every generated `.drawio` file **must** follow these rules.
 
+> **Reference file**: `references/style-guide-reference.drawio` — a complete, validated example diagram. Read it when generating a new diagram to confirm style compliance before producing output.
+
 ### 4.1 Canvas & Layout
 
 - **Background**: Default Draw.io canvas (assumed dark-theme friendly).
