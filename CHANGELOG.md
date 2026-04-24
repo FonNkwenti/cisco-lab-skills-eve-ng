@@ -38,6 +38,12 @@ All notable changes to the cisco-lab-skills hub are documented here.
 - `scaffolding/.claude/commands/` — project-scoped slash commands copied into every
   bootstrapped exam repo: `/plan-exam`, `/create-spec`, `/build-lab`, `/build-topic`,
   `/build-capstone`, `/tag-lab`, `/sync-skills`, `/status`.
+- Three additional supporting commands promoted from ccnp-encor-labs to the hub scaffolding
+  (now included in every bootstrapped repo):
+  - `/diagram <topic>/<lab-id>` — regenerate a topology diagram independently via `drawio` skill
+  - `/inject-faults <topic>/<lab-id>` — regenerate fault-injection scripts via `fault-injector` skill
+  - `/troubleshoot <topic>/<lab-id>` — run structured 4-phase diagnosis via `cisco-troubleshooting-1` skill
+  - All three use the same advisory-gating pattern as the core 8 commands.
 
 ### Migration for existing exam repos
 After `git submodule update --remote .agent/skills`, grep each exam repo for

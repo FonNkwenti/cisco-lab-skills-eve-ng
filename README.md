@@ -242,6 +242,9 @@ looks off, but never blocks you from proceeding.
 | `/build-capstone <slug>` | `mega-capstone-creator` | Build the cross-topic mega-capstone |
 | `/tag-lab <topic>/<lab-id>` | `tag-lab` | Tag a built lab with metadata |
 | `/sync-skills` | (git only) | `git submodule update --remote .agent/skills` with summary diff |
+| `/diagram <topic>/<lab-id>` | `drawio` | Regenerate or update a topology diagram independently of a full build |
+| `/inject-faults <topic>/<lab-id>` | `fault-injector` | Regenerate fault-injection scripts after workbook changes |
+| `/troubleshoot <topic>/<lab-id>` | `cisco-troubleshooting-1` | Run structured 4-phase diagnosis on an active EVE-NG fault |
 
 When in doubt about where you are, run `/status` — it reads `specs/topic-plan.yaml` and
 walks every topic, reporting per-topic whether the spec exists and how many labs are
