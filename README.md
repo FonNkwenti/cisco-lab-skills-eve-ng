@@ -234,7 +234,7 @@ looks off, but never blocks you from proceeding.
 
 | Command | Routes to | Purpose |
 |---|---|---|
-| `/status` | (read-only) | Print current phase, topic list, and per-topic completion |
+| `/project-status` | (read-only) | Print current phase, topic list, and per-topic completion |
 | `/plan-exam` | `exam-planner` | Phase 1 — read blueprint, write `topic-plan.yaml` |
 | `/create-spec <topic>` | `spec-creator` | Phase 2 — write `spec.md` + `baseline.yaml` for one topic |
 | `/build-lab <topic>/<lab-id>` | `lab-assembler` | Phase 3 — build one lab package |
@@ -246,7 +246,7 @@ looks off, but never blocks you from proceeding.
 | `/inject-faults <topic>/<lab-id>` | `fault-injector` | Regenerate fault-injection scripts after workbook changes |
 | `/troubleshoot <topic>/<lab-id>` | `cisco-troubleshooting-1` | Run structured 4-phase diagnosis on an active EVE-NG fault |
 
-When in doubt about where you are, run `/status` — it reads `specs/topic-plan.yaml` and
+When in doubt about where you are, run `/project-status` — it reads `specs/topic-plan.yaml` and
 walks every topic, reporting per-topic whether the spec exists and how many labs are
 built. It prints a one-line recommendation for the next command.
 

@@ -90,7 +90,7 @@ cat > "$TARGET_DIR/CLAUDE.md" << EOF
 2. **Phase 2 — Spec:** Run \`/create-spec <topic>\` per topic → \`labs/<topic>/spec.md\` + \`baseline.yaml\` (review after each)
 3. **Phase 3 — Build:** Run \`/build-lab <topic>/<lab-id>\` one lab at a time → workbook, configs, topology, scripts (review after each)
 
-Additional commands: \`/build-capstone\`, \`/tag-lab\`, \`/sync-skills\`, \`/status\`. All commands live in \`.claude/commands/\` — inspect or customise them there. The commands are advisory: they warn on missing prerequisites but let you proceed.
+Additional commands: \`/build-capstone\`, \`/tag-lab\`, \`/sync-skills\`, \`/project-status\`. All commands live in \`.claude/commands/\` — inspect or customise them there. The commands are advisory: they warn on missing prerequisites but let you proceed.
 
 ## Common Commands
 
@@ -132,7 +132,7 @@ Run these inside Claude Code, in order:
 
 | Command | Does |
 |---|---|
-| \`/status\` | Show where you are and recommend the next command |
+| \`/project-status\` | Show where you are and recommend the next command |
 | \`/plan-exam\` | Phase 1 — read the blueprint, produce \`specs/topic-plan.yaml\` |
 | \`/create-spec <topic>\` | Phase 2 — produce \`spec.md\` + \`baseline.yaml\` for one topic |
 | \`/build-lab <topic>/<lab-id>\` | Phase 3 — build one lab package |
@@ -151,9 +151,9 @@ All commands are advisory — they warn on missing prerequisites but let you pro
 
 ## Lab Chapters
 
-| Chapter | Description |
-|---------|-------------|
-| *(Add chapters as they are built)* | |
+<!-- lab-index-start -->
+> Run \`/plan-exam\` first to populate this section with the topic list and lab checklist.
+<!-- lab-index-end -->
 
 ## Development
 

@@ -133,7 +133,7 @@ See conductor/product.md and conductor/workflow.md for detailed documentation.
 2. Phase 2 - Spec: Run /create-spec <topic> per topic (review after each)
 3. Phase 3 - Build: Run /build-lab <topic>/<lab-id> one lab at a time (review after each)
 
-Additional commands: /build-capstone, /tag-lab, /sync-skills, /status. All commands live in .claude/commands/ - they warn on missing prerequisites but let you proceed (advisory gating).
+Additional commands: /build-capstone, /tag-lab, /sync-skills, /project-status. All commands live in .claude/commands/ - they warn on missing prerequisites but let you proceed (advisory gating).
 
 ## Common Commands
 
@@ -172,7 +172,7 @@ Run these inside Claude Code, in order:
 
 | Command | Does |
 |---------|------|
-| /status | Show where you are and recommend the next command |
+| /project-status | Show where you are and recommend the next command |
 | /plan-exam | Phase 1 - read the blueprint, produce specs/topic-plan.yaml |
 | /create-spec <topic> | Phase 2 - produce spec.md + baseline.yaml for one topic |
 | /build-lab <topic>/<lab-id> | Phase 3 - build one lab package |
@@ -191,9 +191,9 @@ All commands are advisory - they warn on missing prerequisites but let you proce
 
 ## Lab Chapters
 
-| Chapter | Description |
-|---------|-------------|
-| (Add chapters as they are built) | |
+<!-- lab-index-start -->
+> Run /plan-exam first to populate this section with the topic list and lab checklist.
+<!-- lab-index-end -->
 
 ## Development
 

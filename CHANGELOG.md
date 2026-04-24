@@ -29,6 +29,7 @@ All notable changes to the cisco-lab-skills hub are documented here.
 ## [Unreleased]
 
 ### Renamed
+- `/status` command → `/project-status` to avoid conflict with Claude Code's built-in `/status` command.
 - `lab-workbook-creator/` → `lab-assembler/`. The skill always produced the full lab
   package (workbook, initial-configs, solutions, topology, setup_lab.py, meta.yaml,
   fault-injection scripts), not just the workbook. "Assembler" reflects that; "builder"
@@ -37,7 +38,12 @@ All notable changes to the cisco-lab-skills hub are documented here.
 ### Added
 - `scaffolding/.claude/commands/` — project-scoped slash commands copied into every
   bootstrapped exam repo: `/plan-exam`, `/create-spec`, `/build-lab`, `/build-topic`,
-  `/build-capstone`, `/tag-lab`, `/sync-skills`, `/status`.
+  `/build-capstone`, `/tag-lab`, `/sync-skills`, `/project-status`.
+- README auto-update: `plan-exam`, `create-spec`, `build-lab`, `build-topic` commands now
+  maintain a `## Lab Chapters` section in the exam repo README. Uses
+  `<!-- lab-index-start -->` / `<!-- lab-index-end -->` markers as anchors. Topics appear
+  after Phase 1; unchecked lab checklists appear after Phase 2; checkboxes are ticked as
+  each lab is approved in Phase 3.
 - Three additional supporting commands promoted from ccnp-encor-labs to the hub scaffolding
   (now included in every bootstrapped repo):
   - `/diagram <topic>/<lab-id>` — regenerate a topology diagram independently via `drawio` skill
