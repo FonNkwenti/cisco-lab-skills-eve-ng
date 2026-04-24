@@ -508,7 +508,11 @@ You are generating a topology.drawio diagram for a Cisco certification EVE-NG la
 
 ## Task
 Write Draw.io XML to:
-  labs/<topic>/lab-NN-<slug>/topology.drawio
+  labs/<topic>/lab-NN-<slug>/topology/topology.drawio
+
+Create the `topology/` subdirectory if it does not exist. The drawio file MUST
+live inside `topology/`, not at the lab root. Sibling file in the same folder:
+`topology/README.md` (written in Step 5b).
 
 ## MANDATORY FIRST ACTION
 Read .agent/skills/drawio/SKILL.md in full — especially §4.2–§4.7.
@@ -537,6 +541,7 @@ Never write topology XML from scratch.
 - [ ] Legend box: fillColor=#000000, fontColor=#FFFFFF, bottom-right
 
 ## Post-Write Checklist (fix before confirming done)
+- [ ] File written to `labs/<topic>/lab-NN-<slug>/topology/topology.drawio` — NOT to the lab root
 - [ ] Every router cell uses mxgraph.cisco.routers.router shape
 - [ ] Every router has a separate label cell
 - [ ] Every edge has strokeColor=#FFFFFF
@@ -572,7 +577,13 @@ The script must:
 3. For each active device, call `connect_node()` and push `initial-configs/[Device].cfg`
 4. Log progress clearly per device; return exit code 0 on full success, 1 on partial failure
 
-**Validate:** Run `python3 -m py_compile setup_lab.py` — fix any SyntaxError before proceeding.
+**Validate:** Syntax-check without writing cache files. Preferred:
+```bash
+python3 -c "import ast; ast.parse(open('setup_lab.py').read(), 'setup_lab.py')"
+```
+If you use `python3 -m py_compile setup_lab.py` instead, you MUST follow it
+with `rm -rf __pycache__` — never leave `__pycache__/` in the lab package.
+Fix any SyntaxError before proceeding.
 
 --# Step 6b: Generate root README.md
 
@@ -630,11 +641,15 @@ List all files created, py_compile result for each .py file, and fault-injector/
 
 --# Step 8: Write meta.yaml
 
-After the fault-injector skill completes, write `meta.yaml` in the lab directory.
+After the fault-injector subagent completes, lab-assembler owns meta.yaml.
+The fault-injector does NOT write meta.yaml (see fault-injector/SKILL.md Step 6).
+Collect the fault-injection file paths from the subagent's Output
+Confirmation and include them in `created.files` below.
 
 1. Get `skill_version`: run `git -C .agent/skills log --format="%ci" -1` and take the date portion (YYYY-MM-DD).
 2. Get today's date (YYYY-MM-DD).
 3. Glob all files created in this lab directory (recursive, relative paths).
+   Exclude `__pycache__/` and `*.pyc` artifacts.
 4. Write `labs/<topic>/lab-NN-<slug>/meta.yaml`:
 
 ```yaml
@@ -648,12 +663,12 @@ devices:                    # active devices for this lab (from baseline.yaml la
     role: [Hub Router|Branch A|etc.]
 created:
   date: "[YYYY-MM-DD]"
-  agent: claude-sonnet-4-6
+  agent: [CURRENT_AGENT_ID]   # e.g. claude-sonnet-4-6, claude-opus-4-7, claude-haiku-4-5-20251001
   skill: lab-assembler
   skill_version: "[YYYY-MM-DD]"
   files:
     - workbook.md
-    - topology.drawio
+    - topology/topology.drawio
     - topology/README.md
     - setup_lab.py
     - README.md
@@ -713,10 +728,16 @@ Actions:
 4. Draft solution configs; verify against `reference-data/ios-compatibility.yaml`;
    write to `solutions/`.
 5. Write `workbook.md` with all 11 required sections (including Section 11 Appendix).
-6. Dispatch drawio subagent to write `topology.drawio`.
+6. Dispatch drawio subagent to write `topology/topology.drawio` (inside the `topology/` subfolder).
 7. Write `topology/README.md` with EVE-NG import/export instructions.
 8. Generate `setup_lab.py` using eve_ng.py shared library.
 9. Write root `README.md` quick-reference card.
 10. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
 11. Write `meta.yaml` listing all created files (including `exam` and `devices` fields).
+12. Final cleanup — remove any `__pycache__/` directories and `*.pyc` files from the lab package:
+    ```bash
+    find labs/<topic>/lab-NN-<slug> -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
+    find labs/<topic>/lab-NN-<slug> -type f -name '*.pyc' -delete 2>/dev/null
+    ```
+    Verify with `find labs/<topic>/lab-NN-<slug> -name '__pycache__'` — must return empty.
 12. Pause for review before proceeding to lab-04.

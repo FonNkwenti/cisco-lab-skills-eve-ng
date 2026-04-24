@@ -6,6 +6,36 @@ Newest entries at the top.
 
 ---
 
+## 2026-04-24 — Three-model comparison surfaced three skill-level bugs
+
+From the OSPF lab-01 three-model build comparison (Haiku / Sonnet / Opus):
+
+1. **Inconsistent drawio placement rule:** `lab-assembler` said drawio at lab
+   root, but `topology/README.md` in a subfolder. Haiku followed the letter
+   of the rule (wrong folder); Sonnet/Opus inferred the consistent layout.
+   **Fix:** Both `drawio/SKILL.md` and `lab-assembler/SKILL.md` now specify
+   `topology/topology.drawio` and Step 5 has a path assertion in its
+   post-write checklist.
+
+2. **meta.yaml subagent bleed:** `fault-injector/SKILL.md` Step 6 told the
+   subagent to write meta.yaml directly, causing it to overwrite the parent's
+   provenance with its own identity (Haiku and Sonnet builds both required
+   manual overrides post-dispatch).
+   **Fix:** Fault-injector no longer touches meta.yaml. lab-assembler owns
+   meta.yaml; fault-injector returns its file list via Output Confirmation.
+
+3. **`__pycache__` litter:** Both skills instructed `python3 -m py_compile`
+   with no cleanup. Every build left `__pycache__/` directories in
+   `scripts/fault-injection/` and sometimes at lab root.
+   **Fix:** Syntax-check via `ast.parse` (no filesystem side effect) or
+   follow py_compile with explicit `rm -rf __pycache__`. Final-cleanup step
+   added to lab-assembler. `.gitignore` entries already present.
+
+Detection path: side-by-side review of three same-spec builds made the
+pattern visible. Single-build review would have missed #1 and #3.
+
+---
+
 ## Draw.io — Never Write XML from Scratch (ENARSI, 2026-02)
 
 ### ❌ Bug: topology.drawio generated as plain rectangles, ignoring drawio skill
