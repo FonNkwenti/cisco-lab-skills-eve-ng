@@ -28,6 +28,29 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ## [Unreleased]
 
+### Fixed: drawio SKILL.md vs reference file discrepancies (cisco19 shapes, rounded zones)
+
+**What changed:** Two visual style mismatches between `drawio/SKILL.md` and the canonical
+`drawio/references/style-guide-reference.drawio` were found and corrected.
+
+1. **Device icons**: SKILL.md §4.2 had old `mxgraph.cisco.routers.router` shapes (dark-blue
+   filled silhouettes). The reference uses `mxgraph.cisco19.rect;prIcon=router` (white fill,
+   teal border, modern Cisco19 library). All style strings, XML snippets, and the validation
+   checklist updated.
+
+2. **Zone/domain shapes**: SKILL.md §4.10.2 specified `ellipse` (ovals). The reference uses
+   `rounded=1;arcSize=5` (near-rectangular boxes with barely-softened corners). All zone
+   style strings and XML snippets updated.
+
+**Additional:** Canvas background `#1a1a2e` now explicit in §4.1; label approach in §4.3 updated
+to embedded HTML in device cell `value` via `labelPosition=` attributes (matching the reference
+pattern, no separate label cells needed).
+
+**Affected labs:** Any `topology.drawio` generated before this fix uses the old shapes. Regenerate
+via `/diagram <topic>/<lab-id>` after running `git submodule update --remote .agent/skills`.
+
+---
+
 ### Migrated: fault-injector and lab-assembler to eve_ng.py shared library
 
 **What changed:** Replaced hardcoded `EVE_NG_HOST` / `CONSOLE_PORT` constants in all
