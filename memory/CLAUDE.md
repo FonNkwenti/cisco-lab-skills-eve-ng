@@ -71,6 +71,15 @@ Every workbook MUST include:
 - All scripts accept `--host <eve-ng-ip>` and `--lab-path <topic>/<slug>.unl` (REST API only — does NOT generate .unl)
 - Exit codes: 0=success, 1=partial restore, 2=missing --host, 3=EVE-NG error, 4=preflight fail
 
+## Git Workflow
+
+Always use `/git-commit` for all commits and pushes — never run raw `git commit` or `git push` directly. The command runs under Haiku, enforces conventional commit format, stages correctly (no `git add -A`), and requires explicit confirmation before pushing.
+
+```
+/git-commit                        ← stage all tracked changes, draft message, confirm
+/git-commit path/to/file.md        ← stage specific files only
+```
+
 ## Artifact Regeneration (after skill sync or fixes)
 
 After `/sync-skills`, use these to update individual artifacts without rebuilding the whole lab:

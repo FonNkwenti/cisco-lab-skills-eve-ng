@@ -80,6 +80,7 @@ All commands live in `.claude/commands/` inside your exam repo and are advisory 
 | `/build-capstone <slug>` | 3 | Builds the cross-topic mega-capstone lab |
 | `/tag-lab <topic>/<lab-id>` | Post-build | Stamps `meta.yaml` with agent + skill version |
 | `/sync-skills` | Any | Runs `git submodule update --remote .agent/skills` and reports what changed |
+| `/git-commit [files]` | Any | Stage, commit (conventional format), and optionally push — always use this instead of raw git commands |
 
 ### Artifact-level commands (regenerate one thing)
 
