@@ -185,13 +185,28 @@ Run these inside Claude Code, in order:
 | /project-status | Show where you are and recommend the next command |
 | /plan-exam | Phase 1 - read the blueprint, produce specs/topic-plan.yaml |
 | /create-spec <topic> | Phase 2 - produce spec.md + baseline.yaml for one topic |
-| /build-lab <topic>/<lab-id> | Phase 3 - build one lab package |
+| /build-lab <topic>/<lab-id> | Phase 3 - build one complete lab package |
 | /build-topic <topic> | Phase 3 - build every lab in a topic (review gate between each) |
 | /build-capstone <slug> | Build the cross-topic mega-capstone |
 | /tag-lab <topic>/<lab-id> | Tag a built lab with metadata |
 | /sync-skills | git submodule update --remote .agent/skills with a summary |
 
 All commands are advisory - they warn on missing prerequisites but let you proceed.
+
+### Regenerating individual artifacts
+
+After a skill update or style fix, use these to redo one artifact without rebuilding the whole lab:
+
+| Command | Regenerates |
+|---------|-------------|
+| /diagram <topic>/<lab-id> | topology/topology.drawio - re-run after a drawio skill fix or topology change |
+| /inject-faults <topic>/<lab-id> | scripts/fault-injection/ - re-run after editing workbook.md Section 9 or after a fault-injector skill fix |
+| /troubleshoot <topic>/<lab-id> <symptom> | (no files) - live structured diagnosis of an active EVE-NG fault |
+
+Typical post-sync workflow:
+  /sync-skills
+  /diagram ospf/lab-00-single-area-ospfv2       # regenerate topology with updated style
+  /inject-faults ospf/lab-00-single-area-ospfv2  # regenerate fault scripts with updated templates
 
 ## Running a built lab
 

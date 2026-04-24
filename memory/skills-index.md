@@ -64,6 +64,43 @@ Before invoking any skill, the exam repo must have:
         │  generates: labs/mega-capstone/ — multi-domain final capstone
 ```
 
+## Slash Commands — Full Reference
+
+All commands live in `.claude/commands/` inside your exam repo and are advisory (they warn on missing prerequisites but do not block).
+
+### Phase commands (build progression)
+
+| Command | Phase | What it does |
+|---------|-------|-------------|
+| `/project-status` | Any | Shows current phase, what's been built, and the recommended next command |
+| `/plan-exam` | 1 | Reads `blueprint/<code>/blueprint.md` → writes `specs/topic-plan.yaml` + empty `labs/<topic>/` folders |
+| `/create-spec <topic>` | 2 | Reads topic plan → writes `labs/<topic>/spec.md` + `baseline.yaml`; review before proceeding |
+| `/build-lab <topic>/<lab-id>` | 3 | Builds one complete lab package (workbook, configs, topology, scripts); review before proceeding |
+| `/build-topic <topic>` | 3 | Builds every lab in a topic with a review gate between each |
+| `/build-capstone <slug>` | 3 | Builds the cross-topic mega-capstone lab |
+| `/tag-lab <topic>/<lab-id>` | Post-build | Stamps `meta.yaml` with agent + skill version |
+| `/sync-skills` | Any | Runs `git submodule update --remote .agent/skills` and reports what changed |
+
+### Artifact-level commands (regenerate one thing)
+
+Use these when a skill was updated, a workbook section changed, or a diagram needs fixing — without rebuilding the whole lab.
+
+| Command | Regenerates | When to use |
+|---------|-------------|-------------|
+| `/diagram <topic>/<lab-id>` | `topology.drawio` | After a drawio skill fix, after topology changes in baseline.yaml, or after `/sync-skills` reveals a style update |
+| `/inject-faults <topic>/<lab-id>` | `scripts/fault-injection/*.py` + `README.md` | After adding/editing troubleshooting scenarios in workbook.md Section 9, or after a fault-injector skill fix |
+| `/troubleshoot <topic>/<lab-id> <symptom>` | _(no files)_ | When actively debugging a live fault in EVE-NG — runs structured 4-phase diagnosis; not a file generator |
+
+**Typical post-skill-sync workflow:**
+
+```
+/sync-skills                                  ← pull latest skill fixes
+/diagram ospf/lab-00-single-area-ospfv2       ← regenerate topology with new style
+/inject-faults ospf/lab-00-single-area-ospfv2 ← regenerate fault scripts with new template
+```
+
+`/build-lab` also dispatches diagram and inject-faults automatically (Steps 5 and 7 of `lab-assembler`). The artifact-level commands let you redo just one piece without touching workbook, configs, or solutions.
+
 ### Platform selection from baseline.yaml
 
 | baseline.yaml platform value | EVE-NG node type | Use case |
