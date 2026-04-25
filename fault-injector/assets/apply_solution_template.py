@@ -32,7 +32,7 @@ SOLUTIONS_DIR = SCRIPT_DIR.parents[1] / "solutions"
 
 # Path to the EXISTING, ALREADY-IMPORTED lab in EVE-NG — used only for port
 # discovery via the REST API. This does NOT create or modify the .unl file.
-DEFAULT_LAB_PATH = "[TOPIC]/[LAB_SLUG].unl"
+DEFAULT_LAB_PATH = "[PROJECT_FOLDER]/[TOPIC]/[LAB_SLUG].unl"
 
 # All devices affected by the troubleshooting scenarios — restored in order.
 RESTORE_TARGETS = [
