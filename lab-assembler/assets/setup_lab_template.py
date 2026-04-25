@@ -27,7 +27,7 @@ INITIAL_CONFIGS_DIR = SCRIPT_DIR / "initial-configs"
 
 # Path to the EXISTING, ALREADY-IMPORTED lab in EVE-NG — used only for port
 # discovery via the REST API. This does NOT create or modify the .unl file.
-DEFAULT_LAB_PATH = "[TOPIC]/[LAB_SLUG].unl"
+DEFAULT_LAB_PATH = "[PROJECT_FOLDER]/[TOPIC]/[LAB_SLUG].unl"
 
 # Active devices for this lab (must match node names in EVE-NG).
 DEVICES = [
