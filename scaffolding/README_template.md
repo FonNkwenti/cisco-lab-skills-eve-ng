@@ -64,6 +64,14 @@ Every topic moves through three sequential phases. The skill toolkit at `.agent/
 Each phase has a review gate — outputs are inspected before the next phase begins.
 See [`.agent/skills/README.md`](.agent/skills/) for the full skill catalogue and design.
 
+## Suggested Practice Order
+
+<!-- practice-order-start -->
+_Run `/plan-exam` to populate this section from `specs/topic-plan.yaml` (build order + dependencies)._
+<!-- practice-order-end -->
+
+> **You can practice topics in any order.** Each lab is self-contained — every lab folder has its own `setup_lab.py`, initial configs, and topology, so prerequisites are baked in and don't depend on having completed earlier labs. The order above is the recommended progression for working through the exam from scratch; if you already know the foundations, jump straight to whichever topic you want to drill.
+
 ## Commands
 
 | Command | Phase | Purpose |
