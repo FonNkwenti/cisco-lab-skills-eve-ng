@@ -45,7 +45,6 @@ python setup_lab.py --host <eve-ng-ip>
 │   ├── spec.md                 Topic spec — progression and coverage
 │   ├── baseline.yaml           Topology + IP plan + lab definitions
 │   └── lab-NN-<slug>/          Built lab: workbook, configs, topology, scripts
-├── conductor/                  Project workflow docs (product, tracks, workflow)
 ├── memory/                     Cross-session notes and progress logs
 ├── tests/                      Repo-level tests
 └── .agent/skills/              Lab-generation toolkit (git submodule)
@@ -98,7 +97,6 @@ For the current state of the project (which labs are built, what's next), run `/
 | If you want to… | Read |
 |----|----|
 | Understand conventions and project context | [`CLAUDE.md`](CLAUDE.md) |
-| See current chapter plan / track | [`conductor/tracks.md`](conductor/tracks.md) |
 | See live build progress | [`STATUS.md`](STATUS.md) |
 | Learn how the skill toolkit works | [`.agent/skills/README.md`](.agent/skills/) |
 | Read the exam blueprint | [`blueprint/{{EXAM_CODE}}/blueprint.md`](blueprint/{{EXAM_CODE}}/blueprint.md) |
