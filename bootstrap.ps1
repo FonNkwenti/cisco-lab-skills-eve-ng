@@ -27,10 +27,15 @@ param(
     [string]$CertName,
 
     [Parameter(Mandatory=$true)]
-    [string]$ExamCode
+    [string]$ExamCode,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ExamFullName = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $ExamFullName) { $ExamFullName = $CertName }
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HUB_DIR = $SCRIPT_DIR
@@ -161,70 +166,36 @@ ${fence}
 "@
     Set-Content -Path $claudeMdPath -Value $claudeMdContent
 
-    Write-Host "→ Creating README.md..."
-    $readmeMdPath = Join-Path $TARGET_DIR "README.md"
-    $readmeMdContent = @"
-# $CertName ($ExamCode) Lab Series
+    Write-Host "→ Generating README.md from template..."
+    $readmeTmpl = Get-Content (Join-Path $HUB_DIR "scaffolding/README_template.md") -Raw
+    $readmeContent = $readmeTmpl.
+        Replace('{{EXAM_SHORT}}', $CertName).
+        Replace('{{EXAM_CODE}}', $ExamCode).
+        Replace('{{EXAM_NAME}}', $ExamFullName).
+        Replace('{{PLATFORM}}', 'EVE-NG (Intel/Windows)').
+        Replace('{{REPO_NAME}}', $ProjectName).
+        Replace('{{TOPIC_COUNT}}', '_TBD — run /plan-exam_').
+        Replace('{{TOTAL_LABS}}', '_TBD — run /plan-exam_').
+        Replace('{{REFERENCE_LAB}}', '_TBD — first lab built in Phase 3_')
+    Set-Content -Path (Join-Path $TARGET_DIR "README.md") -Value $readmeContent
 
-A comprehensive set of hands-on labs for the $CertName ($ExamCode) exam.
-
-## Getting Started
-
-1. Clone with submodules: git clone --recurse-submodules <repo-url>
-2. Install Python dependencies: pip install -r requirements.txt
-3. Set up EVE-NG (see .agent/skills/eve-ng/SKILL.md for constraints)
-4. Upload the blueprint to blueprint/$ExamCode/blueprint.md
-5. Open this repo in Claude Code and run the workflow below
-
-## Workflow (slash commands)
-
-Run these inside Claude Code, in order:
-
-| Command | Does |
-|---------|------|
-| /project-status | Show where you are and recommend the next command |
-| /plan-exam | Phase 1 - read the blueprint, produce specs/topic-plan.yaml |
-| /create-spec <topic> | Phase 2 - produce spec.md + baseline.yaml for one topic |
-| /build-lab <topic>/<lab-id> | Phase 3 - build one complete lab package |
-| /build-topic <topic> | Phase 3 - build every lab in a topic (review gate between each) |
-| /build-capstone <slug> | Build the cross-topic mega-capstone |
-| /tag-lab <topic>/<lab-id> | Tag a built lab with metadata |
-| /sync-skills | git submodule update --remote .agent/skills with a summary |
-
-All commands are advisory - they warn on missing prerequisites but let you proceed.
-
-### Regenerating individual artifacts
-
-After a skill update or style fix, use these to redo one artifact without rebuilding the whole lab:
-
-| Command | Regenerates |
-|---------|-------------|
-| /diagram <topic>/<lab-id> | topology/topology.drawio - re-run after a drawio skill fix or topology change |
-| /inject-faults <topic>/<lab-id> | scripts/fault-injection/ - re-run after editing workbook.md Section 9 or after a fault-injector skill fix |
-| /troubleshoot <topic>/<lab-id> <symptom> | (no files) - live structured diagnosis of an active EVE-NG fault |
-
-Typical post-sync workflow:
-  /sync-skills
-  /diagram ospf/lab-00-single-area-ospfv2       # regenerate topology with updated style
-  /inject-faults ospf/lab-00-single-area-ospfv2  # regenerate fault scripts with updated templates
-
-## Running a built lab
-
-1. In EVE-NG: import the lab's .unl file (or create a new lab matching baseline.yaml), start nodes, note dynamic console ports.
-2. Push initial configs: python labs/<topic>/<lab-id>/setup_lab.py --host <eve-ng-ip>
-3. Open workbook.md and work through the tasks.
-
-## Lab Chapters
-
-<!-- lab-index-start -->
-> Run /plan-exam first to populate this section with the topic list and lab checklist.
-<!-- lab-index-end -->
-
-## Development
-
-Lab creation uses skills in .agent/skills/. See CLAUDE.md for context.
-"@
-    Set-Content -Path $readmeMdPath -Value $readmeMdContent
+    Write-Host "→ Generating STATUS.md from template..."
+    $today = Get-Date -Format 'yyyy-MM-dd'
+    $statusTmpl = Get-Content (Join-Path $HUB_DIR "scaffolding/STATUS_template.md") -Raw
+    $statusContent = $statusTmpl.
+        Replace('{{EXAM_SHORT}}', $CertName).
+        Replace('{{EXAM_CODE}}', $ExamCode).
+        Replace('{{LAST_UPDATED}}', $today).
+        Replace('{{SKILLS_COMMIT}}', '(run /sync-skills)').
+        Replace('{{SKILLS_BRANCH}}', 'main').
+        Replace('{{BLUEPRINT_OBJECTIVES}}', '_pending blueprint upload_').
+        Replace('{{PHASE_1_STATE}}', '— not started').
+        Replace('{{PHASE_2_STATE}}', '— not started').
+        Replace('{{PHASE_3_STATE}}', '— not started').
+        Replace('{{TOPIC_ROWS}}', '| _run /plan-exam to populate_ |  |  |  |').
+        Replace('{{RECENT_ACTIVITY}}', "_Project bootstrapped on $today. No activity yet._").
+        Replace('{{NEXT_COMMAND}}', "Upload your exam blueprint to ``blueprint/$ExamCode/blueprint.md``, then run ``/plan-exam``.")
+    Set-Content -Path (Join-Path $TARGET_DIR "STATUS.md") -Value $statusContent
 
     Write-Host "→ Linking skills into .claude\skills\ for Claude Code discovery..."
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $TARGET_DIR ".agent\skills\scripts\link-skills.ps1") -ProjectRoot $TARGET_DIR
