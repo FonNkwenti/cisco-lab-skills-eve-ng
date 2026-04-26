@@ -55,7 +55,8 @@ Use `assets/apply_solution_template.py` as the base template. Customise:
 The script reads solution configs from `solutions/[Device].cfg` (two directory levels above
 `scripts/fault-injection/`, i.e. the lab root). It calls `find_open_lab(host, node_names=RESTORE_TARGETS)`
 to auto-discover the lab, then `discover_ports()` for port lookup. Supports `--reset` to run
-`erase_device_config()` before pushing configs. Do NOT define `DEFAULT_LAB_PATH`.
+`soft_reset_device()` (issues `default interface` + `no router` to clear running-config state without a
+reload) before pushing configs, and `--node` to target a single device. Do NOT define `DEFAULT_LAB_PATH`.
 
 --# Step 4: Generate scripts/fault-injection/README.md
 

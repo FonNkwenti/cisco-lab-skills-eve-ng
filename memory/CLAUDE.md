@@ -64,7 +64,7 @@ Every workbook MUST include:
 
 ## Automation Standards
 
-- All scripts use `common/tools/eve_ng.py` shared library: `require_host()`, `discover_ports()`, `connect_node()`, `erase_device_config()`
+- All scripts use `common/tools/eve_ng.py` shared library: `require_host()`, `discover_ports()`, `connect_node()`, `soft_reset_device()`
 - Port discovery at runtime via EVE-NG REST API — no hardcoded port constants
 - `setup_lab.py` at lab root: `sys.path.insert(0, str(SCRIPT_DIR.parents[1] / "common" / "tools"))`
 - Fault injection scripts at `scripts/fault-injection/`: `sys.path.insert(0, str(SCRIPT_DIR.parents[3] / "common" / "tools"))`

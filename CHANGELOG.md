@@ -61,7 +61,8 @@ from the `common/tools/eve_ng.py` shared library.
 - All three `inject_scenario_0N_template.py` files rewritten: `require_host()`, `discover_ports()`,
   `connect_node()`, pre-flight checks, structured exit codes (0/2/3/4)
 - `apply_solution_template.py` rewritten: reads `solutions/[Device].cfg` via `discover_ports()`,
-  supports `--reset` flag (`erase_device_config()`)
+  supports `--reset` flag (`soft_reset_device()`: issues `default interface` + `no router` to clear
+  running-config state without a reload) and `--node` to target a single device
 - `README_template.md` updated: `--host <eve-ng-ip>` in all commands, exit codes table,
   `.unl` import prerequisite note
 - `SKILL.md` updated: Step 1 documents runtime port discovery, Script Structure Reference
