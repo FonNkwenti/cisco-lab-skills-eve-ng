@@ -21,12 +21,15 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 # Depth: lab-NN-<slug>/ -> <topic>/ -> labs/
 sys.path.insert(0, str(SCRIPT_DIR.parents[1] / "common" / "tools"))
-from eve_ng import EveNgError, connect_node, discover_ports, require_host  # noqa: E402
+from eve_ng import EveNgError, connect_node, discover_ports, require_host, resolve_and_discover  # noqa: E402
 
 INITIAL_CONFIGS_DIR = SCRIPT_DIR / "initial-configs"
 
-# Path to the EXISTING, ALREADY-IMPORTED lab in EVE-NG — used only for port
-# discovery via the REST API. This does NOT create or modify the .unl file.
+# Fast-path lab path used by resolve_and_discover. If the lab is missing here
+# (renamed/moved/imported into a different parent folder in EVE-NG), the helper
+# falls back to find_open_lab() and walks the folder tree. The [PROJECT_FOLDER]
+# segment MUST be substituted with the EVE-NG parent folder (e.g. "ccnp-spri")
+# — never leave it out, or the fast-path will 404 every run.
 DEFAULT_LAB_PATH = "[PROJECT_FOLDER]/[TOPIC]/[LAB_SLUG].unl"
 
 # Active devices for this lab (must match node names in EVE-NG).
@@ -75,7 +78,7 @@ def main() -> int:
     print("=" * 60)
 
     try:
-        ports = discover_ports(host, args.lab_path)
+        args.lab_path, ports = resolve_and_discover(host, args.lab_path, list(DEVICES))
     except EveNgError as exc:
         print(f"[!] {exc}", file=sys.stderr)
         return 3
