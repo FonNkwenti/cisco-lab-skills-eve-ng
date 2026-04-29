@@ -1,25 +1,41 @@
-import os
+"""
+lab_utils.py -- scaffolding reference for EVE-NG lab setup helpers.
 
-from netmiko import ConnectHandler
+IMPORTANT: Do NOT use ConnectHandler directly in generated lab scripts.
+Use connect_node() from labs/common/tools/eve_ng.py instead. That function
+handles EVE-NG-specific quirks:
+  - clear_buffer() before enable() to drain stale syslog from persistent
+    telnet buffers (critical for CSR1000v which emits more post-save output)
+  - check_config_mode() guard before 'end' to prevent DNS lookup hang when
+    a device without 'no ip domain lookup' is already in exec mode
+  - 'no logging console' suppression so syslog lines don't corrupt future
+    Netmiko prompt matching on the shared EVE-NG telnet stream
+  - device_type parameter for IOS-XR nodes (skips enable/end entirely)
+
+All generated setup_lab.py / apply_solution.py / inject_*.py scripts
+already use connect_node() via: from eve_ng import connect_node
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+# Locate labs/common/tools/ relative to this file's expected installed location.
+# Scaffolding is instantiated at labs/<topic>/common/tools/lab_utils.py,
+# so labs/common/tools/ is three levels up then into common/tools.
+_TOOLS_DIR = Path(__file__).resolve().parents[3] / "common" / "tools"
+if str(_TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_DIR))
+
+from eve_ng import connect_node, EveNgError  # noqa: E402
 
 
 class LabSetup:
     def __init__(self, devices, eve_ng_host="192.168.x.x"):
         self.devices = devices          # List of (name, port, config_path)
         self.eve_ng_host = eve_ng_host  # EVE-NG server IP
-
-    def _connect(self, host, port):
-        """Create a Netmiko connection to an EVE-NG console port."""
-        device = {
-            "device_type": "cisco_ios_telnet",
-            "host": host,
-            "port": port,
-            "username": "",
-            "password": "",
-            "secret": "",
-            "timeout": 10,
-        }
-        return ConnectHandler(**device)
 
     def push_config(self, host, port, config_file):
         print(f"Connecting to {host}:{port}...")
@@ -29,19 +45,21 @@ class LabSetup:
                 return False
 
             commands = []
-            with open(config_file, 'r') as f:
+            with open(config_file) as f:
                 for line in f:
-                    if line.strip() and not line.startswith('!'):
+                    if line.strip() and not line.startswith("!"):
                         commands.append(line.strip())
 
-            conn = self._connect(host, port)
-            conn.send_config_set(commands)
-            conn.send_command("write memory", read_timeout=10)
-            print(f"  Successfully loaded {config_file}")
-            conn.disconnect()
+            conn = connect_node(host, port)
+            try:
+                conn.send_config_set(commands)
+                conn.send_command("write memory", read_timeout=10)
+                print(f"  Successfully loaded {config_file}")
+            finally:
+                conn.disconnect()
             return True
-        except Exception as e:
-            print(f"  Failed to connect or push config: {e}")
+        except (EveNgError, Exception) as exc:
+            print(f"  Failed to connect or push config: {exc}")
             return False
 
     def run(self):
@@ -56,61 +74,44 @@ class LabRefresher:
         self.devices = devices          # List of (name, port, config_path)
         self.eve_ng_host = eve_ng_host  # EVE-NG server IP
 
-    def _connect(self, host, port):
-        """Create a Netmiko connection to an EVE-NG console port."""
-        device = {
-            "device_type": "cisco_ios_telnet",
-            "host": host,
-            "port": port,
-            "username": "",
-            "password": "",
-            "secret": "",
-            "timeout": 10,
-        }
-        return ConnectHandler(**device)
-
     def _parse_cleanup_commands(self, config_file):
         """Parse config to find interfaces and routing protocols to reset."""
         interfaces = []
         routers = []
-        with open(config_file, 'r') as f:
+        with open(config_file) as f:
             for line in f:
                 stripped = line.strip()
-                if stripped.startswith('interface '):
-                    interfaces.append(stripped.split(' ', 1)[1])
-                elif stripped.startswith('router '):
+                if stripped.startswith("interface "):
+                    interfaces.append(stripped.split(" ", 1)[1])
+                elif stripped.startswith("router "):
                     routers.append(stripped)
-        cleanup = []
-        for iface in interfaces:
-            cleanup.append(f"default interface {iface}")
-        for router in routers:
-            cleanup.append(f"no {router}")
+        cleanup = [f"default interface {iface}" for iface in interfaces]
+        cleanup += [f"no {router}" for router in routers]
         return cleanup
 
     def push_config(self, host, port, config_file):
         print(f"Refreshing {host}:{port} with {config_file}...")
         try:
-            conn = self._connect(host, port)
+            conn = connect_node(host, port)
+            try:
+                cleanup = self._parse_cleanup_commands(config_file)
+                if cleanup:
+                    conn.send_config_set(cleanup)
 
-            # Default all interfaces and remove routing protocols
-            cleanup = self._parse_cleanup_commands(config_file)
-            if cleanup:
-                conn.send_config_set(cleanup)
+                commands = []
+                with open(config_file) as f:
+                    for line in f:
+                        if line.strip() and not line.startswith("!"):
+                            commands.append(line.strip())
 
-            # Push initial config
-            commands = []
-            with open(config_file, 'r') as f:
-                for line in f:
-                    if line.strip() and not line.startswith('!'):
-                        commands.append(line.strip())
-
-            conn.send_config_set(commands)
-            conn.send_command("write memory", read_timeout=10)
-            print(f"  Successfully refreshed.")
-            conn.disconnect()
+                conn.send_config_set(commands)
+                conn.send_command("write memory", read_timeout=10)
+                print("  Successfully refreshed.")
+            finally:
+                conn.disconnect()
             return True
-        except Exception as e:
-            print(f"  Failed: {e}")
+        except (EveNgError, Exception) as exc:
+            print(f"  Failed: {exc}")
             return False
 
     def run(self):
