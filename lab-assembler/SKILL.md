@@ -147,6 +147,28 @@ Every workbook must include a Device Inventory table immediately before the cabl
 
 Use the platform and image from `baseline.yaml core_topology.devices[N].platform` and `.image`. If not specified, use the EVE-NG default for that platform.
 
+**Section 3 — Loopback Address table (REQUIRED):**
+
+Every workbook must include a Loopback Address table immediately after the Device Inventory table and before the cabling table in Section 3. Populate from `baseline.yaml core_topology.devices[N].loopbacks`.
+
+```markdown
+| Device | Interface | Address/Prefix | Purpose |
+|--------|-----------|----------------|---------|
+| R1     | Loopback0 | 10.0.0.1/32    | Router ID, iBGP peering source |
+| R2     | Loopback0 | 10.0.0.2/32    | Router ID, iBGP peering source |
+```
+
+**Section 3 — Advertised Prefixes table (conditional):**
+
+Include an Advertised Prefixes table after the cabling table when the lab configures explicit `network` statements or route redistribution that injects prefixes into a routing protocol. Omit for pure IGP underlay labs where no user-space prefixes are advertised.
+
+```markdown
+| Device | Prefix | Protocol | Notes |
+|--------|--------|----------|-------|
+| R1     | 172.16.1.0/24 | eBGP network | Customer A aggregate |
+| R6     | 172.16.6.0/24 | eBGP network | External peer aggregate |
+```
+
 **Section 4 — IS/NOT pre-loaded format (REQUIRED):**
 
 Section 4 must use an explicit two-column list — not prose — to describe what the student starts with:
@@ -489,10 +511,61 @@ For `capstone_ii`, Section 5 heading and opening must be:
 --# Step 4: Generate initial-configs/
 
 - **First progressive lab (number 0):** Generate base IP addressing from `baseline.yaml core_topology` (IP config only — no routing protocol config).
-- **Subsequent progressive labs (N > 0):** Copy exactly from Lab (N-1) `solutions/`. Do not modify.
+- **Subsequent progressive labs (N > 0):** Start from Lab (N-1) `solutions/` as the base. Then apply the teardown check below before writing.
 - **Standalone labs (`type: standalone`):** Generate from `baseline.yaml core_topology` IP addressing only — not chained from previous lab.
 - **Capstone I or Capstone II (`clean_slate: true`):** Generate from `baseline.yaml core_topology` IP addressing only — do NOT copy previous lab solutions. All routing protocol config is absent; the student configures everything from scratch.
 - One `.cfg` file per active device, named `[Device].cfg`.
+
+### Teardown check (progressive labs only, same-topic)
+
+After establishing the N-1 solution as the base, compare it per-device against what lab N's
+initial config actually needs (derived from lab N's objectives in `baseline.yaml labs[N]` and
+the solution configs drafted in Step 2). IOS/IOS-XE config application is **additive** — omitting
+a block from the pushed config does not remove it from the router. Explicit `no` commands are
+required for any block that must be gone before the student starts.
+
+**When a teardown block is needed:**
+
+A teardown block is required when lab N's objectives restructure a protocol or feature from
+scratch — meaning config blocks present in N-1's solution will NOT appear in lab N's initial
+config AND are NOT preserved into lab N's solution (e.g., BGP confederations replacing standard
+eBGP, an OSPF area redesign replacing the previous one).
+
+Do NOT generate a teardown block for:
+- Config that carries forward unchanged into lab N (OSPF underlay when the BGP lab builds on it)
+- Cross-topic inherited config (IGP config inherited from a prior topic's labs)
+- Capstone labs — these already use `clean_slate: true` and generate from baseline
+
+**What to negate and in what order:**
+
+Generate `no` commands only for objects that exist in N-1's solution and are absent from lab N's
+initial config. Write them as a clearly delimited block at the **top** of the initial config,
+before any positive configuration. Use this fixed ordering to avoid IOS dependency warnings:
+
+```
+! === TEARDOWN: remove <protocol/feature> from lab-<N-1> ===
+! 1. Protocol process (removes all sub-config in one shot)
+no router bgp <ASN>
+no router ospf <N>
+! 2. Supporting policy objects
+no route-map <NAME>
+no ip prefix-list <NAME>
+no ip community-list <NAME>
+no ip extcommunity-list standard <NAME>
+! 3. Global protocol flags
+no ip bgp-community new-format
+! 4. Interface deltas (interfaces in N-1 that have no role in lab N)
+interface <GigX/Y>
+ no ip address
+ shutdown
+! === END TEARDOWN ===
+```
+
+Only emit the categories that actually apply — omit any line for an object not present in N-1's
+solution. `no router bgp <ASN>` on a router where BGP was never configured produces a benign
+warning and does not break anything, so it is safe to be slightly over-inclusive on the process
+line if the per-device diff is ambiguous. For supporting objects, only negate what is
+confirmed present in the N-1 solution for that device.
 
 --# Step 5: Generate topology.drawio
 
