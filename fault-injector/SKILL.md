@@ -25,7 +25,13 @@ NEVER hardcode a `DEFAULT_LAB_PATH` — lab paths vary across EVE-NG instances a
 
 For each scenario (minimum 3 per lab), generate `scripts/fault-injection/inject_scenario_0N.py`.
 
-Use `assets/inject_scenario_01_template.py` (and `_02`, `_03`) as base templates. Customise:
+**Capstone detection**: Check the lab slug. If it contains `capstone-troubleshooting`, use
+`assets/inject_scenario_01_capstone_template.py` (and `_02`, `_03`) as base templates instead.
+Capstone templates suppress all device name output in print statements so students cannot infer
+which router is affected by reading terminal output during live lab runs. For all other labs,
+use `assets/inject_scenario_01_template.py` (and `_02`, `_03`).
+
+Customise:
 - `DEVICE_NAME` — target device name (must match the node name in the EVE-NG lab)
 - `FAULT_COMMANDS` list — from the scenario's solution section (the inverse of the fix)
 - `PREFLIGHT_CMD` — `show` command whose output verifies pre-injection state
@@ -78,6 +84,7 @@ Use `assets/README_template.md` as the base. Fill in:
 - [ ] `RESTORE_TARGETS` in `apply_solution.py` covers every device touched by any scenario
 - [ ] `PREFLIGHT_SOLUTION_MARKER` and `PREFLIGHT_FAULT_MARKER` are distinct, unambiguous strings
 - [ ] **No script docstring, banner, print, or preflight error message reveals the fault type, affected device/interface, or expected symptom** — students must discover these through troubleshooting, not by reading the script
+- [ ] **Capstone labs only** (`capstone-troubleshooting` in lab slug): no inject script print statement references a router or device name — verify the `_capstone_template.py` variants were used, not the regular ones
 - [ ] Syntax-check every generated `.py` file WITHOUT creating cache files. Use one of:
   - `python3 -c "import ast, sys; [ast.parse(open(f).read(), f) for f in sys.argv[1:]]" inject_scenario_01.py ...`  (preferred — no filesystem side effects)
   - OR `python3 -m py_compile *.py && rm -rf __pycache__ scripts/fault-injection/__pycache__`  (acceptable — but MUST include the rm)
