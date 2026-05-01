@@ -508,6 +508,101 @@ For `capstone_ii`, Section 5 heading and opening must be:
 > No step-by-step guidance is provided — work from symptoms only.
 ```
 
+--# Step 3b: Workbook Contract Gate (BLOCKING)
+
+After `workbook.md` is written, re-read it from disk and validate it against the
+Step 3 contract before proceeding to Step 4. This gate catches missing sections,
+malformed tables, and format drift early — when fixes are cheap and the
+generation context is still fresh.
+
+**Procedure:**
+1. Re-read `labs/<topic>/lab-NN-<slug>/workbook.md` from disk (do not rely on
+   in-memory state — partial writes and segment concatenation can drift).
+2. Walk every checklist item below. For each FAIL, record the line number and
+   the precise contract clause that is violated.
+3. If ANY item fails: rewrite the offending block(s) per the Step 3 contract,
+   write the file, and **re-run the entire checklist** from item 1. Do not
+   short-circuit; one fix can break another section.
+4. Only proceed to Step 4 once every item passes on a single full pass. Do not
+   carry "to be fixed later" items forward.
+
+**Checklist — Structural:**
+- [ ] Title line `# Lab NN — <Name>` is the first non-blank line
+- [ ] Table of Contents block present immediately after the title, before Section 1
+- [ ] TOC has exactly 11 entries pointing to Sections 1 through 11 in order
+- [ ] Each TOC anchor slug matches its target heading (lowercase, spaces→hyphens, special chars stripped)
+- [ ] Horizontal rule `---` separates the TOC from Section 1
+- [ ] Section headings `## 1.` through `## 11.` all present and in order
+
+**Checklist — Section 1 (Concepts & Skills Covered):**
+- [ ] `**Exam Objective:**` line cites blueprint bullet(s) and topic name
+- [ ] One short intro paragraph follows the Exam Objective line
+- [ ] At least 3 named theory subsections (`### <Topic>`) with prose + IOS syntax blocks
+- [ ] `**Skills this lab develops:**` table closes the section with Skill | Description columns
+
+**Checklist — Section 3 (Hardware & Environment Specifications):**
+- [ ] Device Inventory table (Device | Role | Platform | Image) — populated from `baseline.yaml`
+- [ ] Loopback Address table (Device | Interface | Address/Prefix | Purpose) immediately after Device Inventory
+- [ ] Cabling table follows the Loopback table
+- [ ] Console Access Table (Device | Port | Connection Command) present
+- [ ] Advertised Prefixes table present iff the lab uses `network` statements or redistribution
+
+**Checklist — Section 4 (Base Configuration):**
+- [ ] Two explicit lists: **IS pre-loaded** and **IS NOT pre-loaded**
+- [ ] Neither list contains raw IOS syntax (no backticked `router eigrp 100`, no `network` statements, etc.)
+- [ ] "IS NOT" items conceptually align with Section 5 task list
+
+**Checklist — Section 5 (Lab Challenge):**
+- [ ] Each `### Task N: <Title>` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
+- [ ] No task bullet contains raw IOS command syntax
+- [ ] Capstone labs only: heading is `Full Protocol Mastery` (capstone_i) or `Comprehensive Troubleshooting` (capstone_ii)
+
+**Checklist — Section 6 (Verification & Analysis):**
+- [ ] Every verification code block uses inline `! ←` comments marking the exact lines/values to confirm
+- [ ] At least one `show` command per Section 5 task
+
+**Checklist — Section 7 (Verification Cheatsheet):**
+- [ ] Cheatsheet split into named `### <Group>` subsections — never one monolithic code block
+- [ ] Each config group has: a syntax skeleton code block + a Command | Purpose table
+- [ ] Verification Commands subsection uses a Command | What to Look For table (not a code block)
+- [ ] Wildcard / Mask Quick Reference table present (when applicable to the protocol)
+- [ ] Common Failure Causes table present
+
+**Checklist — Section 8 (Solutions):**
+- [ ] Spoiler warning callout present at the top of the section
+- [ ] Each objective wraps configs and verification commands inside `<details>` blocks
+- [ ] Section 8 contains ONLY lab-objective solutions — no troubleshooting tickets bleed in from Section 9
+
+**Checklist — Section 9 (Troubleshooting Scenarios):**
+- [ ] Workflow code block at the top showing `setup_lab.py` + an `inject_scenario_0N.py` + `apply_solution.py` sequence
+- [ ] At least 3 `### Ticket N — <Symptom>` blocks
+- [ ] No ticket heading reveals the fault type, target device, or root cause (symptom-only)
+- [ ] Each ticket has: 1-2 sentence scenario context, `**Inject:**` command line, `**Success criteria:**` line, Diagnosis Steps `<details>`, Fix `<details>`
+
+**Checklist — Section 10 (Lab Completion Checklist):**
+- [ ] Exactly two groups: Core Implementation and Troubleshooting
+
+**Checklist — Section 11 (Appendix: Script Exit Codes):**
+- [ ] Exit code table present with codes 0-4 and Meaning | Applies to columns
+
+**Resolution rules on FAIL:**
+- **Mechanical issues** (missing TOC, missing heading, missing table, malformed columns): generate the fix and write the file. Re-validate.
+- **Content issues** (raw IOS in Section 5 task body, ticket heading reveals fault/device, IS/NOT list contains backticked commands, missing `! ←` markers in Section 6): rewrite the offending block per the Step 3 contract. Re-validate.
+- **Ambiguous failures** (cannot determine if Advertised Prefixes table is required, cannot tell which blueprint bullet a Section 5 task implements): STOP and escalate to the user with the specific finding and the relevant contract clause. Do not guess.
+
+**Outcome logging:**
+After the gate passes, append to `labs/<topic>/lab-NN-<slug>/decisions.md`:
+
+```markdown
+## Workbook gate — <YYYY-MM-DD>
+- Outcome: <PASS-CLEAN | PASS-AFTER-FIXES>
+- Items fixed: <count, or "none">
+- Notes: <one-line summary of any non-trivial rewrites, or "n/a">
+```
+
+If `decisions.md` does not exist (i.e. the model gate did not record one), create it
+with the model gate entry first (per `/build-lab` Section 1) and this gate entry second.
+
 --# Step 4: Generate initial-configs/
 
 - **First progressive lab (number 0):** Generate base IP addressing from `baseline.yaml core_topology` (IP config only — no routing protocol config).
