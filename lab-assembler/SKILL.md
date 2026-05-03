@@ -715,7 +715,8 @@ Never write topology XML from scratch.
 - [ ] File written to `labs/<topic>/lab-NN-<slug>/topology/topology.drawio` — NOT to the lab root
 - [ ] Every router cell uses mxgraph.cisco19.rect;prIcon=router (or prIcon=l3_switch / workgroup_switch / cloud / workstation)
 - [ ] Every device label is embedded in the cell value= as HTML — no separate label mxCells exist
-- [ ] Every edge has strokeColor=#FFFFFF, strokeWidth=2
+- [ ] Physical edges have strokeColor=#FFFFFF, strokeWidth=2
+- [ ] Tunnel/dashed overlay edges have strokeColor=#FFFFFF, strokeWidth=1 (thinner than physical — NOT strokeWidth=2)
 - [ ] Every interface endpoint has a standalone .N octet cell (edgeLabel style, parent="1")
 - [ ] Legend present at bottom-right with fillColor=#000000, fontColor=#FFFFFF, arcSize=3
 
