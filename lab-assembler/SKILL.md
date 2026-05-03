@@ -705,7 +705,7 @@ Never write topology XML from scratch.
 - [ ] Router shape: mxgraph.cisco19.rect;prIcon=router (NOT mxgraph.cisco.routers.router — deprecated library)
 - [ ] Device labels: embedded in device cell value= as HTML (NOT separate text cells)
 - [ ] Connection lines: strokeColor=#FFFFFF, strokeWidth=2 — NOT default black
-- [ ] IP last-octet labels: standalone mxCell with edgeLabel style, parent="1"
+- [ ] IP last-octet labels: standalone free-floating mxCell, edgeLabel style, connectable=0, parent="1" (NOT parented to the edge)
 - [ ] Legend box: fillColor=#000000, fontColor=#FFFFFF, bottom-right
 - [ ] Canvas background: #1a1a2e set in <mxGraphModel background="#1a1a2e">
 - [ ] Zone shapes (OSPF areas, BGP AS): rounded=1;arcSize=5 — NOT ellipse
@@ -716,7 +716,7 @@ Never write topology XML from scratch.
 - [ ] Every device label is embedded in the cell value= as HTML — no separate label mxCells exist
 - [ ] Every edge has strokeColor=#FFFFFF, strokeWidth=2
 - [ ] Every interface endpoint has a standalone .N octet cell (edgeLabel style, parent="1")
-- [ ] Legend present at bottom-right with fillColor=#000000, fontColor=#FFFFFF
+- [ ] Legend present at bottom-right with fillColor=#000000, fontColor=#FFFFFF, arcSize=3
 
 ## Output Confirmation
 File path, line count, number of router cells, number of edge cells,
