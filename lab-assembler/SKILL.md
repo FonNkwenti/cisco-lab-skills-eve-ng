@@ -701,20 +701,22 @@ Never write topology XML from scratch.
 [fill: e.g. Triangle — R1 top center, R2 bottom-left, R3 bottom-right]
 
 ## Pre-Write Checklist
-- [ ] drawio/SKILL.md §4.2-§4.7 read; §4.7 XML snippets in context
-- [ ] Router shape: mxgraph.cisco.routers.router — NOT a rectangle
-- [ ] Device labels: separate text cells — NOT embedded in router cell value=
-- [ ] Connection lines: strokeColor=#FFFFFF — NOT default black
-- [ ] IP last-octet labels: separate edgeLabel cells parented to "1"
+- [ ] drawio/SKILL.md §4.2–§4.7 read; §4.7 XML snippets in context
+- [ ] Router shape: mxgraph.cisco19.rect;prIcon=router (NOT mxgraph.cisco.routers.router — deprecated library)
+- [ ] Device labels: embedded in device cell value= as HTML (NOT separate text cells)
+- [ ] Connection lines: strokeColor=#FFFFFF, strokeWidth=2 — NOT default black
+- [ ] IP last-octet labels: standalone mxCell with edgeLabel style, parent="1"
 - [ ] Legend box: fillColor=#000000, fontColor=#FFFFFF, bottom-right
+- [ ] Canvas background: #1a1a2e set in <mxGraphModel background="#1a1a2e">
+- [ ] Zone shapes (OSPF areas, BGP AS): rounded=1;arcSize=5 — NOT ellipse
 
 ## Post-Write Checklist (fix before confirming done)
 - [ ] File written to `labs/<topic>/lab-NN-<slug>/topology/topology.drawio` — NOT to the lab root
-- [ ] Every router cell uses mxgraph.cisco.routers.router shape
-- [ ] Every router has a separate label cell
-- [ ] Every edge has strokeColor=#FFFFFF
-- [ ] Every interface endpoint has a standalone .N octet cell
-- [ ] Legend present at bottom-right with black fill
+- [ ] Every router cell uses mxgraph.cisco19.rect;prIcon=router (or prIcon=l3_switch / workgroup_switch / cloud / workstation)
+- [ ] Every device label is embedded in the cell value= as HTML — no separate label mxCells exist
+- [ ] Every edge has strokeColor=#FFFFFF, strokeWidth=2
+- [ ] Every interface endpoint has a standalone .N octet cell (edgeLabel style, parent="1")
+- [ ] Legend present at bottom-right with fillColor=#000000, fontColor=#FFFFFF
 
 ## Output Confirmation
 File path, line count, number of router cells, number of edge cells,
