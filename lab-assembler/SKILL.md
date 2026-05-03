@@ -553,7 +553,8 @@ generation context is still fresh.
 - [ ] "IS NOT" items conceptually align with Section 5 task list
 
 **Checklist — Section 5 (Lab Challenge):**
-- [ ] Each `### Task N: <Title>` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
+- [ ] Every Section 5 H3 heading matches `### Task N:` (N = digit). Headings like `### Scenario A`, `### Objective N`, `### Step N` are a FAIL. Exception: capstone-ii troubleshooting tickets use `### Ticket N —`, but capstone-i implementation tasks still use `### Task N:`.
+- [ ] Each `### Task N:` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
 - [ ] No task bullet contains raw IOS command syntax
 - [ ] Capstone labs only: heading is `Full Protocol Mastery` (capstone_i) or `Comprehensive Troubleshooting` (capstone_ii)
 
