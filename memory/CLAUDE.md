@@ -80,6 +80,20 @@ Always use `/git-commit` for all commits and pushes — never run raw `git commi
 /git-commit path/to/file.md        ← stage specific files only
 ```
 
+## Lab Fix Propagation Rule
+
+When fixing a bug in any lab workbook (phantom command, wrong command, omission,
+ambiguity, task ordering error), immediately check whether the same bug exists in the
+capstone project(s) for that topic and fix them too.
+
+- Search the topic's capstone workbook(s) for the same command, task, or pattern.
+- If the bug is present in a built capstone, apply the identical fix there.
+- If no capstone exists yet for the topic, do nothing — the fix will be incorporated when
+  the capstone is built.
+
+Capstone workbooks follow the pattern `labs/<topic>/lab-NN-capstone-*/workbook.md`.
+A topic may have both a config capstone and a troubleshooting capstone — check both.
+
 ## Artifact Regeneration (after skill sync or fixes)
 
 After `/sync-skills`, use these to update individual artifacts without rebuilding the whole lab:
