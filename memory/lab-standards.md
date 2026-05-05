@@ -25,7 +25,7 @@ labs/<topic>/lab-NN-<slug>/
 |---|---------|-------|
 | 1 | Concepts & Skills Covered | |
 | 2 | Topology & Scenario | Narrative enterprise context |
-| 3 | Hardware & Environment Specifications | Must include Console Access Table + Cabling Table. Console ports are dynamic — populate from EVE-NG web UI after lab creation. Format: `telnet <eve-ng-ip> <port>` |
+| 3 | Hardware & Environment Specifications | Must include: Device Inventory table, Loopback Address table, cabling table, Advertised Prefixes table (when lab configures network statements), Console Access Table. Console ports are dynamic — populate from EVE-NG web UI after lab creation. Format: `telnet <eve-ng-ip> <port>` |
 | 4 | Base Configuration | |
 | 5 | Lab Challenge: Core Implementation | Challenge-first, no step hints |
 | 6 | Verification & Analysis | |
@@ -55,14 +55,25 @@ Section 5 uses **Tasks**, not Objectives. Each task uses this exact layout:
 ---
 ```
 
-**No raw IOS command syntax in task steps or in the Section 4 "NOT pre-loaded" list.**
-Named parameters (key-chain names, AS numbers, algorithm names, subnet addresses) are allowed.
-The `**Verification:**` line at the end of each task is the only place show commands appear in Section 5.
+**No raw IOS/XR command syntax in task steps or in the Section 4 "NOT pre-loaded" list.**
+Named parameters (object names, AS numbers, algorithm names, subnet addresses, keyword flags
+like `summary-only`) are allowed — they provide precision without handing over the command.
+The prohibition covers all CLI forms: global config, sub-commands, route-map clauses, and
+exec-mode operational commands (`clear`, `debug`). The `**Verification:**` line is the only
+place CLI commands appear in Section 5 (including soft-resets needed to trigger evaluation).
 
 - ✅ "Create a key-chain named OSPF_AUTH with key ID 1 and a strong key-string."
 - ❌ "Run `key chain OSPF_AUTH` / `key 1` / `key-string <value>`."
 - ✅ "Enable EIGRP in Autonomous System 100 on all three routers."
 - ❌ "Configure `router eigrp 100` on R1, R2, and R3."
+- ✅ "Install a null-route for 172.16.0.0/16 pointing to Null0 as the aggregate anchor."
+- ❌ "Run `ip route 172.16.0.0 255.255.0.0 Null0`."
+- ✅ "Originate the 172.16.0.0/16 aggregate on R1. Do not use `summary-only`."
+- ❌ "Add `aggregate-address 172.16.0.0 255.255.0.0` under the BGP address-family."
+- ✅ "Create route-map `R1_OUT` seq 10: match prefix-list `PFX_EXACT` → prepend AS 65100 three times."
+- ❌ "Under seq 10: `match ip address prefix-list PFX_EXACT` / `set as-path prepend 65100 65100 65100`."
+- ✅ "Apply `R1_OUT` outbound on R1's R4 neighbor."
+- ❌ "Add `neighbor 10.1.14.4 route-map R1_OUT out` under the BGP address-family."
 
 ## Cheatsheet Formatting (Section 7) — REQUIRED
 

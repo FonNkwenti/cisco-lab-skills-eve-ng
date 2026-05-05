@@ -139,13 +139,13 @@ Write a complete workbook with all required sections:
 Every workbook must include a Device Inventory table immediately before the cabling table in Section 3:
 
 ```markdown
-| Device | Role | Platform | Image |
-|--------|------|----------|-------|
-| R1 | Hub Router | IOSv | vios-adventerprisek9-m.SPA.156-2.T |
-| R2 | Branch A | IOSv | vios-adventerprisek9-m.SPA.156-2.T |
+| Device | Role | Platform | Image | RAM |
+|--------|------|----------|-------|-----|
+| R1 | Hub Router | IOSv | vios-adventerprisek9-m.SPA.156-2.T | 512 MB |
+| R2 | Branch A | IOSv | vios-adventerprisek9-m.SPA.156-2.T | 512 MB |
 ```
 
-Use the platform and image from `baseline.yaml core_topology.devices[N].platform` and `.image`. If not specified, use the EVE-NG default for that platform.
+Use the platform and image from `baseline.yaml core_topology.devices[N].platform` and `.image`. If not specified, use the EVE-NG default for that platform. Populate RAM from `memory/eve-ng-constraints.md` for the device's platform.
 
 **Section 3 — Loopback Address table (REQUIRED):**
 
@@ -212,15 +212,32 @@ Section 5 contains Tasks, not Objectives. Each task uses this exact layout:
 ```
 
 Rules for task bullet points:
-- Describe WHAT to configure in plain English. Named parameters (key-chain names, AS numbers, subnet values, algorithm names) are allowed — they provide necessary precision.
-- **Never write raw IOS command syntax** in the task body. No `router eigrp 100`, no `key chain`, no `passive-interface`, no full CLI lines.
-- The `**Verification:**` line at the end of each task MUST include the relevant `show` command(s) and the expected outcome. This is the only place where show commands appear in Section 5.
+- Describe WHAT to configure in plain English. Named parameters (object names, AS numbers,
+  subnet addresses, keyword flags like `summary-only`) are allowed — they provide necessary
+  precision without handing the student the command.
+- **Never write raw IOS/XR command syntax** in the task body. This covers all CLI forms:
+  global config commands, interface sub-commands, router process sub-commands, route-map
+  sub-commands, exec-mode operational commands (`clear`, `debug`), and any line that could
+  be pasted directly into a terminal.
+- Soft-reset commands (`clear ip bgp X soft in/out`) belong only in the `**Verification:**`
+  line, not in the task body steps.
+- The `**Verification:**` line at the end of each task MUST include the relevant `show`
+  command(s) (and any required soft-reset to trigger evaluation) plus the expected outcome.
+  This is the only place where CLI commands appear in Section 5.
 
 Examples:
 - ✅ "Create a key-chain named OSPF_AUTH with key ID 1 and a strong key-string."
 - ❌ "Run `key chain OSPF_AUTH` / `key 1` / `key-string <value>`."
 - ✅ "Enable EIGRP in Autonomous System 100 on all three routers."
 - ❌ "Configure `router eigrp 100` on R1, R2, and R3."
+- ✅ "Install a null-route for 172.16.0.0/16 pointing to Null0 as the anchor for the aggregate."
+- ❌ "Run `ip route 172.16.0.0 255.255.0.0 Null0`."
+- ✅ "Originate the 172.16.0.0/16 aggregate on R1. Do not use `summary-only`."
+- ❌ "Add `aggregate-address 172.16.0.0 255.255.0.0` under the BGP address-family."
+- ✅ "Create route-map `R1_OUT` seq 10: match prefix-list `PFX_EXACT` → prepend AS 65100 three times."
+- ❌ "Under seq 10: `match ip address prefix-list PFX_EXACT` / `set as-path prepend 65100 65100 65100`."
+- ✅ "Apply `R1_OUT` outbound on R1's R4 neighbor."
+- ❌ "Add `neighbor 10.1.14.4 route-map R1_OUT out` under the BGP address-family."
 - ✅ **Verification:** "`show ip eigrp neighbors` must show two active neighbors on each router."
 
 **Section 4 — Base Configuration "NOT pre-loaded" list:**
@@ -541,7 +558,7 @@ generation context is still fresh.
 - [ ] `**Skills this lab develops:**` table closes the section with Skill | Description columns
 
 **Checklist — Section 3 (Hardware & Environment Specifications):**
-- [ ] Device Inventory table (Device | Role | Platform | Image) — populated from `baseline.yaml`
+- [ ] Device Inventory table (Device | Role | Platform | Image | RAM) — populated from `baseline.yaml`; RAM from `memory/eve-ng-constraints.md`
 - [ ] Loopback Address table (Device | Interface | Address/Prefix | Purpose) immediately after Device Inventory
 - [ ] Cabling table follows the Loopback table
 - [ ] Console Access Table (Device | Port | Connection Command) present
