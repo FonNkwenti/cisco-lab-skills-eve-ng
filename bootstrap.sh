@@ -47,6 +47,14 @@ cp -r "$HUB_DIR/scaffolding/labs-common/"     "$TARGET_DIR/labs/common/"
 echo "→ Copying slash commands..."
 cp -r "$HUB_DIR/scaffolding/.claude/commands/." "$TARGET_DIR/.claude/commands/"
 
+echo "→ Installing telemetry hook (Stop hook → .claude/last_run.json)..."
+mkdir -p "$TARGET_DIR/.claude/hooks"
+cp "$HUB_DIR/scaffolding/.claude/hooks/capture_telemetry.py" "$TARGET_DIR/.claude/hooks/capture_telemetry.py"
+cp "$HUB_DIR/scaffolding/.claude/settings.json"              "$TARGET_DIR/.claude/settings.json"
+
+echo "→ Copying telemetry & cost documentation..."
+cp "$HUB_DIR/scaffolding/docs/telemetry-and-cost.md" "$TARGET_DIR/docs/telemetry-and-cost.md"
+
 echo "→ Generating conductor files..."
 cp "$HUB_DIR/conductor-template/workflow.md"       "$TARGET_DIR/conductor/workflow.md"
 cp "$HUB_DIR/conductor-template/tech-stack.md"     "$TARGET_DIR/conductor/tech-stack.md"

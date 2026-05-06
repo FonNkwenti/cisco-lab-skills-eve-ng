@@ -91,6 +91,15 @@ try {
     $cmdDst = Join-Path $TARGET_DIR ".claude/commands"
     Copy-Item (Join-Path $cmdSrc "*") $cmdDst -Recurse -Force
 
+    Write-Host "-> Installing telemetry hook (Stop hook -> .claude/last_run.json)..."
+    $hookDst = Join-Path $TARGET_DIR ".claude/hooks"
+    New-Item -ItemType Directory -Path $hookDst -Force | Out-Null
+    Copy-Item (Join-Path $HUB_DIR "scaffolding/.claude/hooks/capture_telemetry.py") (Join-Path $hookDst "capture_telemetry.py") -Force
+    Copy-Item (Join-Path $HUB_DIR "scaffolding/.claude/settings.json") (Join-Path $TARGET_DIR ".claude/settings.json") -Force
+
+    Write-Host "-> Copying telemetry & cost documentation..."
+    Copy-Item (Join-Path $HUB_DIR "scaffolding/docs/telemetry-and-cost.md") (Join-Path $TARGET_DIR "docs/telemetry-and-cost.md") -Force
+
     Write-Host "→ Generating conductor files..."
     Copy-Item (Join-Path $HUB_DIR "conductor-template/workflow.md") (Join-Path $TARGET_DIR "conductor/workflow.md") -Force
     Copy-Item (Join-Path $HUB_DIR "conductor-template/tech-stack.md") (Join-Path $TARGET_DIR "conductor/tech-stack.md") -Force
