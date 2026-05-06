@@ -28,6 +28,31 @@ All notable changes to the cisco-lab-skills hub are documented here.
 
 ## [Unreleased]
 
+### Fixed: IP addressing not explicitly documented in workbook Section 3
+
+**What changed:** `lab-assembler/SKILL.md` now requires two additional tables in Section 3
+of every workbook:
+
+1. **Loopback Address table** — placed immediately after the Device Inventory table.
+   Lists every active device's loopback interface(s), address/prefix, and purpose
+   (router-id, peering source, prefix source, etc.).
+
+2. **Advertised Prefixes table** — placed after the cabling table. Lists every prefix the
+   lab explicitly injects into a routing protocol via a `network` statement or redistribution.
+   Omit for pure IGP underlay labs with no advertised user-space prefixes.
+
+**Why:** Previously the only IP reference in the workbook was the cabling table (transit
+subnets only) and the ASCII topology diagram (loopback last-octets only). A reviewer or
+student had to cross-reference `baseline.yaml` or the solution configs to find all
+addresses — there was no single place to verify the full IP plan at a glance.
+
+**`memory/lab-standards.md` updated:** Section 3 row now lists all five required tables.
+
+**Affected labs:** Any lab built before this fix is missing the Loopback Address and
+Advertised Prefixes tables in Section 3. Add them manually or regenerate the workbook.
+
+---
+
 ### Fixed: drawio SKILL.md vs reference file discrepancies (cisco19 shapes, rounded zones)
 
 **What changed:** Two visual style mismatches between `drawio/SKILL.md` and the canonical

@@ -1,38 +1,36 @@
 platforms:
-  # ─── Active EVE-NG platforms ─────────────────────────────────────────────────
   iosv:
-    ios: "15.9(3)M6"
+    ios: 15.9(3)M6
     type: qemu
     group: ios-classic
-    console_port: null   # Dynamic — discovered via EVE-NG REST API
+    console_port: null
     deprecated: false
   iosvl2:
-    ios: "15.x (high_iron_20200929)"
+    ios: 15.x (high_iron_20200929)
     type: qemu
     group: ios-l2
     console_port: null
     deprecated: false
   csr1000v:
-    ios: "17.03.05"
+    ios: 17.03.05
     type: qemu
     group: ios-xe
     console_port: null
     deprecated: false
   iol_l3:
-    ios: "15.7(3)M"
+    ios: 15.7(3)M
     type: iol
     group: ios-classic
     console_port: null
     deprecated: false
   iol_l2:
-    ios: "15.x (high_iron_20190423)"
+    ios: 15.x (high_iron_20190423)
     type: iol
     group: ios-l2
     console_port: null
     deprecated: false
-  # ─── SD-WAN (Viptela OS) — added 2026-04-11 ─────────────────────────────────
   vmanage:
-    ios: "20.6.2"
+    ios: 20.6.2
     type: qemu
     group: sdwan
     console_port: null
@@ -40,7 +38,7 @@ platforms:
     role: management-controller
     deprecated: false
   vbond:
-    ios: "20.6.2"
+    ios: 20.6.2
     type: qemu
     group: sdwan
     console_port: null
@@ -48,7 +46,7 @@ platforms:
     role: orchestrator
     deprecated: false
   vsmart:
-    ios: "20.6.2"
+    ios: 20.6.2
     type: qemu
     group: sdwan
     console_port: null
@@ -56,540 +54,744 @@ platforms:
     role: control-plane
     deprecated: false
   vedge:
-    ios: "20.6.2"
+    ios: 20.6.2
     type: qemu
     group: sdwan
     console_port: null
     image: vtedge-20.6.2
     role: data-plane
     deprecated: false
-  # ─── Legacy Dynamips platforms (GNS3 / Apple Silicon era) ────────────────────
   c7200:
-    ios: "15.3(3)XB12"
+    ios: 15.3(3)XB12
     type: dynamips
     group: ios-classic
     console_port: 5001
     deprecated: true
   c3725:
-    ios: "12.4(15)T14"
+    ios: 12.4(15)T14
     type: dynamips
     group: ios-classic
     console_port: 5002
     deprecated: true
-
-# context values: global | interface | interface-switch | router-eigrp | router-eigrp-named | af-ipv4-unicast | router-ospf | router-ospfv3 | router-bgp | af-ipv4-bgp
 commands:
-  # ─── EIGRP ───────────────────────────────────────────────────────────────────
-  - command: "router eigrp ENARSI"
-    context: global
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "Named-mode EIGRP process requires IOS 15.0+. IOSv=pass, IOL L3=pass, c7200=pass, c3725=fail (IOS 12.4)"
-
-  - command: "address-family ipv4 unicast autonomous-system 100"
-    context: router-eigrp-named
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "Named mode address-family requires IOS 15.0+"
-
-  - command: "ip authentication mode eigrp 100 md5"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: ""
-
-  - command: "ip authentication key-chain eigrp 100 EIGRP_AUTH"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: ""
-
-  - command: "ip summary-address eigrp 100 10.0.0.0 255.0.0.0"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: ""
-
-  - command: "distribute-list prefix PFX_OUT out"
-    context: router-eigrp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: ""
-
-  - command: "route-map RM_POLICY permit 10"
-    context: global
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: ""
-
-  - command: "distribute-list prefix PFX_DENY_R4_STUB out FastEthernet0/0"
-    context: af-ipv4-unicast
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: "Named mode EIGRP — must be under topology base sub-mode. Use GigabitEthernet0/0 for IOSv."
-
-  - command: "distribute-list route-map RM_TAG_BRANCH_A out"
-    context: af-ipv4-unicast
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: unknown
-    c3725: unknown
-    notes: "Named mode EIGRP — route-map based distribute-list under topology base"
-
-# ─── OSPF (OSPFv2) — verified in ENCOR OSPF labs 01–08 ──────────────────────
-
-  - command: "router ospf 1"
-    context: global
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "OSPFv2 process — verified in ENCOR labs 01–08"
-
-  - command: "network 10.0.0.0 0.0.0.3 area 0"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "OSPF network statement — wildcard mask + area; any address/mask/area values"
-
-  - command: "ip ospf network point-to-point"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Override OSPF network type on broadcast/serial links"
-
-  - command: "ip ospf cost 10"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Manual OSPF cost override"
-
-  - command: "ip ospf priority 100"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "DR election priority; 0 = never elected DR"
-
-  - command: "ip ospf authentication message-digest"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Enable MD5 auth on interface; pair with ip ospf message-digest-key"
-
-  - command: "ip ospf message-digest-key 1 md5 KEY"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "MD5 key for OSPF interface authentication"
-
-  - command: "ip ospf authentication key-chain OSPF_AUTH"
-    context: interface
-    ios-classic: unknown
-    ios-l2: unknown
-    ios-xe: unknown
-    c7200: unknown
-    c3725: unknown
-    notes: "Key-chain auth (IOS 15.3+) — untested; use MD5 as safe alternative"
-
-  - command: "area 1 stub"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: ""
-
-  - command: "area 1 stub no-summary"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Totally stubby area — ABR config only"
-
-  - command: "area 1 nssa"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: ""
-
-  - command: "area 1 nssa no-summary"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Totally NSSA — ABR config only"
-
-  - command: "area 1 authentication message-digest"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Area-wide MD5 auth — applies to all interfaces in the area"
-
-  - command: "area 1 range 10.1.0.0 255.255.0.0"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "ABR inter-area route summarization"
-
-  - command: "default-information originate"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Redistribute default route into OSPF; requires default route in RIB"
-
-  - command: "redistribute connected subnets"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "subnets keyword required to include non-classful routes"
-
-  - command: "redistribute eigrp 100 subnets route-map MAP"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Mutual redistribution; always use route-map to tag and control metrics"
-
-# ─── OSPFv3 — IOS 15.0+ ──────────────────────────────────────────────────────
-
-  - command: "router ospfv3 1"
-    context: global
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "OSPFv3 process (IOS 15.0+) — supports both IPv4 and IPv6 address families"
-
-  - command: "ospfv3 1 ipv4 area 0"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "Enable OSPFv3 IPv4 AF on interface; requires 'router ospfv3' process"
-
-  - command: "ospfv3 1 ipv6 area 0"
-    context: interface
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "Enable OSPFv3 IPv6 AF on interface"
-
-  - command: "redistribute ospfv3 1 subnets"
-    context: router-ospf
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: fail
-    notes: "Redistribute OSPFv3 routes into OSPFv2; IOS 15.0+ only"
-
-# ─── BGP — verified in ENCOR BGP lab-01 ─────────────────────────────────────
-
-  - command: "router bgp 65001"
-    context: global
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "BGP process — verified in ENCOR BGP lab-01 (basic eBGP peering)"
-
-  - command: "bgp router-id 10.1.1.1"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Explicit BGP router-id; prevents ambiguity in multi-interface routers"
-
-  - command: "bgp log-neighbor-changes"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Log BGP neighbor state transitions to syslog"
-
-  - command: "neighbor 10.0.0.1 remote-as 65002"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Define BGP peer; eBGP when AS differs, iBGP when AS matches"
-
-  - command: "neighbor 10.0.0.1 description ISP-1"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: ""
-
-  - command: "network 10.1.1.1 mask 255.255.255.255"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Advertise prefix into BGP; exact match required in RIB"
-
-  - command: "address-family ipv4"
-    context: router-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Enter BGP IPv4 unicast AF; required for neighbor activation in modern IOS"
-
-  - command: "neighbor 10.0.0.1 activate"
-    context: af-ipv4-bgp
-    ios-classic: pass
-    ios-l2: unknown
-    ios-xe: pass
-    c7200: pass
-    c3725: pass
-    notes: "Activate BGP peer in IPv4 unicast address-family"
-
-# ─── Switching (IOSvL2 / IOL L2) ─────────────────────────────────────────────
-# NOTE: interface-switch context uses GigabitEthernet1/0 (IOSvL2) or Ethernet0/0 (IOL L2).
-#       IOSv and CSR1000v have no layer-2 switch ports — all switchport commands fail there.
-
-  - command: "switchport mode access"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: "IOSvL2 / IOL L2 switch port access mode"
-
-  - command: "switchport mode trunk"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
-
-  - command: "switchport access vlan 10"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
-
-  - command: "switchport trunk encapsulation dot1q"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: "Required before 'switchport mode trunk'"
-
-  - command: "switchport trunk native vlan 99"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
-
-  - command: "switchport trunk allowed vlan 10,20,30"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
-
-  - command: "switchport nonegotiate"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: "Disable DTP; always use on manually configured trunk ports"
-
-  - command: "spanning-tree portfast"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: "Per-interface PortFast"
-
-  - command: "spanning-tree vlan 10 priority 4096"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: pass
-    notes: "Per-VLAN STP priority — must be multiple of 4096"
-
-  - command: "channel-group 1 mode on"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: pass
-    notes: "Static EtherChannel"
-
-  - command: "spanning-tree portfast default"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: fail
-    notes: "Global PortFast — supported on IOSvL2; NOT supported on c3725 IOS 12.4"
-
-  - command: "spanning-tree mode rapid-pvst"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: fail
-    notes: "RSTP — supported on IOSvL2 (IOS 15.x); NOT supported on c3725 IOS 12.4"
-
-  - command: "spanning-tree bpduguard enable"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: fail
-    notes: "BPDU Guard — supported on IOSvL2; NOT supported on c3725 IOS 12.4"
-
-  - command: "channel-group 1 mode active"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: fail
-    notes: "LACP — supported on IOSvL2; NOT supported on c3725 IOS 12.4"
-
-  - command: "channel-group 1 mode desirable"
-    context: interface-switch
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: unknown
-    c3725: fail
-    notes: "PAgP — supported on IOSvL2; NOT supported on c3725 IOS 12.4"
-
-  - command: "vtp domain ENCOR-LAB"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: "VTP domain config — IOSvL2/IOL L2/NM-16ESW only"
-
-  - command: "vtp mode server"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
-
-  - command: "vtp version 2"
-    context: global
-    ios-classic: fail
-    ios-l2: pass
-    ios-xe: fail
-    c7200: fail
-    c3725: pass
-    notes: ""
+- command: router eigrp ENARSI
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: Named-mode EIGRP process requires IOS 15.0+. IOSv=pass, IOL L3=pass, c7200=pass,
+    c3725=fail (IOS 12.4)
+- command: address-family ipv4 unicast autonomous-system 100
+  context: router-eigrp-named
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: Named mode address-family requires IOS 15.0+
+- command: ip authentication mode eigrp 100 md5
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: ''
+- command: ip authentication key-chain eigrp 100 EIGRP_AUTH
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: ''
+- command: ip summary-address eigrp 100 10.0.0.0 255.0.0.0
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: ''
+- command: distribute-list prefix PFX_OUT out
+  context: router-eigrp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: ''
+- command: route-map RM_POLICY permit 10
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: ''
+- command: distribute-list prefix PFX_DENY_R4_STUB out FastEthernet0/0
+  context: af-ipv4-unicast
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: Named mode EIGRP — must be under topology base sub-mode. Use GigabitEthernet0/0
+    for IOSv.
+- command: distribute-list route-map RM_TAG_BRANCH_A out
+  context: af-ipv4-unicast
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: Named mode EIGRP — route-map based distribute-list under topology base
+- command: router ospf 1
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: OSPFv2 process — verified in ENCOR labs 01–08
+- command: network 10.0.0.0 0.0.0.3 area 0
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: OSPF network statement — wildcard mask + area; any address/mask/area values
+- command: ip ospf network point-to-point
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Override OSPF network type on broadcast/serial links
+- command: ip ospf cost 10
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Manual OSPF cost override
+- command: ip ospf priority 100
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: DR election priority; 0 = never elected DR
+- command: ip ospf authentication message-digest
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Enable MD5 auth on interface; pair with ip ospf message-digest-key
+- command: ip ospf message-digest-key 1 md5 KEY
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: MD5 key for OSPF interface authentication
+- command: ip ospf authentication key-chain OSPF_AUTH
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  c7200: unknown
+  c3725: unknown
+  notes: Key-chain auth (IOS 15.3+) — untested; use MD5 as safe alternative
+- command: area 1 stub
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: ''
+- command: area 1 stub no-summary
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Totally stubby area — ABR config only
+- command: area 1 nssa
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: ''
+- command: area 1 nssa no-summary
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Totally NSSA — ABR config only
+- command: area 1 authentication message-digest
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Area-wide MD5 auth — applies to all interfaces in the area
+- command: area 1 range 10.1.0.0 255.255.0.0
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: ABR inter-area route summarization
+- command: default-information originate
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Redistribute default route into OSPF; requires default route in RIB
+- command: redistribute connected subnets
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: subnets keyword required to include non-classful routes
+- command: redistribute eigrp 100 subnets route-map MAP
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Mutual redistribution; always use route-map to tag and control metrics
+- command: router ospfv3 1
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: OSPFv3 process (IOS 15.0+) — supports both IPv4 and IPv6 address families
+- command: ospfv3 1 ipv4 area 0
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: Enable OSPFv3 IPv4 AF on interface; requires 'router ospfv3' process
+- command: ospfv3 1 ipv6 area 0
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: Enable OSPFv3 IPv6 AF on interface
+- command: redistribute ospfv3 1 subnets
+  context: router-ospf
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: fail
+  notes: Redistribute OSPFv3 routes into OSPFv2; IOS 15.0+ only
+- command: router bgp 65001
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: BGP process — verified in ENCOR BGP lab-01 (basic eBGP peering)
+- command: bgp router-id 10.1.1.1
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Explicit BGP router-id; prevents ambiguity in multi-interface routers
+- command: bgp log-neighbor-changes
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Log BGP neighbor state transitions to syslog
+- command: neighbor 10.0.0.1 remote-as 65002
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Define BGP peer; eBGP when AS differs, iBGP when AS matches
+- command: neighbor 10.0.0.1 description ISP-1
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: ''
+- command: network 10.1.1.1 mask 255.255.255.255
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Advertise prefix into BGP; exact match required in RIB
+- command: address-family ipv4
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Enter BGP IPv4 unicast AF; required for neighbor activation in modern IOS
+- command: neighbor 10.0.0.1 activate
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Activate individual BGP peer in IPv4 unicast address-family
+- command: neighbor PEER-GROUP activate
+  context: af-ipv4-bgp
+  ios-classic: fail
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    Peer-group TEMPLATE activation in address-family ipv4. Fails on IOSv (confirmed
+    15.6(2)T, likely all IOSv) with "Activation failed: configure bgp listener range
+    before activating peergroup" — IOS interprets this as Dynamic Neighbors and requires
+    bgp listen range first. Workaround: activate each member individually
+    (neighbor 10.0.0.X activate); members still inherit all peer-group attributes
+    (remote-as, update-source, next-hop-self). Passes on IOS-XE (CSR1000v 17.03.05).
+- command: neighbor 10.0.0.1 update-source Loopback0
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Source iBGP TCP session from loopback; required for loopback-peering resilience
+- command: neighbor 10.0.0.1 next-hop-self
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Replace eBGP next-hop with local address so iBGP peers can resolve forwarding
+- command: neighbor 10.0.0.1 route-reflector-client
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Mark neighbor as RR client; RR will reflect routes between clients
+- command: bgp cluster-id 10.0.0.4
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Set RR cluster ID; prevents routing loops when multiple RRs share the same
+    cluster
+- command: ip prefix-list PFX-NAME seq 5 permit 172.16.1.0/24
+  context: global
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Named prefix-list for route filtering; available since IOS 11.1
+- command: no ip prefix-list PFX-NAME seq 5
+  context: global
+  ios-classic: fail
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    Seq-only deletion rejected on IOSv with "% Incomplete command." — the full entry
+    text is required, or use "no ip prefix-list NAME" to drop the entire list then
+    re-add. IOS-XE (CSR1000v 17.03.05) accepts seq-only deletion. Workaround applies
+    to all ios-classic targets; confirmed on IOSv 15.6(2)T.
+- command: match ip address prefix-list PFX-NAME
+  context: route-map
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Match prefix-list in route-map; available since IOS 12.0
+- command: set local-preference 200
+  context: route-map
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Set BGP LOCAL_PREF; iBGP-only attribute, higher value is preferred
+- command: set metric 10
+  context: route-map
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Set BGP MED (MULTI_EXIT_DISC); lower value is preferred; non-transitive
+- command: set as-path prepend 65001
+  context: route-map
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Prepend own AS to make path appear longer and less preferred
+- command: neighbor 10.0.0.1 route-map RM-NAME in
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Apply route-map to inbound updates from neighbor; triggers soft-reconfiguration
+- command: neighbor 10.0.0.1 route-map RM-NAME out
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: pass
+  notes: Apply route-map to outbound updates to neighbor
+- command: neighbor 10.0.0.1 ttl-security hops 1
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: unknown
+  notes: 'GTSM: sender sets TTL=255; receiver checks TTL >= (256-N). Direct eBGP peers
+    use hops 1. Verified IOSv lab-03.'
+- command: neighbor 10.0.0.1 password CISCO_SP
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: unknown
+  notes: TCP-MD5 session authentication. Mismatch causes silent segment drops and
+    hold-timer expiry — no NOTIFICATION generated.
+- command: neighbor 10.0.0.1 maximum-prefix 100 75 warning-only
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: unknown
+  notes: Log warning at 75% threshold; session stays up. Without warning-only the
+    session tears down when limit is exceeded.
+- command: neighbor 10.0.0.1 maximum-prefix 100 restart 5
+  context: af-ipv4-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: pass
+  c3725: unknown
+  notes: Tear down session when limit exceeded; auto-reconnect after 5 minutes. Without
+    restart, manual clear is required.
+- command: switchport mode access
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: IOSvL2 / IOL L2 switch port access mode
+- command: switchport mode trunk
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: switchport access vlan 10
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: switchport trunk encapsulation dot1q
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: Required before 'switchport mode trunk'
+- command: switchport trunk native vlan 99
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: switchport trunk allowed vlan 10,20,30
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: switchport nonegotiate
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: Disable DTP; always use on manually configured trunk ports
+- command: spanning-tree portfast
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: Per-interface PortFast
+- command: spanning-tree vlan 10 priority 4096
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: pass
+  notes: Per-VLAN STP priority — must be multiple of 4096
+- command: channel-group 1 mode on
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: pass
+  notes: Static EtherChannel
+- command: spanning-tree portfast default
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: fail
+  notes: Global PortFast — supported on IOSvL2; NOT supported on c3725 IOS 12.4
+- command: spanning-tree mode rapid-pvst
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: fail
+  notes: RSTP — supported on IOSvL2 (IOS 15.x); NOT supported on c3725 IOS 12.4
+- command: spanning-tree bpduguard enable
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: fail
+  notes: BPDU Guard — supported on IOSvL2; NOT supported on c3725 IOS 12.4
+- command: channel-group 1 mode active
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: fail
+  notes: LACP — supported on IOSvL2; NOT supported on c3725 IOS 12.4
+- command: channel-group 1 mode desirable
+  context: interface-switch
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: unknown
+  c3725: fail
+  notes: PAgP — supported on IOSvL2; NOT supported on c3725 IOS 12.4
+- command: vtp domain ENCOR-LAB
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: VTP domain config — IOSvL2/IOL L2/NM-16ESW only
+- command: vtp mode server
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: vtp version 2
+  context: global
+  ios-classic: fail
+  ios-l2: pass
+  ios-xe: fail
+  c7200: fail
+  c3725: pass
+  notes: ''
+- command: mpls traffic-eng tunnels
+  context: global
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: mpls traffic-eng tunnels
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: mpls traffic-eng level-2
+  context: router-isis
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: mpls traffic-eng router-id Loopback0
+  context: router-isis
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: ip rsvp bandwidth 100000 100000
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mode mpls traffic-eng
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng destination 10.0.0.4
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng path-option 10 dynamic
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: ip explicit-path name PE1-via-P2 enable
+  context: global
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: next-address 10.0.0.3
+  context: ip-explicit-path
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng autoroute announce
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng path-option 20 dynamic lockdown
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng bandwidth 10000
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: tunnel mpls traffic-eng priority 1 1
+  context: interface
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown
+- command: mpls ldp sync
+  context: router-isis
+  ios-classic: unknown
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: ''
+  c7200: unknown
+  c3725: unknown

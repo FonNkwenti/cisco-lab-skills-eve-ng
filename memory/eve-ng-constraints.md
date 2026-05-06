@@ -40,6 +40,17 @@ Replaces the deprecated `gns3-constraints.md`.
 - RAM: 768 MB | IOS: 15.x (high_iron_20200929)
 - Supports: RSTP, LACP, BPDU Guard, PortFast, VTP, EtherChannel
 
+### IOS-XRv — `xrv` (classic XRv, routing policy / BGP labs)
+| Interface | Notes |
+|-----------|-------|
+| GigabitEthernet0/0/0/0 | First data port |
+| GigabitEthernet0/0/0/1 | Second data port |
+| GigabitEthernet0/0/0/2 | Third data port |
+- RAM: 3072 MB | IOS-XR: 6.x
+- Supports: IS-IS, OSPF, BGP, RPL (full named sets, hierarchical/parameterized policies)
+- Does NOT support: SRv6, SR-MPLS dataplane (use xrv9k for those)
+- Prompt: `RP/0/0/CPU0:hostname#` | Driver: `cisco_xr_telnet`
+
 ### CSR1000v — `csr1000v` (IOS-XE / advanced features)
 | Interface | Notes |
 |-----------|-------|

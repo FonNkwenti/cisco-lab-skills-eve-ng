@@ -6,6 +6,56 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-01 — `no ip prefix-list NAME seq N` (seq-only) is rejected on IOSv
+
+`no ip prefix-list PFX_NAME seq 5` fails on IOSv with `% Incomplete command.`
+The insertion of the replacement entry then fails with `%Insertion failed - seq # e`
+because seq 5 still exists. Both failures are silent at the Python/Netmiko level —
+the script exits 0 but no config change was applied.
+
+**Rule:** Always use `no ip prefix-list NAME` (delete the entire list) when removing or
+replacing a prefix-list entry on ios-classic targets, then re-add the correct entry.
+This is portable across all IOSv versions and IOS-XE.
+
+**Related:** `clear ip bgp X soft in` triggers a Route Refresh from the neighbor.
+Allow ~5 seconds for the re-advertisement cycle to complete before reading
+`show ip bgp neighbors X routes` — checking immediately after the command returns
+may still show stale adj-RIB-in entries.
+Entry added to `reference-data/ios-compatibility.yaml` under `no ip prefix-list NAME seq N`.
+
+---
+
+## 2026-05-01 — BGP peer-group template `activate` is a phantom command on IOSv
+
+**Platform:** IOSv (confirmed 15.6(2)T; treat all `ios-classic` as affected until proven otherwise)
+
+`neighbor PEER-GROUP activate` inside `address-family ipv4` is rejected on IOSv with:
+
+```
+% Activation failed : configure "bgp listener range" before activating peergroup
+```
+
+IOS treats peer-group template activation as a Dynamic Neighbors feature and requires
+`bgp listen range` first — which is not needed for static iBGP.
+
+**Workaround:** Activate each peer-group member individually:
+
+```
+address-family ipv4
+ neighbor 10.0.0.2 activate
+ neighbor 10.0.0.3 activate
+```
+
+Members still inherit all peer-group attributes (remote-as, update-source, next-hop-self).
+The `neighbor IBGP next-hop-self` line in the address-family is preserved and works.
+`neighbor PEER-GROUP activate` works correctly on IOS-XE (CSR1000v 17.03.05).
+
+**Rule:** Never emit `neighbor PEER-GROUP activate` in address-family config blocks for
+`ios-classic` platform targets. Always activate members individually.
+Entry added to `reference-data/ios-compatibility.yaml` under `neighbor PEER-GROUP activate`.
+
+---
+
 ## 2026-04-24 — Three-model comparison surfaced three skill-level bugs
 
 From the OSPF lab-01 three-model build comparison (Haiku / Sonnet / Opus):

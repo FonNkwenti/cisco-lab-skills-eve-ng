@@ -47,7 +47,7 @@ Every lab directory MUST contain:
 Every workbook MUST include:
 - At least 3 troubleshooting scenarios (Section 9)
 - Solutions wrapped in `<details>` spoiler blocks (Section 8)
-- Device Inventory table in Section 3 (platform, image)
+- Device Inventory table in Section 3 (platform, image, RAM) — RAM values from `memory/eve-ng-constraints.md`
 - IS/NOT pre-loaded block in Section 4 (concept-level, no IOS syntax)
 - Console Access Table in Section 3 (ports populated from EVE-NG web UI after lab creation)
 - `scripts/fault-injection/` with `inject_scenario_0N.py` + `apply_solution.py`
