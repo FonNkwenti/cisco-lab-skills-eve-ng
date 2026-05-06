@@ -1,6 +1,7 @@
 ---
 name: tag-lab
 description: Stamps a lab's meta.yaml with the agent and skill that generated or modified it. Use after running an external agent (Gemini, Kimi, etc.) on a lab directory. Invoked as /tag-lab <chapter/lab-slug> <agent-name> <skill-name>.
+model: claude-haiku-4-5-20251001
 ---
 
 # Tag Lab Skill
@@ -8,6 +9,31 @@ description: Stamps a lab's meta.yaml with the agent and skill that generated or
 Records provenance for labs generated or modified by external agents (Gemini, Kimi K2.5, etc.) by appending an entry to `meta.yaml`. Keeps provenance tracking accurate when Claude is not the generating agent.
 
 -# Instructions
+
+--# Step 0: Read telemetry sidecar (if present)
+
+Before parsing arguments, check for telemetry data from the current or previous session.
+
+Check in this order:
+1. `.claude/pending_telemetry.json` — written inline by `build-lab` at the end of a build (same session, highest priority)
+2. `.claude/last_run.json` — written by the Stop hook after the previous session ended (manual `/tag-lab` workflow)
+
+If either file exists, read it and store the contents as `telemetry`. If neither exists, set `telemetry = null`.
+
+Expected fields in the sidecar (all fields are nullable — handle missing gracefully):
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "tool_calls": 42,
+  "duration_seconds": 847,
+  "session_id": "abc123",
+  "written_at": "2026-05-06T14:30:00+00:00",
+  "source": "build-lab-inline"
+}
+```
+
+After reading `pending_telemetry.json`, **delete it** — it is a one-shot sidecar.
+Do not delete `last_run.json` — it is a rolling session record.
 
 --# Step 1: Parse Arguments
 
@@ -62,9 +88,16 @@ updated:
     agent: [agent-name]
     skill: [skill-name]
     skill_version: "[YYYY-MM-DD from Step 2]"
+    telemetry:                            # omit this entire key if telemetry is null
+      model: "[telemetry.model]"
+      tool_calls: [telemetry.tool_calls]
+      duration_seconds: [telemetry.duration_seconds]
+      session_id: "[telemetry.session_id]"
     files:
       - [all files from Step 3]
 ```
+
+If `telemetry` is `null` (no sidecar was found in Step 0), omit the `telemetry:` key entirely — do not write null values.
 
 Write the updated file back.
 
@@ -87,9 +120,16 @@ updated:
     agent: [agent-name]
     skill: [skill-name]
     skill_version: "[YYYY-MM-DD from Step 2]"
+    telemetry:                            # omit this entire key if telemetry is null
+      model: "[telemetry.model]"
+      tool_calls: [telemetry.tool_calls]
+      duration_seconds: [telemetry.duration_seconds]
+      session_id: "[telemetry.session_id]"
     files:
       - [all files from Step 3]
 ```
+
+If `telemetry` is `null` (no sidecar was found in Step 0), omit the `telemetry:` key entirely.
 
 --# Step 5: Confirm
 
@@ -98,6 +138,7 @@ Report to the user:
 - Agent and skill recorded
 - Number of files listed
 - Whether this was a new `meta.yaml` or an append to an existing one
+- Telemetry source: `pending_telemetry.json` / `last_run.json` / none (omitted)
 
 -# Examples
 
