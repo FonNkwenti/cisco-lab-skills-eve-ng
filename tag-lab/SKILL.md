@@ -28,7 +28,8 @@ Expected fields in the sidecar (all fields are nullable — handle missing grace
   "duration_seconds": 847,
   "session_id": "abc123",
   "written_at": "2026-05-06T14:30:00+00:00",
-  "source": "build-lab-inline"
+  "source": "build-lab-inline",
+  "skill": "build-lab"
 }
 ```
 
@@ -93,6 +94,7 @@ updated:
       tool_calls: [telemetry.tool_calls]
       duration_seconds: [telemetry.duration_seconds]
       session_id: "[telemetry.session_id]"
+      skill: "[telemetry.skill]"
     files:
       - [all files from Step 3]
 ```
@@ -125,6 +127,7 @@ updated:
       tool_calls: [telemetry.tool_calls]
       duration_seconds: [telemetry.duration_seconds]
       session_id: "[telemetry.session_id]"
+      skill: "[telemetry.skill]"
     files:
       - [all files from Step 3]
 ```
