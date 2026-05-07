@@ -215,6 +215,12 @@ Rules for task bullet points:
 - Describe WHAT to configure in plain English. Named parameters (object names, AS numbers,
   subnet addresses, keyword flags like `summary-only`) are allowed — they provide necessary
   precision without handing the student the command.
+- **Always name named resources explicitly** — route-maps, key-chains, prefix-lists, explicit
+  paths, VRFs, tunnel names, policy objects, and any other construct that is referenced by name
+  in a later task, in a verification command, or in the fault-injection scripts. Students need
+  the name to know what to create; omitting it forces guessing and breaks cross-task coherence.
+  Providing the name is not the same as providing the command — "create an explicit path called
+  `PE1-via-P2`" tells the student what to build without showing them how.
 - **Never write raw IOS/XR command syntax** in the task body. This covers all CLI forms:
   global config commands, interface sub-commands, router process sub-commands, route-map
   sub-commands, exec-mode operational commands (`clear`, `debug`), and any line that could
@@ -224,9 +230,13 @@ Rules for task bullet points:
 - The `**Verification:**` line at the end of each task MUST include the relevant `show`
   command(s) (and any required soft-reset to trigger evaluation) plus the expected outcome.
   This is the only place where CLI commands appear in Section 5.
+- Where a command tree is non-obvious or easy to confuse with a similar tree (e.g.,
+  `tunnel mpls traffic-eng` vs `mpls traffic-eng`), a brief context hint is allowed as a
+  blockquote note below the bullet list. The hint names the command prefix and directs the
+  student to use `?` — it must not show the full command or its arguments.
 
 Examples:
-- ✅ "Create a key-chain named OSPF_AUTH with key ID 1 and a strong key-string."
+- ✅ "Create a key-chain named `OSPF_AUTH` with key ID 1 and a strong key-string."
 - ❌ "Run `key chain OSPF_AUTH` / `key 1` / `key-string <value>`."
 - ✅ "Enable EIGRP in Autonomous System 100 on all three routers."
 - ❌ "Configure `router eigrp 100` on R1, R2, and R3."
@@ -238,6 +248,8 @@ Examples:
 - ❌ "Under seq 10: `match ip address prefix-list PFX_EXACT` / `set as-path prepend 65100 65100 65100`."
 - ✅ "Apply `R1_OUT` outbound on R1's R4 neighbor."
 - ❌ "Add `neighbor 10.1.14.4 route-map R1_OUT out` under the BGP address-family."
+- ✅ "Define a named explicit path called `PE1-via-P2` with loose hops through P2 and PE2."
+- ❌ "Configure `ip explicit-path name PE1-via-P2 enable` / `next-address loose 10.0.0.3`."
 - ✅ **Verification:** "`show ip eigrp neighbors` must show two active neighbors on each router."
 
 **Section 4 — Base Configuration "NOT pre-loaded" list:**
