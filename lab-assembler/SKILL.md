@@ -234,6 +234,10 @@ Rules for task bullet points:
   `tunnel mpls traffic-eng` vs `mpls traffic-eng`), a brief context hint is allowed as a
   blockquote note below the bullet list. The hint names the command prefix and directs the
   student to use `?` — it must not show the full command or its arguments.
+- Where keyword order is non-obvious (i.e., a modifier keyword precedes the argument rather
+  than following it), the context hint must tell students to run `?` **before** typing the
+  argument, not after. Example: `next-address loose <IP>` — hint should say
+  "use `next-address ?` before typing the address to see available keyword options."
 
 Examples:
 - ✅ "Create a key-chain named `OSPF_AUTH` with key ID 1 and a strong key-string."
