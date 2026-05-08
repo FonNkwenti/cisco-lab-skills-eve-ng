@@ -82,6 +82,25 @@ For any command that is `fail` on the target platform:
   Verify the remaining lab objectives still cover all `baseline.yaml labs[N].objectives` entries —
   if any objective loses its only implementing command, STOP and escalate to the user.
 
+**After resolving any failure, write the result back to the compatibility database
+before proceeding to Step 2f:**
+
+1. Open `.agent/skills/reference-data/ios-compatibility.yaml`.
+2. Find the entry for the failed command:
+   - If it exists with `unknown`: update to `fail` on the affected platform.
+   - If it does not exist: add a new entry with `fail` on the affected platform.
+3. If a correct alternative was substituted, find or add an entry for the alternative
+   command and set it to `pass` on the target platform, with a `notes` field
+   explaining why the original failed and what the correct form is.
+4. If the failure represents a non-obvious pattern (keyword ordering, missing keyword,
+   IOSv-specific behaviour), also add an entry to `LESSONS_LEARNED.md`.
+5. Commit both files to the submodule in a single commit with message:
+   `docs(ios-compat): <command> fails on <platform> — <correct-form> substituted`
+   Then bump the parent repo's submodule pointer.
+
+This write-back happens at build time, before configs are written to disk, so every
+resolved failure becomes permanent knowledge available to all future labs.
+
 ### 2f — Write solutions/ to disk
 
 Only after all commands are `pass` on their target platform: write one `.cfg` file
