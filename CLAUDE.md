@@ -11,6 +11,23 @@ Always read at the start of a lab generation session:
 1. `memory/progress.md` — current chapter and lab completion status
 2. `LESSONS_LEARNED.md` — bugs and patterns from prior development
 
+## Branching
+
+See `BRANCHING.md` for the full rule. Short version:
+
+- **`main` is a published API.** Every downstream exam repo (CCNP SPRI,
+  ENARSI, ENCOR, SPCOR, ...) inherits it on `git submodule update --remote`.
+- **Default to a branch for speculative or untested changes.** This is
+  intentionally the inverse of the trunk-default rule used in exam repos —
+  the asymmetry reflects the higher blast radius here.
+- **Direct-to-`main` is OK for:** typo/doc fixes, `LESSONS_LEARNED.md`
+  entries, `ios-compatibility.yaml` updates, mature skill changes already
+  validated downstream.
+- **Use a branch for:** new builder behavior, skill-step changes, schema
+  changes, anything cross-cutting. Match the parent exam repo's branch name
+  so the work is coordinated across both repos.
+- **`experiment/` branches require a kill-date in the first commit message.**
+
 ## Three-Phase Workflow
 
 1. **exam-planner** — reads full blueprint, creates `topic-plan.yaml` + empty `labs/<topic>/` folders
