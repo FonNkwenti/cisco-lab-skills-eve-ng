@@ -6,6 +6,43 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-08 — IOSv MPLS TE command differences vs. physical IOS
+
+Three IOSv-specific behaviours discovered during MPLS lab-03 (RSVP-TE) development.
+All apply to IOSv 15.9(3)M6; treat all `ios-classic` MPLS labs as affected.
+
+### 1. `mpls mtu` requires the `override` keyword on IOSv
+
+Physical IOS: `mpls mtu 1508` (accepted)
+IOSv: `% Invalid input detected` — the `override` keyword is mandatory.
+
+**Rule:** Always emit `mpls mtu override <size>` in configs targeting IOSv.
+Never use bare `mpls mtu <size>`. Check `baseline.yaml platform` before generating
+any MPLS interface config with an MTU override.
+Entries added to `reference-data/ios-compatibility.yaml` under `mpls mtu override`.
+
+### 2. `show mpls interfaces detail` reports `LSP Tunnel labeling enabled/not enabled`, not `Traffic Engineering: enabled`
+
+Documentation and physical IOS show `Traffic Engineering: enabled`.
+IOSv 15.9 shows `LSP Tunnel labeling enabled` (or `not enabled`).
+
+**Rule:** In workbook verification steps and cheatsheets, always use
+`LSP Tunnel labeling enabled` as the expected string for IOSv MPLS TE verification —
+never `Traffic Engineering: enabled`. This affects troubleshooting tickets that
+ask students to compare against a known-good field name.
+
+### 3. `show mpls traffic-eng tunnels <TunnelN> detail` — `detail` keyword rejected on IOSv
+
+On physical IOS, appending `detail` after a named tunnel gives extended output.
+On IOSv 15.9, `detail` causes `% Invalid input detected`. Specifying a single
+tunnel by name already gives full verbose output — `detail` is redundant and harmful.
+
+**Rule:** Never append `detail` after a specific tunnel name in show commands
+targeting IOSv. Use `show mpls traffic-eng tunnels Tunnel10` (no `detail`).
+The `detail` keyword is only valid when listing ALL tunnels: `show mpls traffic-eng tunnels detail`.
+
+---
+
 ## 2026-05-01 — `no ip prefix-list NAME seq N` (seq-only) is rejected on IOSv
 
 `no ip prefix-list PFX_NAME seq 5` fails on IOSv with `% Incomplete command.`
