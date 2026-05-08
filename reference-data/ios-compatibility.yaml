@@ -677,90 +677,114 @@ commands:
   notes: ''
 - command: mpls traffic-eng tunnels
   context: global
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Enables MPLS TE globally on IOSv 15.9(3)M6. Required on every node in the
+    TE domain. Verified in SPRI MPLS lab-03.
   c7200: unknown
   c3725: unknown
 - command: mpls traffic-eng tunnels
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Enables TE on a specific interface so RSVP PATH messages are accepted and
+    the link appears in the TED. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: mpls traffic-eng level-2
   context: router-isis
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Enables IS-IS TE flooding (Extended IS Reachability TLVs) on IOSv 15.9(3)M6.
+    Without this the router is invisible in the TE topology. Verified SPRI MPLS lab-03.
   c7200: unknown
   c3725: unknown
 - command: mpls traffic-eng router-id Loopback0
   context: router-isis
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Sets the TE router-ID advertised in IS-IS TE LSPs. Must match the tunnel
+    destination address on the headend. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: ip rsvp bandwidth 100000 100000
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: >
+    Reserves RSVP bandwidth on the interface and advertises it in the TED. Format:
+    "ip rsvp bandwidth <global-kbps> <per-flow-kbps>". CSPF prunes links where
+    available < requested; setting too low (e.g. 10 10) causes CSPF to fail for
+    any tunnel > 10 kbps. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: tunnel mode mpls traffic-eng
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Sets the tunnel encapsulation to RSVP-TE. Required on the headend tunnel
+    interface. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
-- command: tunnel mpls traffic-eng destination 10.0.0.4
+- command: tunnel destination 10.0.0.4
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: >
+    Standard tunnel destination command — NOT "tunnel mpls traffic-eng destination".
+    The mpls traffic-eng prefix does NOT apply to destination. Use plain
+    "tunnel destination <ip>" for RSVP-TE tunnels, same as GRE tunnels.
+    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng path-option 10 dynamic
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Dynamic CSPF path — TE computes best path from TED on the headend. Lower
+    option number = higher preference. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: ip explicit-path name PE1-via-P2 enable
   context: global
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: >
+    Global config command — NOT interface context. Defines a named explicit path
+    for CSPF to follow. Sub-commands: "next-address loose <ip>" (loose hop = CSPF
+    routes to the waypoint) or "next-address strict <ip>" (must be directly connected).
+    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
-- command: next-address 10.0.0.3
+- command: next-address loose 10.0.0.3
   context: ip-explicit-path
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: >
+    The "loose" keyword PRECEDES the IP address: "next-address loose <ip>", NOT
+    "next-address <ip> loose". Typing "next-address <ip> ?" shows only <cr> — the
+    loose keyword must come before the address. Verified on IOSv 15.9(3)M6.
+    Non-loose form "next-address <ip>" (strict hop) also passes.
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng autoroute announce
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Installs the tunnel destination in the IGP routing table via the tunnel
+    interface (autoroute). "show ip route <dest>" shows via Tunnel interface.
+    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng path-option 20 dynamic lockdown
@@ -768,23 +792,28 @@ commands:
   ios-classic: unknown
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Lockdown prevents fallback to a lower-preference path-option. Not tested
+    on IOSv; treat as unknown.
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng bandwidth 10000
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: Requested bandwidth in kbps — used by CSPF to prune links with insufficient
+    available bandwidth before path computation. Verified on IOSv 15.9(3)M6.
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng priority 1 1
   context: interface
-  ios-classic: unknown
+  ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: >
+    Setup priority / hold priority. Range 0–7; lower = higher priority. Default 7/7.
+    Priority 1/1 allows this tunnel to preempt most other tunnels during RSVP
+    admission. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: mpls ldp sync
@@ -792,6 +821,53 @@ commands:
   ios-classic: unknown
   ios-l2: unknown
   ios-xe: unknown
-  notes: ''
+  notes: LDP-IGP synchronization — holds IGP metric at max until LDP session is up.
+    Not tested on IOSv; treat as unknown.
+  c7200: unknown
+  c3725: unknown
+- command: mpls mtu override 1508
+  context: interface
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: >
+    IOSv requires the "override" keyword: "mpls mtu override <size>". The bare
+    "mpls mtu <size>" form used on physical IOS is rejected with "Invalid input".
+    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03). Always use override form in
+    configs targeting ios-classic EVE-NG images.
+  c7200: unknown
+  c3725: unknown
+- command: mpls mtu 1508
+  context: interface
+  ios-classic: fail
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: Rejected on IOSv with "Invalid input". Use "mpls mtu override 1508" instead.
+    Physical IOS platforms accept this form; IOSv does not.
+  c7200: unknown
+  c3725: unknown
+- command: show mpls traffic-eng tunnels Tunnel10 detail
+  context: exec
+  ios-classic: fail
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: >
+    The "detail" keyword is rejected on IOSv 15.9(3)M6 when a specific tunnel name
+    is given — "Invalid input" at "detail". Use "show mpls traffic-eng tunnels Tunnel10"
+    (no detail) — specifying a single tunnel already returns full verbose output.
+    The "detail" keyword IS valid when listing all tunnels:
+    "show mpls traffic-eng tunnels detail" (no tunnel name) passes.
+  c7200: unknown
+  c3725: unknown
+- command: show mpls interfaces detail
+  context: exec
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: unknown
+  notes: >
+    IOSv 15.9(3)M6 reports "LSP Tunnel labeling enabled" / "LSP Tunnel labeling
+    not enabled" — NOT "Traffic Engineering: enabled" as shown in Cisco documentation
+    and physical IOS. Use "LSP Tunnel labeling enabled" as the expected string in
+    workbook verification steps and preflight checks targeting IOSv.
   c7200: unknown
   c3725: unknown
