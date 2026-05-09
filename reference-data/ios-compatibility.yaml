@@ -871,3 +871,51 @@ commands:
     workbook verification steps and preflight checks targeting IOSv.
   c7200: unknown
   c3725: unknown
+- command: nsf ietf
+  context: router-isis
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    IS-IS Graceful Restart per RFC 5306. Available on IOSv 15.9(3)M6.
+    Configuring nsf ietf enables GR helper mode on neighbors — they suppress
+    route withdrawals and maintain adjacency state during the restarting router's
+    control-plane recovery. Functional on IOSv; both sides must configure nsf ietf
+    for full GR operation.
+- command: nsr
+  context: router-isis
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    IS-IS Nonstop Routing. Configuration accepted on IOSv 15.9(3)M6 but has no
+    functional effect — NSR requires a dual-RP platform to maintain standby RP
+    protocol state. IOSv has a single virtual RP. Configure for exam-readiness;
+    document the behavioral gap in the workbook.
+- command: bgp graceful-restart
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    BGP Graceful Restart per RFC 4724. Available on IOSv 15.9(3)M6.
+    Enables GR capability advertisement to BGP peers. Both sides must advertise
+    GR capability for full restart protection. Works for both iBGP and eBGP sessions.
+- command: bgp nsr
+  context: router-bgp
+  ios-classic: pass
+  ios-l2: unknown
+  ios-xe: pass
+  c7200: unknown
+  c3725: unknown
+  notes: >
+    BGP Nonstop Routing. Configuration accepted on IOSv 15.9(3)M6 but has no
+    functional effect without a standby RP. NSR maintains all BGP state on the
+    standby RP so a switchover is invisible to peers. On IOSv (single virtual RP),
+    configure for exam-readiness and document the single-RP behavioral gap.
