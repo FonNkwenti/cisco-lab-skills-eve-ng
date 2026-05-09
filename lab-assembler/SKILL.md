@@ -863,6 +863,86 @@ The lab .unl must be ALREADY IMPORTED and nodes started before running the scrip
 ## Output Confirmation
 List all files created, py_compile result for each .py file, and fault-injector/SKILL.md Step 5 checklist completion status.
 
+--# Step 7c: Emit validation-spec.yaml
+
+After fault-injection scripts are written and before meta.yaml, emit a machine-readable
+verification specification for the lab. This file is consumed by the project-local
+`/validate-lab` slash command (when present) to run live validation against a probe
+or staging lab and surface claim-vs-output mismatches that would otherwise confuse
+students ("workbook claims you'll see X, but X isn't there").
+
+The spec captures only what cannot be reconstructed from `solutions/*.cfg`:
+- the show commands the workbook tells students to run
+- the expected substrings/patterns the workbook claims they will see
+- the workbook section that made each claim (for failure attribution)
+
+Config commands are not duplicated here; the spec references the `.cfg` files.
+
+Write `labs/<topic>/<lab>/validation-spec.yaml`:
+
+```yaml
+schema_version: 1
+lab: <topic>/<lab-id>
+generated_by:
+  skill: lab-assembler
+  skill_version: "<YYYY-MM-DD>"   # same value as meta.yaml
+  date: "<YYYY-MM-DD>"
+
+# Pointer to where config commands live; do NOT duplicate them here.
+config_command_sources:
+  - device: <Name>
+    platform_group: ios-classic   # | ios-l2 | ios-xe | ios-xr
+    file: solutions/<Name>.cfg
+    role: solution                # | initial  (for initial-configs/)
+
+# Verification claims = the show commands the workbook tells students to run,
+# plus the substrings the workbook claims they will see in the output.
+verification_claims:
+  - id: V-001
+    device: <Name>
+    command: "show ..."
+    workbook_section: "Section 6 — Verification Commands"
+    expected:
+      must_contain:
+        - "regex or literal substring"
+      must_not_contain:
+        - "Idle"
+    regex: false                  # default; set true if must_contain entries are regex
+    failure_message: >
+      Workbook claims X. If this assertion fails, the student reads the
+      workbook expecting X but sees something else. Fix in workbook prose
+      or in the lab solution.
+```
+
+Generation rules:
+1. **Source.** Pull claims from Section 6 (Verification Commands) and the verification
+   steps inside Section 5 (Lab Challenge) of the workbook you wrote in Step 3. When a
+   show command appears with adjacent prose like "you should see X" or "verify that
+   Y is Up", emit a claim with X / Y in `must_contain`. When the prose says "should
+   NOT show Z" or "the entry should disappear", emit Z in `must_not_contain`.
+2. **One claim per (device, command, section) triple.** If the workbook tells
+   students to run the same show on two devices, emit two claims with different IDs.
+3. **Claim IDs are `V-NNN`**, zero-padded to 3 digits, sequential per lab.
+4. **No claim => no entry.** If the workbook merely lists a show command without
+   saying what students will see, do NOT emit a claim. Coverage gaps are visible by
+   absence — a device with zero claims is a workbook bug worth surfacing.
+5. **Patterns.** Default to literal-substring matching (`regex: false`). Set
+   `regex: true` only when the workbook prose justifies it (alternation, capture
+   groups, quantifiers). Authoring regex by default is too error-prone — a typo in
+   `Established` becomes a silent always-fail.
+6. **`failure_message` must be specific.** It is the message a student or admin
+   sees when validation fails. "Verify EVPN is up" is too vague; "Workbook Section 6
+   claims PE2's EVPN session to PE1 (1.1.1.1) is Established, but show output reports
+   Idle" is right.
+
+Add `validation-spec.yaml` to `meta.yaml`'s `created.files` list in Step 8.
+
+### 7c — Output Confirmation
+Report the count of `verification_claims` emitted, broken down per device. If any
+device referenced in `config_command_sources` has zero claims, flag it: the workbook
+never tells students to verify anything on that device, which is usually a workbook
+gap rather than an intentional silence.
+
 --# Step 8: Write meta.yaml
 
 After the fault-injector subagent completes, lab-assembler owns meta.yaml.
@@ -892,6 +972,7 @@ created:
   skill_version: "[YYYY-MM-DD]"
   files:
     - workbook.md
+    - validation-spec.yaml            # machine-readable verification claims (Step 7c)
     - topology/topology.drawio
     - topology/README.md
     - setup_lab.py
@@ -957,7 +1038,8 @@ Actions:
 8. Generate `setup_lab.py` using eve_ng.py shared library.
 9. Write root `README.md` quick-reference card.
 10. Invoke `fault-injector` skill to generate `scripts/fault-injection/`.
-11. Write `meta.yaml` listing all created files (including `exam` and `devices` fields).
+11. Emit `validation-spec.yaml` (Step 7c) capturing show commands and workbook claims.
+12. Write `meta.yaml` listing all created files (including `exam` and `devices` fields, and `validation-spec.yaml`).
 12. Final cleanup — remove any `__pycache__/` directories and `*.pyc` files from the lab package:
     ```bash
     find labs/<topic>/lab-NN-<slug> -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
