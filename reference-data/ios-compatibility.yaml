@@ -29,6 +29,22 @@ platforms:
     group: ios-l2
     console_port: null
     deprecated: false
+  xrv:
+    ios: "6.x (classic XRv)"
+    type: qemu
+    group: ios-xr
+    console_port: null
+    deprecated: false
+    ram_gb: 3
+    notes: "Default XR for control-plane CLI parity. Interfaces GigabitEthernet0/0/0/N. Boot ~3-5 min."
+  xrv9k:
+    ios: "7.x (XRv9000)"
+    type: qemu
+    group: ios-xr
+    console_port: null
+    deprecated: false
+    ram_gb: 10
+    notes: "Reserve for xrv9k-only features (MPLS data plane, SR-TE TI-LFA, large-scale EVPN). Boot ~10 min."
   vmanage:
     ios: 20.6.2
     type: qemu
@@ -73,6 +89,14 @@ platforms:
     group: ios-classic
     console_port: 5002
     deprecated: true
+# Per-command compatibility rows.
+# Per-platform-group flag values: pass | fail | unknown
+# Recognised flags: ios-classic | ios-l2 | ios-xe | ios-xr | sdwan
+# Add a flag column only when that group has been empirically probed for the
+# command. Omit the flag (rather than writing 'unknown' on every row) when no
+# probe has been done; absence means "not yet verified".
+# XR rows are typically added by probing on PROBE-XRv first, then PROBE-XRv9k
+# only if behaviour diverges between classic XRv and XRv9k.
 commands:
 - command: router eigrp ENARSI
   context: global
