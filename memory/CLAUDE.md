@@ -39,7 +39,7 @@ Every lab directory MUST contain:
 - `README.md` — quick-reference card (blueprint coverage, quick-start, file tree)
 - `initial-configs/` — per-device .cfg files
 - `solutions/` — per-device .cfg files
-- `topology/topology.drawio` — Cisco19-icon diagram (`.drawio` only; no PNG required)
+- `topology/topology.drawio` — Cisco19-icon diagram (`.drawio` source only; no rendered image)
 - `topology/README.md` — EVE-NG .unl import/export instructions
 - `setup_lab.py` — Netmiko automation (accepts `--host <eve-ng-ip>` argument)
 - `meta.yaml` — provenance tracking (`exam`, `devices`, `created`, `updated`)

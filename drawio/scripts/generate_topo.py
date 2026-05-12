@@ -1,11 +1,6 @@
 import sys
-import os
 import argparse
-import subprocess
 from datetime import datetime
-
-# --- Constants for Export ---
-DRAWIO_EXECUTABLE = "/Applications/draw.io.app/Contents/MacOS/draw.io"
 
 # --- Simple YAML Parser (Subset for baseline.yaml) ---
 def parse_simple_yaml(file_path):
@@ -299,22 +294,11 @@ def generate_xml(devices, links, lab_title, lab_info=None, coords=None,
     xml_content += DRAWIO_FOOTER
     return xml_content
 
-def export_to_png(drawio_file):
-    output_png = os.path.splitext(drawio_file)[0] + ".png"
-    print(f"Exporting {drawio_file} to {output_png}...")
-    try:
-        subprocess.run([DRAWIO_EXECUTABLE, "-x", "-f", "png", "-t", "-s", "2", drawio_file, "-o", output_png], check=True)
-        return True
-    except Exception as e:
-        print(f"Export failed: {e}")
-        return False
-
 def main():
     parser = argparse.ArgumentParser(description="Generate Draw.io XML from baseline.yaml")
     parser.add_argument("--baseline", required=True, help="Path to baseline.yaml")
     parser.add_argument("--lab", required=True, type=int, help="Lab number")
     parser.add_argument("--output", required=True, help="Output .drawio path")
-    parser.add_argument("--export", action="store_true", help="Automatically export to PNG")
     args = parser.parse_args()
 
     data = parse_simple_yaml(args.baseline)
@@ -328,7 +312,6 @@ def main():
     
     with open(args.output, 'w') as f: f.write(xml_output)
     print(f"Generated {args.output}")
-    if args.export: export_to_png(args.output)
 
 if __name__ == "__main__":
     main()

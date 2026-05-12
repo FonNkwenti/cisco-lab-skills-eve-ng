@@ -1,6 +1,6 @@
 ---
 name: drawio
-description: Visual style guide and workflow for creating Cisco network topology diagrams in Draw.io. Use when generating a topology diagram, creating or updating a topology.drawio file, exporting a PNG, or when any other skill needs to produce or validate a network diagram.
+description: Visual style guide and workflow for creating Cisco network topology diagrams in Draw.io. Use when generating a topology diagram, creating or updating a topology.drawio file, or when any other skill needs to produce or validate a network diagram.
 ---
 
 # Draw.io Diagram Skill
