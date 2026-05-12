@@ -145,7 +145,7 @@ Write a complete workbook with all required sections:
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — Device Inventory table, cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/` (see IS/NOT format below)
-5. **Lab Challenge: Core Implementation** — objectives for the student (see format below)
+5. **Lab Challenge: Core Implementation** — configuration/implementation objectives for the student (see format below). **Troubleshooting and fault-diagnosis tasks are NOT permitted in Section 5.** All troubleshooting scenarios — including "find and fix" tasks, fault-injection exercises, and symptom-based diagnostics — belong exclusively in Section 9 (Troubleshooting Scenarios). The last task in Section 5 must be a configuration or verification task, never a troubleshooting exercise.
 6. **Verification & Analysis** — expected `show` command outputs per objective, with inline `!` comments marking the specific lines or values the student must confirm
 7. **Verification Cheatsheet** — quick-reference commands for the entire lab (see format below)
 8. **Solutions (Spoiler Alert!)** — solution configs for lab objectives only, wrapped in `<details>` blocks
@@ -274,6 +274,18 @@ Examples:
 - ✅ "Define a named explicit path called `PE1-via-P2` with loose hops through P2 and PE2."
 - ❌ "Configure `ip explicit-path name PE1-via-P2 enable` / `next-address loose 10.0.0.3`."
 - ✅ **Verification:** "`show ip eigrp neighbors` must show two active neighbors on each router."
+
+**Section 5 — No troubleshooting tasks (REQUIRED):**
+
+Section 5 contains only configuration and implementation tasks. Any task whose primary objective is to diagnose a fault, identify a misconfiguration, or repair a broken state is a troubleshooting task and belongs in Section 9.
+
+Signs that a task is troubleshooting and must be moved to Section 9:
+- The task asks the student to "find," "diagnose," "troubleshoot," "identify the cause of," or "fix" a problem
+- The task instructs the student to break or misconfigure something then observe the result
+- The task revolves around a `show` command whose output reveals a deliberate fault
+- The task title contains "Troubleshoot," "Diagnose," "Debug," "Fix," or "Fault"
+
+Do NOT add a "bonus troubleshooting task" or "fault simulation task" as the last task in Section 5. Every troubleshooting scenario — including simple faults intended as a warm-up — is a first-class troubleshooting ticket in Section 9 with the full inject/diagnose/fix workflow.
 
 **Section 4 — Base Configuration "NOT pre-loaded" list:**
 
@@ -608,6 +620,7 @@ generation context is still fresh.
 - [ ] Every Section 5 H3 heading matches `### Task N:` (N = digit). Headings like `### Scenario A`, `### Objective N`, `### Step N` are a FAIL. Exception: capstone-ii troubleshooting tickets use `### Ticket N —`, but capstone-i implementation tasks still use `### Task N:`.
 - [ ] Each `### Task N:` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
 - [ ] No task bullet contains raw IOS command syntax
+- [ ] No task is a troubleshooting or fault-diagnosis exercise — all Section 5 tasks are implementation/configuration only; troubleshooting belongs in Section 9
 - [ ] Capstone labs only: heading is `Full Protocol Mastery` (capstone_i) or `Comprehensive Troubleshooting` (capstone_ii)
 
 **Checklist — Section 6 (Verification & Analysis):**
