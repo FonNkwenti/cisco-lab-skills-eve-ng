@@ -897,29 +897,31 @@ commands:
   c3725: unknown
 - command: nsf ietf
   context: router-isis
-  ios-classic: pass
+  ios-classic: fail
   ios-l2: unknown
   ios-xe: pass
   c7200: unknown
   c3725: unknown
   notes: >
-    IS-IS Graceful Restart per RFC 5306. Available on IOSv 15.9(3)M6.
-    Configuring nsf ietf enables GR helper mode on neighbors — they suppress
-    route withdrawals and maintain adjacency state during the restarting router's
-    control-plane recovery. Functional on IOSv; both sides must configure nsf ietf
-    for full GR operation.
+    IS-IS Graceful Restart per RFC 5306. REJECTED on IOSv 15.6(2)T and
+    15.9(3)M6 — the nsf command does not exist under router isis on these builds.
+    IS-IS GR requires hardware-plane separation (CEF on a separate line card from
+    the RP), which does not exist in a fully virtualised router. Available on
+    IOS-XE, physical IOS 15.4+, IOS-XR, ASR 9000. Both sides must configure
+    nsf ietf for full GR operation.
 - command: nsr
   context: router-isis
-  ios-classic: pass
+  ios-classic: fail
   ios-l2: unknown
   ios-xe: pass
   c7200: unknown
   c3725: unknown
   notes: >
-    IS-IS Nonstop Routing. Configuration accepted on IOSv 15.9(3)M6 but has no
-    functional effect — NSR requires a dual-RP platform to maintain standby RP
-    protocol state. IOSv has a single virtual RP. Configure for exam-readiness;
-    document the behavioral gap in the workbook.
+    IS-IS Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 —
+    the nsr command is not present in the IOSv command set under router isis.
+    NSR requires a dual-RP platform (standby RP maintains protocol state for
+    seamless switchover). Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS.
+    Single-RP virtualised platforms (IOSv) cannot support NSR.
 - command: bgp graceful-restart
   context: router-bgp
   ios-classic: pass
@@ -933,13 +935,14 @@ commands:
     GR capability for full restart protection. Works for both iBGP and eBGP sessions.
 - command: bgp nsr
   context: router-bgp
-  ios-classic: pass
+  ios-classic: fail
   ios-l2: unknown
   ios-xe: pass
   c7200: unknown
   c3725: unknown
   notes: >
-    BGP Nonstop Routing. Configuration accepted on IOSv 15.9(3)M6 but has no
-    functional effect without a standby RP. NSR maintains all BGP state on the
-    standby RP so a switchover is invisible to peers. On IOSv (single virtual RP),
-    configure for exam-readiness and document the single-RP behavioral gap.
+    BGP Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 —
+    the bgp nsr command is not present in the IOSv command set under router bgp.
+    NSR maintains all BGP state on a standby RP for seamless switchover.
+    Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS. Single-RP virtualised
+    platforms (IOSv) cannot support NSR.

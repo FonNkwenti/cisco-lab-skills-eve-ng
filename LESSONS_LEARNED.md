@@ -6,6 +6,46 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-11 — IS-IS NSF, IS-IS NSR, and BGP NSR are REJECTED on IOSv
+
+Three high-availability commands are not present in the IOSv command set
+(vios-adventerprisek9-m.SPA.156-2.T = IOS 15.6(2)T; also confirmed on 15.9(3)M6).
+They fail with "% Invalid input" or similar — not merely accepted as no-ops.
+
+### rejected commands
+
+| Command | Context | Error |
+|---------|---------|-------|
+| `nsf ietf` | `router isis` | rejected (command not present) |
+| `nsr` | `router isis` | rejected (command not present) |
+| `bgp nsr` | `router bgp` | rejected (command not present) |
+
+### working commands
+
+| Command | Context | Notes |
+|---------|---------|-------|
+| `bgp graceful-restart` | `router bgp` | works on IOSv |
+
+### Impact on fast-convergence labs
+
+- lab-01 (NSF/NSR): Tasks 1 (IS-IS NSF) and Part A of Task 3 are conceptual
+  reference only — no live config possible. Task 2 (BGP GR) works live.
+- lab-01 solutions: Must NOT include `nsf ietf`, `nsr`, or `bgp nsr` on any .cfg.
+- lab-02, lab-03 initial-configs (which chain from lab-01 solutions): Must also
+  exclude these commands. If they leak through, `setup_lab.py` will fail when it
+  pushes the configs.
+
+### Propagation rule
+
+Whenever a progressive lab chain introduces a new lab-N, verify that lab-(N-1)'s
+solutions contain only commands that pass on the target platform. Run `grep -rn
+"nsf ietf\|nsr$\|bgp nsr"` across the topic directory after building solutions.
+
+Entries corrected in `reference-data/ios-compatibility.yaml` from `pass` to `fail`
+for `ios-classic` on all three commands.
+
+---
+
 ## 2026-05-08 — IOSv MPLS TE command differences vs. physical IOS
 
 Three IOSv-specific behaviours discovered during MPLS lab-03 (RSVP-TE) development.
