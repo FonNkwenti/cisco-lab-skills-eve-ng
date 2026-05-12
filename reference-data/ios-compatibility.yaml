@@ -38,7 +38,7 @@ platforms:
     ram_gb: 3
     notes: "Default XR for control-plane CLI parity. Interfaces GigabitEthernet0/0/0/N. Boot ~3-5 min."
   xrv9k:
-    ios: "7.x (XRv9000)"
+    ios: "24.3.1 (upgraded 2026-05-12; was 7.1.1)"
     type: qemu
     group: ios-xr
     console_port: null
@@ -946,3 +946,32 @@ commands:
     NSR maintains all BGP state on a standby RP for seamless switchover.
     Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS. Single-RP virtualised
     platforms (IOSv) cannot support NSR.
+- command: bfd fast-detect
+  context: router-isis-interface-af-ipv4-unicast
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside the IS-IS interface
+    address-family context. Error: % Invalid input detected at '^' marker.
+    BFD is activated under IS-IS by setting bfd minimum-interval and
+    bfd multiplier at the interface level only — no separate enable command
+    is needed. Remove this line from any config targeting ios-xr platforms.
+- command: index N address ipv4 X.X.X.X
+  context: segment-routing-traffic-eng-segment-list
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside segment-list entries.
+    Error: % Invalid input detected at '^' marker. The address ipv4 form for
+    node-SID addressing was removed in IOS-XR 7.x+. Use mpls label form instead:
+    'index N mpls label XXXXX' where label = SRGB-base + prefix-SID-index.
+    With SRGB 16000-23999: R1=16001, R2=16002, R3=16003, R4=16004.
+- command: index N mpls label XXXXX
+  context: segment-routing-traffic-eng-segment-list
+  xrv: fail
+  xrv9k: pass
+  notes: >
+    PASS on XRv9k 24.3.1. FAIL on XRv 6.3.1 — the segment-list command itself
+    does not exist in the 6.3.1 traffic-eng context (named segment-lists were
+    introduced in IOS-XR 7.x). Use mpls label form for all XRv9k segment-list
+    configs. Label = SRGB-base (16000) + prefix-SID-index.
