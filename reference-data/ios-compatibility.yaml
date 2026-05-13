@@ -975,3 +975,27 @@ commands:
     does not exist in the 6.3.1 traffic-eng context (named segment-lists were
     introduced in IOS-XR 7.x). Use mpls label form for all XRv9k segment-list
     configs. Label = SRGB-base (16000) + prefix-SID-index.
+- command: show isis fast-reroute topology ipv4 unicast
+  context: exec
+  xrv9k: fail
+  notes: >
+    REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
+    at '^' marker. The 'topology' subcommand does not exist in the XR isis
+    fast-reroute show tree. Use 'show isis fast-reroute detail' instead for
+    per-prefix FRR backup visibility.
+- command: show isis fast-reroute ipv4 <prefix>
+  context: exec
+  xrv9k: fail
+  notes: >
+    REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
+    at '^' marker. Use 'show isis fast-reroute detail <prefix>' for per-prefix
+    FRR detail on IOS-XR platforms.
+- command: show isis fast-reroute detail
+  context: exec
+  xrv9k: pass
+  notes: >
+    PASS on XRv9k. Shows IS-IS FRR backup table for all prefixes including FRR
+    backup next-hop, metric, and protection flags (P/NP/LC/D/SRLG). This is the
+    correct replacement for the non-existent 'show isis fast-reroute topology'
+    command on IOS-XR. Append a prefix (e.g. 'detail 10.0.0.3/32') to filter
+    to a single prefix.

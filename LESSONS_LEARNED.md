@@ -6,6 +6,35 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR TI-LFA: `show isis fast-reroute topology` does not exist; use `detail`
+
+Confirmed by live probing XRv9k on segment-routing lab-01 (TI-LFA).
+
+### `show isis fast-reroute topology ipv4 unicast` — INVALID on all tested XR versions
+
+`show isis fast-reroute topology ipv4 unicast` and `show isis fast-reroute ipv4 <prefix>`
+are rejected with `% Invalid input detected at '^' marker.` on IOS-XRv9k 7.1.1 and 24.3.1.
+These commands do not exist in the XR show tree.
+
+**Correct commands:**
+- All prefixes: `show isis fast-reroute detail`
+- Single prefix: `show isis fast-reroute detail <prefix/len>`
+- Repair label stack: `show mpls forwarding prefix <prefix/len> detail` — look for the `(!)` backup entry; the label stack is shown under `Label Stack (Top -> Bottom): { ... }`
+- Route-level backup: `show route ipv4 <prefix/len> detail` — shows backup NH and imposed label
+
+**Rule:** Never use `show isis fast-reroute topology` or `show isis fast-reroute ipv4 <prefix>`
+in workbooks or scripts targeting IOS-XR platforms. Always use `show isis fast-reroute detail`.
+
+### Adjacent PQ-node repair stack is one label, not two
+
+When the TI-LFA PQ-node is R2's immediate next-hop neighbor, IOS-XR imposes only one
+repair label (the destination's prefix SID). The outer steering SID is omitted because
+the PQ-node is already the next-hop. Example: R2 protecting L2 (R2↔R3), PQ-node = R1
+(adjacent on L1) — repair label stack for 10.0.0.3/32 is `{ 16003 }`, not `{ 16001, 16003 }`.
+A two-label stack is only needed when the PQ-node is a non-adjacent router.
+
+---
+
 ## 2026-05-12 — IOS-XR Segment-Routing: two LLM-generated syntax bugs confirmed on live nodes
 
 Discovered by live probing XRv Classic 6.3.1 and XRv9k 24.3.1 via Netmiko telnet.
