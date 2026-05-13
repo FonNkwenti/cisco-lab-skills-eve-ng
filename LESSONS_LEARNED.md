@@ -6,6 +6,66 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR Pipe Modifiers: `| section` and `| begin` are NOT supported; use `| include` or `| utility`
+
+Confirmed by live probing XRv9k 24.3.1 during SRv6 lab work.
+
+### `| section` — INVALID on all IOS-XR versions
+
+`sh isis fast-reroute | section No FRR backup` is rejected on IOS-XR 24.3.1 with:
+`% Invalid input detected at '^' marker.`
+
+The `| section` and `| begin` pipe modifiers are **IOS-XE/IOSv-only features** and
+do not exist in the IOS-XR command parser. IOS-XR has a different pipe grammar:
+
+| IOS-XE Modifier | IOS-XR Alternative |
+|-----------------|--------------------|
+| `\| section <pattern>` | `\| include <pattern>` or `\| utility "sed -n '/<pattern>/,/^[^ ]/p'"` |
+| `\| begin <pattern>` | `\| utility "sed -n '/<pattern>/,$ p'"` |
+| `\| include <pattern>` | `\| include <pattern>` (same — works on both) |
+| `\| exclude <pattern>` | `\| exclude <pattern>` (same — works on both) |
+| `\| redirect <file>` | `\| file <file>` |
+| `\| append <file>` | `\| file <file> append` |
+| `\| count <pattern>` | `\| utility "grep -c <pattern>"` |
+| — | `\| utility <command>` (sed, awk, grep, cut, sort, uniq, head, tail) |
+
+### The `| utility` pipe is the IOS-XR superpower
+
+IOS-XR has a unique `| utility <command>` pipe that passes output through
+standard Unix utilities. This enables powerful filtering that actually exceeds
+IOS-XE's capabilities:
+
+```
+# Emulate | section No FRR backup
+sh isis fast-reroute | utility "sed -n '/No FRR backup/,/^[^ ]/p'"
+
+# Emulate | begin No FRR backup
+sh isis fast-reroute | utility "sed -n '/No FRR backup/,$ p'"
+
+# Count lines matching 'backup'
+sh isis fast-reroute | utility "grep -c backup"
+
+# Show first 30 lines
+sh isis fast-reroute | utility "head -30"
+
+# Sort unique prefixes
+sh route ipv4 | utility "grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+/[0-9]\+'" | utility sort -u
+```
+
+### Rule
+
+- Never write `| section` or `| begin` in workbook verification steps targeting
+  IOS-XR platforms.
+- For simple pattern filtering, use `| include` (works on both XR and XE).
+- For section-style multi-line filtering, use `| utility "sed -n '...'"`.
+- Update all IOS-XR-targeted workbook verification steps that currently use
+  `| section` or `| begin`.
+
+Entries added to `reference-data/ios-compatibility.yaml` with `ios-xr: fail` for
+both `| section` and `| begin`. `| utility` documented with `ios-xr: pass`.
+
+---
+
 ## 2026-05-13 — IOS-XR TI-LFA: `show isis fast-reroute topology` does not exist; use `detail`
 
 Confirmed by live probing XRv9k on segment-routing lab-01 (TI-LFA).

@@ -999,6 +999,62 @@ commands:
     correct replacement for the non-existent 'show isis fast-reroute topology'
     command on IOS-XR. Append a prefix (e.g. 'detail 10.0.0.3/32') to filter
     to a single prefix.
+- command: | section <pattern>
+  context: exec
+  ios-classic: pass
+  ios-xe: pass
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    NOT supported on IOS-XR. The `| section <pattern>` pipe modifier used on
+    IOS-XE/IOSv (displays the section header + all lines under it) is rejected
+    on IOS-XR with `% Invalid input detected at '^' marker.`.
+    Alternatives on IOS-XR:
+    (1) `| include <pattern>` — shows only lines matching the pattern
+    (2) `| utility "sed -n '/<pattern>/,/^[^ ]/p'"` — emulates section by
+        printing from the header to the next non-indented line
+    (3) `| utility "awk '/<pattern>/{flag=1} flag; /^[^ ]/{if(NR>1 && flag)
+        flag=0}'"` — awk-based section emulation with header reset
+- command: | begin <pattern>
+  context: exec
+  ios-classic: pass
+  ios-xe: pass
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    NOT supported on IOS-XR. The `| begin <pattern>` pipe modifier (displays
+    output starting from the first matching line) is rejected on IOS-XR.
+    Alternative: `| utility "sed -n '/<pattern>/,$ p'"`
+- command: | utility
+  context: exec
+  ios-classic: unknown
+  ios-xe: unknown
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    IOS-XR-only pipe modifier. Passes the show output through a Unix utility
+    (sed, awk, grep, cut, sort, uniq, head, tail, wc). This is the most
+    powerful alternative to the missing |section and |begin modifiers.
+    Examples:
+    - `| utility wc -l` — count lines
+    - `| utility head -20` — first 20 lines
+    - `| utility "grep -v '^$'"` — exclude blank lines
+    - `| utility "sed -n '/Lo0/,/^[^ ]/p'"` — emulate | section
+- command: | section
+  context: exec
+  ios-classic: pass
+  ios-xe: pass
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    Alias for `| section` — see the `| section` entry above. Same IOS-XR
+    limitation. The unquoted pipe modifier must be written with the space:
+    `sh isis fast-reroute | section No FRR backup` fails on XR.
+
 - command: bfd minimum-interval 50
   context: router-isis-interface
   xrv: pass
