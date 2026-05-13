@@ -6,6 +6,43 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR XRv 6.3.1: `no segment-routing mpls sr-prefer` fails at commit
+
+Confirmed on XRv Classic 6.3.1 during lab-02 fault injection development.
+
+The command `no segment-routing mpls sr-prefer` under IS-IS address-family is accepted
+at input (no "Invalid input" error) but fails at commit time with:
+
+```
+% Failed to commit one or more configuration items during a pseudo-atomic operation.
+All changes made have been reverted.
+```
+
+This is a platform constraint — `sr-prefer` cannot be negated independently while
+`segment-routing mpls` is still active in the same IS-IS address-family on this version.
+
+### Implication for fault injection
+
+Any fault that relies on removing `sr-prefer` from IS-IS to make LDP win over SR for
+mapping-server prefixes cannot be scripted on XRv 6.3.1.
+
+**Alternative fault to achieve the same symptom** (R2 uses LDP instead of SR for a
+mapping-server prefix):
+
+Remove `segment-routing prefix-sid-map advertise-local` from the **mapping server's**
+IS-IS address-family (e.g. R1). This stops IS-IS from flooding the SID Binding TLV for
+the mapped prefix. Peers then have no SR binding to install and fall back to LDP.
+
+**Diagnostic difference:**
+- Missing `sr-prefer`: binding IS in peer's active-policy, but LDP label wins
+- Missing `advertise-local`: binding is ABSENT from peer's active-policy entirely
+
+**Rule:** On XRv 6.3.1, do not use `no segment-routing mpls sr-prefer` as a fault
+mechanism. Use `no segment-routing prefix-sid-map advertise-local` on the mapping
+server instead.
+
+---
+
 ## 2026-05-13 — IOS-XR: `show segment-routing mpls` is not a valid subcommand tree
 
 Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work (R3).

@@ -1127,6 +1127,21 @@ commands:
     outgoing label, interface, next-hop). With 'detail', adds Label Stack,
     path flags, backup path info, and '(!) FRR pure backup' entries.
 
+- command: no segment-routing mpls sr-prefer (under isis af)
+  context: config-isis-af
+  ios-xr: fail
+  xrv: fail
+  xrv9k: unknown
+  notes: >
+    Accepted at input (no 'Invalid input' error) but fails at commit time on XRv
+    Classic 6.3.1 with 'Failed to commit one or more configuration items during a
+    pseudo-atomic operation.' The platform does not allow sr-prefer to be negated
+    independently while 'segment-routing mpls' is still active in the same IS-IS
+    address-family. To make LDP win over SR for mapping-server prefixes, use a
+    different fault mechanism: remove 'segment-routing prefix-sid-map advertise-local'
+    from the mapping server's IS-IS address-family instead. This stops IS-IS from
+    flooding the SID Binding TLV, so peers have no SR binding to install.
+
 - command: show segment-routing mpls connected-prefix-sid-map ipv4
   context: exec
   ios-xr: fail
