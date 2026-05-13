@@ -6,6 +6,27 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR MPLS: `show mpls forwarding <prefix>` requires the `prefix` keyword
+
+Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.
+
+### `show mpls forwarding 10.0.0.3/32` — INVALID on IOS-XR
+
+On IOS-XR, passing a destination prefix directly after `show mpls forwarding` is
+rejected with `% Invalid input detected at '^' marker.`. The `prefix` keyword is
+mandatory between `forwarding` and the IP address/prefix-length.
+
+**Correct forms:**
+- Summary: `show mpls forwarding prefix 10.0.0.3/32`
+- Detail:   `show mpls forwarding prefix 10.0.0.3/32 detail`
+
+On IOS-XE / IOSv the prefix can follow `forwarding` directly without the keyword.
+
+**Rule:** Always write `show mpls forwarding prefix <ip>/<len>` in IOS-XR workbooks
+and scripts. Never write `show mpls forwarding <ip>/<len>` (no `prefix` keyword).
+
+---
+
 ## 2026-05-13 — IOS-XR Pipe Modifiers: `| section` and `| begin` are NOT supported; use `| include` or `| utility`
 
 Confirmed by live probing XRv9k 24.3.1 during SRv6 lab work.

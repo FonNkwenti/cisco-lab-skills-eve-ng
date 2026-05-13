@@ -1065,3 +1065,31 @@ commands:
     configured. 'show bfd session' returns empty; 'show isis adjacency detail'
     shows BFD IPv4: None. Use 'show isis adjacency detail' on XRv 6.3.1 to confirm
     TI-LFA protection via Adjacency SID '(protected)' status instead.
+
+- command: show mpls forwarding <prefix/len>
+  context: exec
+  ios-classic: unknown
+  ios-xe: pass
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    On IOS-XR, filtering the MPLS forwarding table by prefix REQUIRES the
+    'prefix' keyword: 'show mpls forwarding prefix <ip>/<len>'.
+    Without it, the IP address is rejected with '% Invalid input detected at
+    '^' marker.' The correct forms are:
+    - 'show mpls forwarding prefix 10.0.0.3/32'
+    - 'show mpls forwarding prefix 10.0.0.3/32 detail'
+    On IOS-XE/IOSv the prefix can follow 'forwarding' directly without 'prefix'.
+
+- command: show mpls forwarding prefix <prefix/len>
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Correct IOS-XR form for filtering the MPLS forwarding table by destination
+    prefix. The 'prefix' keyword is mandatory on XR between 'forwarding' and
+    the IP prefix. Without 'detail', shows the summary line (local label,
+    outgoing label, interface, next-hop). With 'detail', adds Label Stack,
+    path flags, backup path info, and '(!) FRR pure backup' entries.
