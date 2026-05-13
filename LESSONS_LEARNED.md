@@ -20,17 +20,22 @@ Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work (R3).
 ### Valid `show segment-routing` subcommands on IOS-XR
 
 ```
-show segment-routing local-block       ← SRGB allocation (start, end, current state)
+show segment-routing local-block       ← SRLB only; accepts 'inconsistencies' keyword only
 show segment-routing mapping-server    ← local SR mapping server entries
 show segment-routing traffic-eng       ← SR-TE tunnels and policies
 ```
+
+**Important:** `show segment-routing local-block` is about the **SRLB** (Segment Routing
+*Local* Block), not the SRGB. It only accepts the `inconsistencies` keyword and shows:
+`SRLB inconsistencies range: Start/End: 0/0` when no conflicts exist. It does NOT show
+the SRGB range. To verify the SRGB, use `show running-config segment-routing`.
 
 ### Correct replacements by use case
 
 | Intent | Correct command |
 |--------|----------------|
-| Verify SRGB range / SID fits in block | `show segment-routing local-block` |
-| Check label table for conflicts or SR label presence | `show mpls label table` |
+| Verify SRGB range / SID fits in block | `show running-config segment-routing` (check `global-block`) |
+| Check allocated labels and owner (SR vs LDP) | `show mpls label table` |
 | IS-IS SR prefix-SID active mappings (peer view) | `show isis segment-routing prefix-sid-map active-policy` |
 | OSPF SR prefix-SID state and bindings | `show ospf segment-routing` |
 

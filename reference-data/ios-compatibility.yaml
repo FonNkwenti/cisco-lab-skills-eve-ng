@@ -1134,8 +1134,9 @@ commands:
   xrv9k: fail
   notes: >
     INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand tree;
-    valid 'show segment-routing' subcommands are: local-block, mapping-server,
-    traffic-eng. To check the local SRGB range, use 'show segment-routing local-block'.
+    valid 'show segment-routing' subcommands are: local-block (SRLB only),
+    mapping-server, traffic-eng. To check the configured SRGB range, use
+    'show running-config segment-routing' (look at global-block start/end).
     To check label allocations and ownership (SR vs LDP), use 'show mpls label table'.
     For IS-IS SR prefix mappings, use 'show isis segment-routing prefix-sid-map active-policy'.
     For OSPF SR prefix-SID state, use 'show ospf segment-routing'.
@@ -1149,7 +1150,7 @@ commands:
     INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand; there is
     no 'state' keyword in the 'show segment-routing' tree. To check label allocation
     conflicts or the contents of the label table, use 'show mpls label table'. To check
-    the SRGB allocation, use 'show segment-routing local-block'.
+    the configured SRGB, use 'show running-config segment-routing'.
 
 - command: show segment-routing local-block
   context: exec
@@ -1157,10 +1158,11 @@ commands:
   xrv: pass
   xrv9k: pass
   notes: >
-    Shows the allocated Segment Routing Global Block (SRGB) on the local router:
-    start label, end label, and current allocation state. Use when verifying that
-    a given SID index (e.g. index 50 = label 16050) falls within the configured block.
-    Replacement for the invalid 'show segment-routing mpls connected-prefix-sid-map'.
+    Shows SRLB (Segment Routing LOCAL Block) inconsistencies — NOT the SRGB (global block).
+    Only accepts the 'inconsistencies' keyword; output shows 'SRLB inconsistencies range:
+    Start/End: 0/0' when no conflict exists. This command is NOT useful for SRGB
+    verification. To check the SRGB (global-block), use 'show running-config segment-routing'.
+    Do not use this as a replacement for SRGB-related queries.
 
 - command: show mpls label table
   context: exec
@@ -1169,9 +1171,9 @@ commands:
   xrv9k: pass
   notes: >
     Shows all MPLS label allocations on the router with owner (IS-IS SR, LDP, static).
-    Useful for verifying that a specific SR label (e.g. 16050) is present and to check
-    for label conflicts between SR and LDP. Use when 'show segment-routing local-block'
-    shows the SRGB is correct but a label is still not appearing in the forwarding table.
+    Useful for verifying that a specific SR label (e.g. 16050) is allocated and to check
+    for label conflicts between SR and LDP. Use after confirming the SRGB with
+    'show running-config segment-routing' when a label is still not in the forwarding table.
 
 - command: show ospf segment-routing
   context: exec
