@@ -49,6 +49,33 @@ the PQ-node is already the next-hop. Example: R2 protecting L2 (R2↔R3), PQ-nod
 (adjacent on L1) — repair label stack for 10.0.0.3/32 is `{ 16003 }`, not `{ 16001, 16003 }`.
 A two-label stack is only needed when the PQ-node is a non-adjacent router.
 
+### Fault injection: must remove `fast-reroute per-prefix` entirely to create observable coverage gap
+
+In ring topologies (e.g., 4-node ring with diagonal), classic LFA already provides 100%
+coverage because every neighbor has a shorter alternate path. Removing only
+`fast-reroute per-prefix ti-lfa` (leaving `fast-reroute per-prefix` intact) leaves classic
+LFA active — `show isis fast-reroute summary` still shows 100% and `show isis fast-reroute
+detail` still shows a backup entry. No symptom is observable.
+
+To create an observable FRR coverage gap you must remove `fast-reroute per-prefix` entirely
+(which also removes `ti-lfa`). With both commands absent, the router computes no repair path
+for that interface's destinations, and the summary shows `Unprotected > 0`.
+
+**Rule:** Fault inject scripts that target FRR coverage must remove `no fast-reroute per-prefix`
+(not just `no fast-reroute per-prefix ti-lfa`) when the topology has classic LFA coverage.
+
+### TI-LFA guarantees 100% coverage even without diagonal links — repair paths grow, not coverage
+
+When the L5 diagonal (R1↔R3) is removed from the topology, `show isis fast-reroute summary`
+on all routers continues to show 100% coverage. TI-LFA recomputes a 2-label repair stack
+(P-node SID + prefix SID) to route around the now-missing shortcut. The observable symptom
+of losing the diagonal is: (1) R1's adjacency count drops from 3 to 2, and (2) `show isis
+fast-reroute detail` on R2 shows an explicit P-node label in the backup path.
+
+**Rule:** When writing troubleshooting tickets for topology faults on TI-LFA labs, do not
+claim coverage drops — it won't. Frame the symptom as: missing IS-IS adjacency + repair
+path complexity increase (P-node label added to stack).
+
 ---
 
 ## 2026-05-12 — IOS-XR Segment-Routing: two LLM-generated syntax bugs confirmed on live nodes
