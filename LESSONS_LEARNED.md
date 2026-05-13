@@ -6,6 +6,40 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR: `show segment-routing mpls` is not a valid subcommand tree
+
+Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work (R3).
+
+### Invalid commands
+
+| Command | Valid? | Notes |
+|---------|--------|-------|
+| `show segment-routing mpls connected-prefix-sid-map ipv4` | **fail** | `mpls` is not a valid subcommand under `show segment-routing` |
+| `show segment-routing mpls state` | **fail** | Same — `mpls` keyword rejected |
+
+### Valid `show segment-routing` subcommands on IOS-XR
+
+```
+show segment-routing local-block       ← SRGB allocation (start, end, current state)
+show segment-routing mapping-server    ← local SR mapping server entries
+show segment-routing traffic-eng       ← SR-TE tunnels and policies
+```
+
+### Correct replacements by use case
+
+| Intent | Correct command |
+|--------|----------------|
+| Verify SRGB range / SID fits in block | `show segment-routing local-block` |
+| Check label table for conflicts or SR label presence | `show mpls label table` |
+| IS-IS SR prefix-SID active mappings (peer view) | `show isis segment-routing prefix-sid-map active-policy` |
+| OSPF SR prefix-SID state and bindings | `show ospf segment-routing` |
+
+**Rule:** Never use `show segment-routing mpls ...`. The `mpls` keyword does not exist
+under `show segment-routing` on IOS-XR. All MPLS-plane SR queries go through
+`show mpls ...` or the protocol-specific (`show isis ...`, `show ospf ...`) commands.
+
+---
+
 ## 2026-05-13 — IOS-XR SR mapping-server: `summary` and `active-policy` are not valid suffixes for `show segment-routing mapping-server prefix-sid-map ipv4`
 
 Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.

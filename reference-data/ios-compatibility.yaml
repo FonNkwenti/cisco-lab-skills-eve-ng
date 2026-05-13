@@ -1126,3 +1126,61 @@ commands:
     the IP prefix. Without 'detail', shows the summary line (local label,
     outgoing label, interface, next-hop). With 'detail', adds Label Stack,
     path flags, backup path info, and '(!) FRR pure backup' entries.
+
+- command: show segment-routing mpls connected-prefix-sid-map ipv4
+  context: exec
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand tree;
+    valid 'show segment-routing' subcommands are: local-block, mapping-server,
+    traffic-eng. To check the local SRGB range, use 'show segment-routing local-block'.
+    To check label allocations and ownership (SR vs LDP), use 'show mpls label table'.
+    For IS-IS SR prefix mappings, use 'show isis segment-routing prefix-sid-map active-policy'.
+    For OSPF SR prefix-SID state, use 'show ospf segment-routing'.
+
+- command: show segment-routing mpls state
+  context: exec
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand; there is
+    no 'state' keyword in the 'show segment-routing' tree. To check label allocation
+    conflicts or the contents of the label table, use 'show mpls label table'. To check
+    the SRGB allocation, use 'show segment-routing local-block'.
+
+- command: show segment-routing local-block
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Shows the allocated Segment Routing Global Block (SRGB) on the local router:
+    start label, end label, and current allocation state. Use when verifying that
+    a given SID index (e.g. index 50 = label 16050) falls within the configured block.
+    Replacement for the invalid 'show segment-routing mpls connected-prefix-sid-map'.
+
+- command: show mpls label table
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Shows all MPLS label allocations on the router with owner (IS-IS SR, LDP, static).
+    Useful for verifying that a specific SR label (e.g. 16050) is present and to check
+    for label conflicts between SR and LDP. Use when 'show segment-routing local-block'
+    shows the SRGB is correct but a label is still not appearing in the forwarding table.
+
+- command: show ospf segment-routing
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Shows OSPF SR state and prefix-SID bindings from the local OSPF SR database.
+    Displays SR capability, SRGB range, and per-area prefix-SID entries. Valid
+    replacement for the invalid 'show segment-routing mpls connected-prefix-sid-map ipv4'
+    in OSPF SR labs. Complement with 'show ospf database opaque-area detail' for
+    raw LSA-level SID TLV inspection.
