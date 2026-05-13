@@ -1082,6 +1082,39 @@ commands:
     - 'show mpls forwarding prefix 10.0.0.3/32 detail'
     On IOS-XE/IOSv the prefix can follow 'forwarding' directly without 'prefix'.
 
+- command: show segment-routing mapping-server prefix-sid-map ipv4 summary
+  context: exec
+  ios-xr: fail
+  xrv: fail
+  xrv9k: fail
+  notes: >
+    'summary' is not a valid keyword after 'prefix-sid-map ipv4'. Rejected with
+    '% Invalid input detected at '^' marker.' The correct form is simply:
+    'show segment-routing mapping-server prefix-sid-map ipv4' (bare, shows table)
+    or 'show segment-routing mapping-server prefix-sid-map ipv4 detail'.
+    To see mapping entries received from the MS on a peer router, use:
+    'show isis segment-routing prefix-sid-map active-policy'
+
+- command: show segment-routing mapping-server prefix-sid-map ipv4
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Valid bare form — shows all locally configured SR mapping-server entries in
+    table form (Prefix, SID Index, Range, Flags). Add 'detail' for extended info
+    (Last Prefix, Last SID Index per entry).
+
+- command: show isis segment-routing prefix-sid-map active-policy
+  context: exec
+  ios-xr: pass
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Valid on receiving routers — shows SR mapping entries received via IS-IS
+    from the mapping server. Complementary to the mapping-server-local command:
+    use on peers (not on the mapping server itself) to confirm distribution.
+
 - command: show mpls forwarding prefix <prefix/len>
   context: exec
   ios-xr: pass

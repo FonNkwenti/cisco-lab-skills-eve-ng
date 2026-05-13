@@ -6,6 +6,24 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR SR mapping-server: `summary` and `active-policy` are not valid suffixes for `show segment-routing mapping-server prefix-sid-map ipv4`
+
+Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.
+
+### Valid and invalid forms
+
+| Command | Valid? | Notes |
+|---------|--------|-------|
+| `show segment-routing mapping-server prefix-sid-map ipv4` | **pass** | Shows all local SR-MS entries in table form |
+| `show segment-routing mapping-server prefix-sid-map ipv4 detail` | **pass** | Adds Last Prefix, Last SID Index per entry |
+| `show segment-routing mapping-server prefix-sid-map ipv4 summary` | **fail** | `summary` is not a keyword; rejected with Invalid input |
+| `show segment-routing mapping-server prefix-sid-map ipv4 active-policy` | **fail** | `active-policy` is not valid on this command |
+| `show isis segment-routing prefix-sid-map active-policy` | **pass** | Shows mapping entries **received via IS-IS** (peer view, not MS view) |
+
+**Rule:** Never append `summary` to the `show segment-routing mapping-server prefix-sid-map ipv4` command. Use the bare form. For the peer view (entries received from the mapping server), use `show isis segment-routing prefix-sid-map active-policy` on the receiving router.
+
+---
+
 ## 2026-05-13 — IOS-XR SR+LDP coexistence: `show mpls forwarding prefix` shows LDP entry, not SR entry
 
 Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.
