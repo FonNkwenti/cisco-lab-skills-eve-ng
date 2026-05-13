@@ -999,3 +999,13 @@ commands:
     correct replacement for the non-existent 'show isis fast-reroute topology'
     command on IOS-XR. Append a prefix (e.g. 'detail 10.0.0.3/32') to filter
     to a single prefix.
+- command: bfd minimum-interval 50
+  context: router-isis-interface
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Config is accepted on both XRv 6.3.1 and XRv9k. However on classic XRv 6.3.1
+    (software forwarding), IS-IS BFD sessions do NOT form even with both sides
+    configured. 'show bfd session' returns empty; 'show isis adjacency detail'
+    shows BFD IPv4: None. Use 'show isis adjacency detail' on XRv 6.3.1 to confirm
+    TI-LFA protection via Adjacency SID '(protected)' status instead.

@@ -25,6 +25,22 @@ These commands do not exist in the XR show tree.
 **Rule:** Never use `show isis fast-reroute topology` or `show isis fast-reroute ipv4 <prefix>`
 in workbooks or scripts targeting IOS-XR platforms. Always use `show isis fast-reroute detail`.
 
+### BFD sessions do not form on classic XRv 6.3.1 for IS-IS
+
+On classic IOS-XRv 6.3.1 (software forwarding platform), BFD sessions for IS-IS never
+establish even when `bfd minimum-interval` and `bfd multiplier` are correctly configured
+on both sides. `show bfd session` returns empty; `show isis adjacency detail` shows
+BFD IPv4: None. This is a platform limitation — BFD sub-second timers require hardware
+forwarding (XRv9k or physical).
+
+**Workaround:** Use `show isis adjacency detail` to verify TI-LFA protection. When TI-LFA
+is active, each adjacency shows its SID as `(protected)` with a backup label stack,
+backup interface, and backup next-hop — this confirms the repair path is pre-installed
+independent of BFD.
+
+**Rule:** On workbooks targeting classic XRv, note the BFD limitation and direct students
+to `show isis adjacency detail` instead of `show bfd session` for protection verification.
+
 ### Adjacent PQ-node repair stack is one label, not two
 
 When the TI-LFA PQ-node is R2's immediate next-hop neighbor, IOS-XR imposes only one
