@@ -6,6 +6,35 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-13 — IOS-XR SR+LDP coexistence: `show mpls forwarding prefix` shows LDP entry, not SR entry
+
+Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.
+
+### Two forwarding entries coexist for the same prefix
+
+When both SR-MPLS and LDP are active on IOS-XR, the MPLS forwarding table contains
+**two separate entries** for the same IP prefix:
+
+- **SR entry:** keyed by local SR label (SRGB base + prefix-SID index, e.g. 16003).
+  Shown by `show mpls forwarding labels 16003 16003 detail` — displays `SR Pfx (idx N)`.
+- **LDP entry:** keyed by the IP prefix itself, local label dynamically allocated
+  outside the SRGB (e.g. 24008).
+  Shown by `show mpls forwarding prefix 10.0.0.3/32 detail` — displays the IP prefix as ID.
+
+`show mpls forwarding prefix <ip>/<len>` **always shows the LDP entry**, not the SR entry.
+A student who runs this command will see a dynamic label (24xxx) and conclude LDP is
+winning — but this is misleading. The routing table selects SR by default.
+
+**Correct commands to confirm SR wins:**
+1. `show route ipv4 <prefix> detail` — look for `labeled SR` and `Local Label: 16003`
+2. `show mpls forwarding labels 16003 16003 detail` — shows `SR Pfx (idx N)`, outgoing Pop
+
+**Rule:** In SR+LDP coexistence workbooks, never use `show mpls forwarding prefix` alone
+as evidence of SR winning. Always pair it with `show route detail` or
+`show mpls forwarding labels <srgb+index>` to show the SR entry explicitly.
+
+---
+
 ## 2026-05-13 — IOS-XR MPLS: `show mpls forwarding <prefix>` requires the `prefix` keyword
 
 Confirmed on XRv Classic 6.3.1 during lab-02 SR/LDP coexistence work.
