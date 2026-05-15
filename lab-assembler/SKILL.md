@@ -138,10 +138,15 @@ Write a complete workbook with all required sections:
 1. **Section 1 — Concepts & Skills Covered** — structured as follows:
    a. `**Exam Objective:**` line with blueprint bullet(s) and topic name
    b. One short intro paragraph (what the lab covers and why it matters)
-   c. Named theory subsections (`### Topic`) — prose, IOS syntax blocks, reference tables
+   c. `### The Problem This Lab Solves` framing subsection (REQUIRED). This block makes the conceptual chain explicit before any standalone-feature subsection appears. It must contain three parts in order:
+      - **Problem statement** — 1-2 paragraphs naming the operational gap the lab closes (e.g. "IGP shortest-path can't express business intent"). End with a bold sentence stating what mechanism closes the gap.
+      - **Roles table** — `| Piece | Role in the overall goal |` with one row per major feature the lab teaches. The Role column explains the feature's contribution to the overall goal in plain English, NOT its mechanics.
+      - **Analogy** — one bolded label (e.g. "**Analogy — courier dispatch.**") plus a bulleted list mapping each Piece to a concrete real-world counterpart. Close with a one-line bridge ("Every subsection below is one of these pieces...") that hands the student off to the per-feature subsections.
+   d. Named theory subsections (`### Topic`) — prose, IOS syntax blocks, reference tables
       - Minimum 3 subsections; depth mirrors labs 01/02 style
       - Explain the protocol concept, not just the commands
-   d. `**Skills this lab develops:**` table — Skill | Description (2 columns)
+      - **Each subsection MUST open with a one-line italicized tie-back sentence** that references the framing subsection's roles table or analogy — e.g. `*The intent container from the analogy — <what this subsection covers>.*` or `*The fallback ladder from the analogy — <what this subsection covers>.*`. Phrase it naturally; do NOT use a fixed prefix like "Where this fits the goal:". Without the tie-back, the subsections read as disconnected feature pages and the framing's value is lost.
+   e. `**Skills this lab develops:**` table — Skill | Description (2 columns)
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — Device Inventory table, cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/` (see IS/NOT format below)
@@ -601,7 +606,10 @@ generation context is still fresh.
 **Checklist — Section 1 (Concepts & Skills Covered):**
 - [ ] `**Exam Objective:**` line cites blueprint bullet(s) and topic name
 - [ ] One short intro paragraph follows the Exam Objective line
-- [ ] At least 3 named theory subsections (`### <Topic>`) with prose + IOS syntax blocks
+- [ ] `### The Problem This Lab Solves` framing subsection is present and appears BEFORE any feature subsection
+- [ ] Framing subsection contains: (1) problem statement ending in a bold "what mechanism closes the gap" sentence, (2) `Piece | Role in the overall goal` table, (3) `**Analogy — <name>.**` block with bulleted Piece↔analog mapping
+- [ ] At least 3 named theory subsections (`### <Topic>`) follow the framing block, with prose + IOS syntax blocks
+- [ ] Every feature subsection opens with a single-line italicized tie-back sentence that references the framing's roles table or analogy. Phrase it naturally — no fixed prefix required. No subsection is allowed to start with raw exposition.
 - [ ] `**Skills this lab develops:**` table closes the section with Skill | Description columns
 
 **Checklist — Section 3 (Hardware & Environment Specifications):**

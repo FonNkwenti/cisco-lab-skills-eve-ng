@@ -6,6 +6,79 @@ Newest entries at the top.
 
 ---
 
+## 2026-05-15 — IOS-XR XRv 9000 24.x: Affinity-constrained SR-TE paths use adjacency-SIDs, not prefix-SIDs
+
+**Symptom:** SR-TE policy with affinity `exclude-any` constraint shows an adjacency-SID
+(e.g., label 24000) in the SID list instead of the expected destination prefix-SID (e.g., 16003).
+User may mistake this for LDP labels because the value is outside the SRGB range (16000-23999).
+
+**Root cause:** When CSPF computes a path that diverges from the IGP shortest path (which is
+the whole point of affinity constraints), it cannot use the destination's prefix-SID. A
+prefix-SID means "route toward this node via IGP shortest path" — which would ignore the
+constraint and route via the excluded link. CSPF must use adjacency-SIDs to pin traffic to
+specific links that are not on the IGP shortest path.
+
+**Key distinction:**
+- `SID: 16003 [Prefix-SID]` → follow IGP shortest path to R3 (may use excluded links)
+- `SID: 24000 [Adjacency-SID]` → use this specific physical link explicitly
+
+**How to confirm the constraint is working:** Check `Path Accumulated Metric` and confirm
+label 16004 (R4's prefix-SID) is absent. An adjacency-SID for the constrained link with
+the correct metric is the correct and expected output.
+
+**Workbook impact:** Verification sections showing `SID[0]: 16003` for affinity-constrained
+dynamic policies should be updated to show the adjacency-SID with an explanatory note.
+
+---
+
+## 2026-05-15 — IOS-XR XRv 9000 24.x: SR-TE CSPF requires `distribute link-state` in IS-IS
+
+**Symptom:** SR-TE policy shows `Operational: down` with error `Source node not found in topology`.
+`show segment-routing traffic-eng topology` returns empty output even though IS-IS neighbors
+are up and `show mpls traffic-eng topology` is fully populated.
+
+**Root cause:** IOS-XR maintains two separate TE topology databases:
+1. RSVP-TE topology (`show mpls traffic-eng topology`) — populated by IS-IS TLV 22 automatically
+2. SR-TE CSPF topology (`show segment-routing traffic-eng topology`) — populated only when
+   `distribute link-state` is configured under the IS-IS address-family
+
+Without `distribute link-state`, the SR-TE CSPF engine has no topology graph and cannot
+identify even the local router as the source node.
+
+**Fix:** Add to all SR-capable routers in IS-IS:
+```
+router isis <PROCESS>
+ address-family ipv4 unicast
+  distribute link-state
+```
+
+**Required on:** All headend routers running SR-TE policies. Add to all SR-capable nodes
+in the domain as best practice (consistent across the topology).
+
+**Affected labs:** lab-03-sr-te-3node, lab-03-sr-te-policies-and-steering. Initial-configs
+patched for all XR nodes in both labs (2026-05-15).
+
+---
+
+## 2026-05-15 — IOS-XR XRv 9000 24.x: SR-TE CSPF optimizes label stack when path = IGP path
+
+**Symptom:** `show segment-routing traffic-eng policy color 10` shows only `SID[0]: 16003`
+(single label) for a dynamic IGP policy, not the expected `[16004, 16003]` (two labels).
+
+**Root cause:** When IOS-XR CSPF computes a path that exactly matches the IGP shortest path,
+it optimizes the label stack to only the destination's prefix-SID. The IGP already routes
+toward the destination correctly, so intermediate node SIDs are redundant.
+
+**How to confirm it's correct:** Check `Path Accumulated Metric`. A metric of 20 confirms the
+path routes via R4 (10+10=20) even though only R3's SID (16003) appears in the stack.
+A metric of 30 would mean the direct L5 path was used instead.
+
+**Workbook impact:** Expected outputs showing `[16004, 16003]` for a simple dynamic IGP policy
+should be updated to `[16003]` with a note about this optimization. The two-label stack WILL
+appear for explicit segment-lists (Tasks 3, 7) since those bypass CSPF optimization.
+
+---
+
 ## 2026-05-13 — IOS-XR XRv 6.3.1: `no segment-routing mpls sr-prefer` fails at commit
 
 Confirmed on XRv Classic 6.3.1 during lab-02 fault injection development.
