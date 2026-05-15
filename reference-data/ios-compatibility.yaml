@@ -43,8 +43,8 @@ platforms:
     group: ios-xr
     console_port: null
     deprecated: false
-    ram_gb: 10
-    notes: "Reserve for xrv9k-only features (MPLS data plane, SR-TE TI-LFA, large-scale EVPN). Boot ~10 min."
+    ram_gb: 16
+    notes: "Cisco system minimum is 16 GB RAM (per XRv9000 official requirements). Reserve for xrv9k-only behaviour discovered at lab build/validate time. Boot ~10 min."
   vmanage:
     ios: 20.6.2
     type: qemu
