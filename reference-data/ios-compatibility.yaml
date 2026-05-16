@@ -1201,3 +1201,66 @@ commands:
     replacement for the invalid 'show segment-routing mpls connected-prefix-sid-map ipv4'
     in OSPF SR labs. Complement with 'show ospf database opaque-area detail' for
     raw LSA-level SID TLV inspection.
+
+# === XR platform behaviour (2026-05-16) ===
+
+- command: metric-style narrow
+  context: router-isis-af-ipv4-unicast
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    REQUIRED on XR nodes that peer with IOSv IS-IS neighbors. XR with
+    'metric-style wide' only rejects narrow-metric TLVs (TLV 2) from IOSv,
+    causing zero IS-IS routes despite adjacencies being up. Add
+    'metric-style narrow' alongside 'metric-style wide' on XR nodes in any
+    mixed XR+IOSv environment. In all-XR environments, wide-only is fine.
+
+- command: import route-target (under vrf address-family)
+  context: config-vrf-af
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    On XR, 'import route-target' and 'export route-target' go under
+    'vrf NAME → address-family ipv4 unicast'. Do NOT put 'rd' under the
+    VRF definition — 'rd 4:100' under 'vrf CUST-A' enters 'config-rd'
+    (route-distinguisher set mode), not a VRF attribute. RD belongs only
+    under BGP 'vrf CUST-A'.
+
+- command: root (XR config mode)
+  context: any-config-submode
+  xrv: pass
+  xrv9k: pass
+  notes: >
+    Returns to global config mode from any sub-mode. REQUIRED between major
+    config sections in XR solution files because '!' does NOT exit sub-modes
+    on XR (unlike IOS). Without 'root', 'vrf CUST-A' entered from
+    'config-ldp-if-af' nests under LDP instead of becoming a global VRF.
+
+- command: show vrf CUST-A
+  context: exec
+  xrv: table-format
+  xrv9k: table-format
+  notes: >
+    Outputs a table (VRF/RD/RT/AFI/SAFI) without interface information.
+    To verify interface VRF assignment, use 'show run interface Gi0/0/0/N'
+    or equivalent. Validation specs must split VRF existence verification
+    from interface assignment verification on XR.
+
+- command: show ip vrf detail CUST-A
+  context: exec
+  ios-classic: abbreviates
+  notes: >
+    IOS abbreviates interface names in output:
+    'GigabitEthernet0/0' → 'Gi0/0'. Validation specs using must_contain
+    patterns must use the abbreviated form.
+
+- command: router bgp (XR cold boot commit)
+  context: global
+  xrv: lag-2-5min
+  xrv9k: lag-2-5min
+  notes: >
+    XR BGP process manager (bpm) takes 2-5 min to initialize on cold boot.
+    Committing BGP config before bpm is ready fails with
+    '%ROUTING-BGP-3-INIT_GET_VALUE'. Automation scripts must poll commit
+    with retries (suggest 6 attempts × 20s = 2 min window). After bpm is
+    ready, subsequent commits succeed normally.
