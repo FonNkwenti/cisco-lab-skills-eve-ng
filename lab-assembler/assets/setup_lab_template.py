@@ -68,7 +68,7 @@ def push_config(host: str, name: str, port: int, *, reset: bool = False) -> bool
 def main() -> int:
     parser = argparse.ArgumentParser(description="Push initial configs to lab nodes")
     parser.add_argument("--host", default="192.168.x.x",
-                        help="EVE-NG server IP (required)")
+                        help="EVE-NG server IP (or set EVE_HOST env var)")
     parser.add_argument("--lab-path", default=DEFAULT_LAB_PATH,
                         help=f"Lab .unl path in EVE-NG (default: {DEFAULT_LAB_PATH})")
     parser.add_argument("--reset", action="store_true",

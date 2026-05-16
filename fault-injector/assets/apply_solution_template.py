@@ -77,7 +77,7 @@ def restore_device(host: str, ports: dict, name: str, *, reset: bool) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Restore lab to known-good state")
     parser.add_argument("--host", default="192.168.x.x",
-                        help="EVE-NG server IP (required)")
+                        help="EVE-NG server IP (or set EVE_HOST env var)")
     parser.add_argument("--lab-path", default=None,
                         help="Lab .unl path in EVE-NG (auto-discovered if omitted)")
     parser.add_argument("--reset", action="store_true",
