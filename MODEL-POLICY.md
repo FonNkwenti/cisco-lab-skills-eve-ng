@@ -1,3 +1,7 @@
+---
+description: Defines which Anthropic model IDs are allowed to build labs at each difficulty tier, sourced from the model-policy.yaml shipped with the skills submodule.
+---
+
 # Model Policy
 
 The skills submodule ships a `model-policy.yaml` that defines which

@@ -1,3 +1,7 @@
+---
+description: Branching strategy and workflow conventions for the cisco-lab-skills repository, covering main/feature branches, submodule consumption by exam repos, and merge practices.
+---
+
 # Branching Strategy — `cisco-lab-skills`
 
 This repository is a **shared skill library** mounted as a git submodule at

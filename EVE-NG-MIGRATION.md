@@ -1,3 +1,7 @@
+---
+description: Migration guide from GNS3/Apple Silicon to EVE-NG on Dell Latitude 5540 (Windows), covering platform changes, image requirements, and topology adjustments.
+---
+
 # EVE-NG Migration Guide
 
 Migrating from GNS3/Apple Silicon to EVE-NG on Dell Latitude 5540 (Windows).

@@ -1,3 +1,7 @@
+---
+description: Foundation CLAUDE.md for the cisco-lab-skills submodule — shared context loaded automatically by Pi in every exam repo that mounts this submodule at .agent/skills/.
+---
+
 # cisco-lab-skills
 
 Foundation skill library for Cisco certification lab generation. Mounted as a git submodule

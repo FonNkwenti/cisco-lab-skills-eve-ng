@@ -48,7 +48,7 @@ def push_config(host: str, name: str, port: int, *, reset: bool = False) -> bool
     print(f"[*] Connecting to {name} on {host}:{port} ...")
     try:
         if reset:
-            soft_reset_device(host, port)
+            soft_reset_device(host, port, name=name)
         conn = connect_node(host, port)
         commands = [
             line.strip()

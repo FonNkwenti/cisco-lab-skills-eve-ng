@@ -1,3 +1,7 @@
+---
+description: Patterns, bugs, and design decisions from lab development across certifications. Reference for avoiding known pitfalls when starting a new certification or extending a skill.
+---
+
 # Lessons Learned — Cisco Lab Skills
 
 Patterns, bugs, and design decisions from lab development across certifications.

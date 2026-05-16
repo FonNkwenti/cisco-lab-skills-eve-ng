@@ -1,3 +1,7 @@
+---
+description: Root README for the cisco-lab-skills repository — AI agent skills for Cisco certification lab generation, shared as a git submodule across exam repos.
+---
+
 # cisco-lab-skills
 
 AI agent skills for Cisco certification lab generation. Used as a **git submodule** at `.agent/skills/` inside every certification lab project.

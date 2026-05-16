@@ -1,3 +1,7 @@
+---
+description: Changelog for the cisco-lab-skills repository, documenting all notable changes across versions.
+---
+
 # Changelog
 
 All notable changes to the cisco-lab-skills hub are documented here.
