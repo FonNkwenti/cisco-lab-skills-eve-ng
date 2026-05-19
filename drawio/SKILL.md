@@ -47,11 +47,25 @@ This section defines the canonical visual style for all topology diagrams. Every
 
 - Use the **Cisco19** shape library (`mxgraph.cisco19`). Do NOT use the older `mxgraph.cisco` library.
 - All devices: `width="60" height="60"` (use `width="50" height="40"` for end hosts/workstations).
+- **Icon by platform — pick `prIcon` from the device's platform, not its role:**
+
+  | Device platform (from `baseline.yaml`) | `prIcon` |
+  |----------------------------------------|----------|
+  | IOS XR — any XR node (`xrv`, `xrv9k`, ASR 9000, etc.) | `asr_9000` |
+  | IOS / IOS-XE router (`iosv`, `csr1000v`, ...) | `router` |
+  | L3 switch | `l3_switch` |
+  | L2 switch | `workgroup_switch` |
+
+  **Rule:** every IOS XR router uses the **ASR 9000** icon (`prIcon=asr_9000`) — even when the platform is XRv classic, since XRv is the virtual form of XR software that runs on ASR 9000 hardware. This makes XR nodes instantly distinguishable from IOS/IOS-XE routers in mixed XR↔XE topologies (e.g. a 6PE/6VPE interop lab). Only non-XR routers use `prIcon=router`.
 - **Style Strings** (include `sketch=0;html=1;aspect=fixed;pointerEvents=1;` on every icon):
 
-  - **Router**:
+  - **Router (IOS / IOS-XE)**:
     ```
     sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=router;fillColor=#FAFAFA;strokeColor=#005073;
+    ```
+  - **IOS XR Router (ASR 9000) — use for every XR node**:
+    ```
+    sketch=0;points=[[0.5,0,0],[1,0.5,0],[0.5,1,0],[0,0.5,0],[0.145,0.145,0],[0.8555,0.145,0],[0.855,0.8555,0],[0.145,0.855,0]];html=1;aspect=fixed;pointerEvents=1;shape=mxgraph.cisco19.rect;prIcon=asr_9000;fillColor=#FAFAFA;strokeColor=#005073;
     ```
   - **L3 Switch**:
     ```
@@ -563,6 +577,7 @@ Every badge color present in the diagram needs a legend entry using the swatch c
     - [ ] Canvas background is `#1a1a2e` (set in `<mxGraphModel background="#1a1a2e">`).
     - [ ] Title is at the top center, bold, 16pt, **white text**, wrapped in a rounded white-bordered frame (`strokeColor=default;fillColor=none;rounded=1;`) — NOT `strokeColor=none`.
     - [ ] All device icons use `mxgraph.cisco19.rect;prIcon=<type>` — NOT the old `mxgraph.cisco.routers.router` shapes.
+    - [ ] **Icon matches platform** (§4.2): every IOS XR node uses `prIcon=asr_9000`; only non-XR (IOS/IOS-XE) routers use `prIcon=router`. In mixed XR↔XE labs the two icons must visibly differ.
     - [ ] Device labels are **embedded in the device cell `value`** as HTML (white bold hostname + gray role/IP). No separate label cells.
     - [ ] Label position uses `labelPosition=` / `verticalLabelPosition=` attributes, following the Empty Side Rule (Section 4.3.1).
     - [ ] All connection lines are **white** (`#FFFFFF`), strokeWidth=2.
@@ -602,6 +617,10 @@ Every badge color present in the diagram needs a legend entry using the swatch c
 --# Device icons look wrong (plain circle/router silhouette instead of Cisco19 style)
 - **Cause:** Old `mxgraph.cisco.routers.router` shape used instead of `mxgraph.cisco19.rect;prIcon=router`.
 - **Solution:** Replace the device style with the cisco19 string from §4.2. The cisco19 shapes render as a white/light rectangle with a teal border and an embedded icon — they do NOT look like the old blue-filled silhouettes.
+
+--# XR router drawn with the generic router icon
+- **Cause:** `prIcon=router` was used for an IOS XR node. XR nodes must use the ASR 9000 icon so they are distinguishable from IOS/IOS-XE routers.
+- **Solution:** Change `prIcon=router` to `prIcon=asr_9000` for every device whose `baseline.yaml` platform is an XR platform (`xrv`, `xrv9k`, ...). See the platform→icon table in §4.2. The shape (`mxgraph.cisco19.rect`), connection points, and bounding box are identical — only `prIcon` changes, so links and labels do not shift.
 
 --# Zone shapes are ovals instead of boxes
 - **Cause:** `ellipse` style used instead of `rounded=1;arcSize=5`.
