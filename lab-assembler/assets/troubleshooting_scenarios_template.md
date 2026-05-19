@@ -235,6 +235,54 @@ When creating troubleshooting scenarios for your labs:
 7. **Educational solutions**: Explanations should teach the "why" not just the "how"
 8. **Include verification**: Always show the commands and outputs that prove the fix worked
 
+## Redundancy Safety Check (CRITICAL — run before finalizing any scenario)
+
+**The #1 cause of broken troubleshooting scenarios is network redundancy bypassing the fault.**
+If an alternate path exists and remains functional after the fault is injected, the student
+will type `show` commands and see a working network — the fault is invisible and the exercise
+is worthless.
+
+For every fault scenario you design, answer these questions before writing the inject script:
+
+### 1. What is the single observable symptom?
+Define it precisely: a specific route missing from a specific table, a specific BGP session
+down, a specific ping failing. "Network is broken" is too vague. "`show bgp vpnv4 unicast all`
+on PE3 shows zero remote prefixes" is specific.
+
+### 2. What alternate paths exist for the affected traffic/control-plane?
+Draw every possible path from source to destination on the topology diagram:
+- **Physical paths**: Every link sequence through every P-router
+- **BGP paths**: Every iBGP session — direct PE-PE, via RR, via second RR if dual-RR
+- **VRF import paths**: Every PE whose VRF imports the relevant RT
+- **IGP paths**: Every IGP adjacency advertising the BGP next-hop loopback
+
+### 3. For each alternate path: does the fault break it too?
+- If YES for ALL paths → the fault works. Proceed.
+- If NO for ANY path → the fault is ineffective. **Redesign it.** The network will
+  converge over the surviving path and the student will see no problem.
+
+### 4. Common failure patterns to avoid:
+
+| ❌ Broken Fault | Why It Fails | ✅ Fixed Fault |
+|----------------|-------------|---------------|
+| Disable MPLS on one P1↔PE1 link when PE1 also connects to P2 | LSP rebuilds via P2 path. Route still works. | Disable MPLS on BOTH P1↔PE1 and P2↔PE1 (compound), OR target a single-homed CE-PE link |
+| Remove `route-reflector-client` for PE3 when PE3 is also a non-client of another RR | Routes from clients are reflected to non-clients. Route still arrives. | Remove the neighbor entirely, or use a single-RR topology |
+| Break one IGP adjacency when the router has 3 other adjacencies | Loopback remains reachable via remaining adjacencies. BGP session stays up. | Break ALL IGP adjacencies on the target router, OR target the BGP session directly |
+| Change a VRF import RT when another PE imports the same RT | The CE can learn the route from the other PE. Connectivity works. | Target the RT on ALL PEs that import it, OR target the export side on the origin PE |
+| Wrong AS number on one end of a BGP session when a second session to another neighbor exists | The route arrives via the other neighbor. Table still populates. | Remove the second session too, OR target the only BGP session the router has |
+
+### 5. After designing a scenario that passes the check:
+Insert an **Efficacy Note** HTML comment inside the `<details>Diagnosis` block:
+
+```html
+<!-- Efficacy: <one-line explanation of why no alternate path survives the fault.
+     E.g., "PE3's only BGP neighbor is P1 (2.2.2.2). Removing route-reflector-client
+     on P1 for 5.5.5.5 guarantees zero VPNv4 routes on PE3 — no alternate neighbor
+     and no second RR exist in this topology." -->
+```
+
+This documents the reasoning for anyone reviewing the lab later.
+
 ## Additional Scenario Ideas by Protocol
 
 ### EIGRP:

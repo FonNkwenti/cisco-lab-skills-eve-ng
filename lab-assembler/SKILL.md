@@ -677,6 +677,120 @@ After the gate passes, append to `labs/<topic>/lab-NN-<slug>/decisions.md`:
 If `decisions.md` does not exist (i.e. the model gate did not record one), create it
 with the model gate entry first (per `/build-lab` Section 1) and this gate entry second.
 
+--# Step 3c: Fault Efficacy Gate (BLOCKING)
+
+After Step 3b passes but before Step 4, validate that every troubleshooting
+ticket in Section 9 of the workbook will actually cause the symptom it claims —
+not get silently bypassed by network redundancy.
+
+**Background:** Injected faults fail ~30% of the time because they target an
+element (an interface, a BGP session, an IGP adjacency) that has a redundant
+backup path. If an alternate path exists and remains functional after the fault,
+the student types `show` commands and sees a working network — the fault is
+invisible, the troubleshooting exercise is broken, and the lab loses all
+educational value.
+
+**Procedure:**
+1. Re-read `workbook.md` Section 9. Extract each `### Ticket N — <Symptom>`
+   block in full.
+2. Read `labs/<topic>/baseline.yaml` — the full `core_topology.links` and
+   `labs[N].devices` to understand the physical topology.
+3. For each ticket, run a **redundancy bypass analysis**:
+
+   a. **Identify the fault** — derive the injected config change from the
+      ticket's Fix `<details>` block (the inverse of the fix commands is the
+      fault — e.g., if the fix adds `route-reflector-client`, the fault
+      removes or omits it).
+
+   b. **Identify the expected symptom** — from the ticket heading and scenario
+      context. What exactly does the student observe? A missing route? A
+      down BGP session? A failed ping? Be specific.
+
+   c. **Enumerate all paths** for the affected traffic or control-plane
+      information. For each:
+      - **Physical paths:** Every link sequence between source and destination
+        that carries the affected protocol (MPLS, IGP, etc.).
+      - **BGP paths:** Every iBGP/eBGP session that could deliver the affected
+        NLRI to the observing device. Consider route reflection rules
+        (client→client, non-client→client, etc.).
+      - **VRF import paths:** Every PE whose VRF imports the affected RT.
+      - **IGP paths:** Every IGP adjacency that gives the observing device a
+        route to the BGP next-hop.
+
+   d. **Test each path post-fault:** For each path identified in (c), ask:
+      "After the fault is injected, is this path still functional?" If YES
+      for ANY path, the fault is **ineffective** — the symptom won't manifest.
+
+   e. **Verdict:**
+      - ✅ PASS — no alternate path survives the fault. The symptom is
+        guaranteed to appear.
+      - ❌ FAIL — at least one alternate path bypasses the fault. The symptom
+        may not appear. **The ticket must be redesigned.**
+
+4. **Resolution on FAIL — redesign the fault.** Options:
+   - **Target a single point of failure:** Pick an element with zero redundancy
+     (e.g., the route reflector itself when there's only one RR; a single-homed
+     CE-PE link; the only VRF import RT for a prefix).
+   - **Compound fault:** Inject enough faults to eliminate all bypass paths.
+     Example: if disabling MPLS on one P1↔PE1 link still leaves the path via
+     P2↔PE1, also disable MPLS on P2↔PE1. But compound faults must stay
+     realistic — 2 related breaks, not 5.
+   - **Change the expected symptom:** If the network will still converge but
+     with worse metrics/convergence time, make the symptom about those instead.
+     But prefer absolute breaks (route gone, session down) over degraded-state
+     symptoms (higher metric) — degraded symptoms are harder to observe
+     unequivocally. A student should be able to confirm the fault with one or
+     two `show` commands.
+   - **Remove and replace:** If no redesign works, remove the ticket and replace
+     it with one that targets a non-redundant element. Never leave an ineffective
+     ticket in the workbook.
+
+5. **After redesign, re-run the full analysis** on the modified ticket. Iterate
+   until all tickets pass.
+
+6. Only proceed to Step 4 once EVERY ticket passes its redundancy analysis.
+
+**Redundancy analysis framework (reference table):**
+
+| Fault Category | Redundancy Question | Common Bypass |
+|---------------|-------------------|---------------|
+| Interface-level: `no mpls ip`, shutdown, wrong IP | Does the LSP have a second MPLS-enabled path to the same PE loopback? | Dual-homed PEs with redundant P-routers let LDP build the LSP via the other P |
+| Interface-level: `no ip router isis/ospf` | Does the router have another IGP adjacency that advertises the same loopback? | Multiple P-router adjacencies keep the loopback reachable |
+| BGP session: remove `neighbor`, wrong AS | Does the route arrive via another iBGP neighbor (e.g., a second RR, or direct PE-PE session)? | Dual RRs, residual full-mesh sessions, non-clients receiving reflection |
+| BGP policy: missing `route-reflector-client` | Will the route still reach the PE via reflection to non-clients? | Routes from non-clients → reflected to clients; if the observing PE is a client, it might still get the route via another client that re-advertised it |
+| BGP policy: missing `send-community extended` | Is this the ONLY neighbor a PE has? Does the NLRI exist with correct RT via another path? | PE has multiple iBGP sessions and another carries the prefix with RT intact |
+| VRF: wrong RD, wrong RT, missing import | Is the prefix imported by another PE's VRF that the observing CE can reach? | Multiple PEs import the same RT; the CE can learn the route from another PE |
+| IGP: missing `network` statement | Does the same loopback/interface get advertised via another IGP process or static route? | Multiple IGP adjacencies on different interfaces advertise the same prefix |
+| MPLS LDP: missing `mpls ip` on core interfaces | Can the LSP be built using a different label protocol (RSVP-TE) or via an alternate P-router? | Redundant P-routers provide an alternate LSP; RSVP-TE tunnels bypass broken LDP links |
+
+**Documentation requirement:** After each ticket passes, append an HTML comment
+**Efficacy Note** inside the ticket's `<details>Diagnosis` block in the workbook:
+
+```html
+<!-- Efficacy: <one-line explanation of why the fault is guaranteed to
+     cause the symptom — cite the specific lack of redundancy. E.g.,
+     "PE3's only BGP neighbor is P1 (2.2.2.2). Removing route-reflector-client
+     on P1 for 5.5.5.5 guarantees zero VPNv4 routes on PE3 — no alternate
+     neighbor exists." -->
+```
+
+This note serves as documentation for anyone reviewing the lab (and for the LLM
+if the lab is later regenerated). It is invisible to the student inside the
+`<details>` block.
+
+**Outcome logging:**
+After all tickets pass, append to `labs/<topic>/lab-NN-<slug>/decisions.md`:
+
+```markdown
+## Fault efficacy gate — <YYYY-MM-DD>
+- Outcome: <PASS-CLEAN | PASS-AFTER-FIXES>
+- Tickets checked: <N>
+- Tickets redesigned: <count>
+- Notes: <e.g., "Ticket 3 redesign: targeted P1 route-reflector-client for 5.5.5.5
+  (single point of failure — PE3's only BGP neighbor is P1). Ticket 1 and 2 passed
+  as-is (no redundancy bypass exists).">
+```
+
 --# Step 4: Generate initial-configs/
 
 - **First progressive lab (number 0):** Generate base IP addressing from `baseline.yaml core_topology` (IP config only — no routing protocol config).

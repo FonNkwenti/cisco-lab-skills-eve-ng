@@ -194,7 +194,7 @@ to work but new labs should use the v2.0 workflow.
 
 ## [1.0.0] — 2026-02-20
 
-### Initial Release — Extracted from ccnp-encor-labs-conductor
+### Initial Release — Extracted from ccnp-encor-labs skills toolkit
 
 **Skills included:**
 - `chapter-builder` — Multi-lab generation with config chaining
