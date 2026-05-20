@@ -87,7 +87,13 @@ Exit codes: `0` success, `3` EVE-NG error, `4` pre-flight check failed.
 --# Step 3: Generate apply_solution.py
 
 Use `assets/apply_solution_template.py` as the base template. Customise:
-- `RESTORE_TARGETS` — list of all device names affected by any of the scenarios
+- `RESTORE_TARGETS` — **EVERY device that has a `solutions/<Device>.cfg` file.**
+  This is NON-NEGOTIABLE. During `validate-lab --verify`, the solution configs
+  must be pushed to ALL nodes so every device has the correct running config
+  for validation checks. A lab with 7 solution configs but only 3 devices in
+  `RESTORE_TARGETS` will leave 4 nodes unconfigured, causing false validation
+  failures and phantom Command Errors. Do NOT limit `RESTORE_TARGETS` to only
+  the devices targeted by fault-injection scenarios.
 
 The script reads solution configs from `solutions/[Device].cfg` (two directory levels above
 `scripts/fault-injection/`, i.e. the lab root). It calls `find_open_lab(host, node_names=RESTORE_TARGETS)`
@@ -112,7 +118,7 @@ Use `assets/README_template.md` as the base. Fill in:
 - [ ] NO `DEFAULT_LAB_PATH` constant in any script — auto-discovery via `find_open_lab()` is used
 - [ ] `find_open_lab` is imported from `eve_ng` in all scripts
 - [ ] `--lab-path` defaults to `None` and is treated as optional override only
-- [ ] `RESTORE_TARGETS` in `apply_solution.py` covers every device touched by any scenario
+- [ ] **HARD RULE — `RESTORE_TARGETS` must match every `solutions/<Device>.cfg` file on disk.** Count the .cfg files in `solutions/` and verify the same names appear in `RESTORE_TARGETS`. If there are 7 solution configs, `RESTORE_TARGETS` must list exactly those 7 device names. Failure here means `validate-lab --verify` will leave nodes unconfigured.
 - [ ] `PREFLIGHT_SOLUTION_MARKER` and `PREFLIGHT_FAULT_MARKER` are distinct, unambiguous strings
 - [ ] **Redundancy sanity check passed** — for every injected fault, all alternate paths for the affected traffic/control-plane are also broken by the fault (or no alternate paths exist). If an alternate path survives, the fault is invisible and the script is useless.
 - [ ] **No script docstring, banner, print, or preflight error message reveals the fault type, affected device/interface, or expected symptom** — students must discover these through troubleshooting, not by reading the script
