@@ -309,6 +309,22 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
 10. **Ship the EVE-NG `.unl` file.** Every lab MUST include a `topology/` directory
    containing the exported `.unl` file alongside `topology.drawio` and a
    `README.md` explaining the import process. See Section 7 for the standard.
+11. **Traceroute commands in validation specs MUST be time-boxed.** Unbound
+   `traceroute` (default: 30 hops × 3 probes × 1-3 s) blocks the console for
+   90+ seconds and returns all-star output that cannot be aborted by Netmiko.
+   Always append ` ttl 1 5 timeout 1 probe 1` unless the command already
+   specifies those options:
+   ```
+   # BAD — blocks up to 90 s, no useful output if ICMP filtered
+   traceroute 172.16.2.1 source Loopback0
+
+   # GOOD — max 5 hops × 1 probe × 1 s = 5 seconds
+   traceroute 172.16.2.1 source Loopback0 ttl 1 5 timeout 1 probe 1
+   ```
+   `validate_lab.py` enforces this automatically via `_timebox_command()` —
+   any traceroute in `validation-spec.yaml` without `timeout`/`ttl`/`probe`
+   is rewritten before sending. Spec authors should write the time-boxed form
+   directly so the spec is accurate on disk.
 
 --# 7. Shipping EVE-NG Lab Files (`.unl`)
 

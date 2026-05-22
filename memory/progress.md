@@ -6,6 +6,7 @@
 |-------|-----|--------|-------|
 | ospf | lab-00-single-area-ospfv2 | ✓ Complete | Approved |
 | ospf | lab-01-multiarea-ospfv2 | ✓ Complete | Review needed — Haiku test build |
+| evpn | lab-00-evpn-vpws | Review Needed | Opus 4.7 build; validation unverified (no EVE-NG host — best-effort EVPN syntax, `! TODO: verify` markers); baseline bumped v2.1 (PE-XR replaces PE2 as VPWS endpoint); promote via /validate-lab |
 
 ---
 

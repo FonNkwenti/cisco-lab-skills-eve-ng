@@ -378,7 +378,7 @@ show ip route eigrp
 </details>
 ```
 
-**Troubleshooting ticket format (required for each scenario in Section 8):**
+**Troubleshooting ticket format (required for each scenario in Section 9):**
 
 Ticket headings MUST describe the **symptom** the student observes — never the fault type or target device. The fault identity is the answer and must only appear inside `<details>` spoiler blocks.
 
@@ -387,18 +387,63 @@ Ticket headings MUST describe the **symptom** the student observes — never the
 
 [1-2 sentence scenario context — what the student has been told]
 
-**Success criteria:** [What must be true when fixed]
+**Inject:** `python3 scripts/fault-injection/inject_scenario_0N.py`
+
+**Success criteria:** [What must be true when fixed — specific verifiable state]
 
 <details>
 <summary>Click to view Diagnosis Steps</summary>
-...
+
+**Step 1 — [What this step checks]:**
+```
+[Device]# show [command]
+```
+[Explain what to look for in the output. If X, conclude Y. If Z, proceed to Step 2.]
+
+**Step 2 — [Narrower check]:**
+```
+[Device]# show [command]
+```
+[Explain the expected output vs. broken output. What does each result mean?]
+
+**Step N — [Final narrowing step that isolates the fault]:**
+```
+[Device]# show [command]
+```
+[Pinpoint the exact omission or misconfiguration.]
+
 </details>
 
 <details>
 <summary>Click to view Fix</summary>
-...
+
+The expected fault is [one-line description].
+
+```
+[Device](config)# [fix command 1]
+[Device](config-sub)# [fix command 2]
+[Device](config-sub)# end
+
+[Device]# show [verification command]    ! [what to confirm]
+```
+
+[If applicable, add alternative fault + fix here with a separate prose lead-in.]
 </details>
 ```
+
+**Diagnosis Steps rules:**
+- Number each step (`Step 1 —`, `Step 2 —`, etc.) with a title describing what it checks
+- Each step must contain at least one `show` command in a code block with the device prompt
+- After every code block, explain what the student should see, what each outcome means, and which step to go to next if the fault isn't found here
+- Steps must progressively narrow: start broad ("confirm the symptom exists"), then isolate ("check this specific component"), then pinpoint ("here is the exact missing config line")
+- Never reveal the fault in the step titles — the fault is only named in the Fix section
+- Each diagnosis code block must include explanatory comments (`! ←`) marking the critical output lines (Section 6 format for `show` output)
+
+**Fix rules:**
+- Always include actual IOS/XR config commands in a code block — never prose-only "add X"
+- Include verification commands that confirm the fix worked
+- If multiple faults could cause the same symptom, include alternative fixes with clear labels (e.g., "Alternative fault: ...")
+- Use the correct device prompt: `Device#` for IOSv exec, `Device(config)#` for global config, `RP/0/0/CPU0:Device#` for XR exec, `RP/0/0/CPU0:Device(config)#` for XR config
 
 Examples of correct vs. incorrect headings:
 - ❌ `Ticket 1: AS Number Mismatch (Target: R2)` — reveals fault and device
@@ -408,7 +453,7 @@ Examples of correct vs. incorrect headings:
 
 **Section 9 format (required):**
 
-Section 9 opens with the inject/restore workflow, then lists each ticket. Each ticket includes its inject command inline so the student knows exactly which script to run without leaving the workbook.
+Section 9 opens with the inject/restore workflow, then lists each ticket using the detailed Diagnosis + Fix template defined above. Each ticket includes its inject command inline so the student knows exactly which script to run without leaving the workbook.
 
 ```markdown
 ## 9. Troubleshooting Scenarios
@@ -426,23 +471,7 @@ python3 scripts/fault-injection/apply_solution.py      # restore
 
 ---
 
-### Ticket N — [Observable Symptom]
-
-[1-2 sentence scenario context]
-
-**Inject:** `python3 scripts/fault-injection/inject_scenario_0N.py`
-
-**Success criteria:** [What must be true when fixed]
-
-<details>
-<summary>Click to view Diagnosis Steps</summary>
-...
-</details>
-
-<details>
-<summary>Click to view Fix</summary>
-...
-</details>
+[Each ticket follows the detailed format above: heading, context, Inject, Success criteria, Diagnosis Steps with numbered walkthrough, Fix with commands]
 ```
 
 **`scripts/fault-injection/README.md` format (ops-only — no challenge descriptions):**
@@ -651,7 +680,9 @@ generation context is still fresh.
 - [ ] Workflow code block at the top showing `setup_lab.py` + an `inject_scenario_0N.py` + `apply_solution.py` sequence
 - [ ] At least 3 `### Ticket N — <Symptom>` blocks
 - [ ] No ticket heading reveals the fault type, target device, or root cause (symptom-only)
-- [ ] Each ticket has: 1-2 sentence scenario context, `**Inject:**` command line, `**Success criteria:**` line, Diagnosis Steps `<details>`, Fix `<details>`
+- [ ] Each ticket has: 1-2 sentence scenario context, `**Inject:**` command line, `**Success criteria:**` line, Diagnosis Steps `<details>` with numbered walkthrough, Fix `<details>` with actual config commands
+- [ ] Diagnosis Steps: each step numbered, each step contains at least one `show` command in a code block with explanatory prose, steps progressively narrow from symptom→isolation→pinpoint
+- [ ] Fix section: contains actual IOS/XR commands in a code block (never prose-only), includes verification commands
 
 **Checklist — Section 10 (Lab Completion Checklist):**
 - [ ] Exactly two groups: Core Implementation and Troubleshooting
