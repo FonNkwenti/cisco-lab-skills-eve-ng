@@ -152,7 +152,7 @@ Write a complete workbook with all required sections:
 
       Required parts in order:
 
-      1. **Opening sentence** (italicised): `*Read this before Task N if [the config] feels scattered.*` — N is the task number where assembly complexity peaks (the assembler task). `[the config]` names the specific config: "the IOS-XR config", "the four config blocks".
+      1. **Opening sentence** (italicised): `*Read this before Task N if [the config] feels scattered.*` — N is the task number where assembly complexity peaks; identify it as the task where the student assembles all independent config blocks for the first time (typically the highest-numbered configuration task in Section 5). `[the config]` names the specific config: "the IOS-XR config", "the four config blocks".
 
       2. **Conceptual explanation** — 1-2 paragraphs. Names the structural principle: why the config is shaped this way and what the assembly point is. For multi-platform labs, names what each platform fuses vs. splits. No IOS syntax — conceptual only.
 
@@ -161,7 +161,7 @@ Write a complete workbook with all required sections:
          - Multi-platform: `| # | The job | Question it answers | [Platform A] | [Platform B] | Shared key |`
          Rules: one row per major config block the student must write; *Question it answers* describes functional role only — never IOS syntax; *Shared key* names the identifier linking the block to the assembler (EVI number, interface name, VRF name) — use `—` if none; bold the assembler row's "The job" cell: `**Cross-connect (assembler)**` or equivalent.
 
-      4. **"Invisible wires" ASCII diagram** — one per platform. Each shows config blocks as bordered regions (`┌─┐│└─┘`) with `▼ ►` arrows annotated with the shared identifier, and the assembler block labelled `(THE ASSEMBLER)`. Wrapped in a fenced code block (no language tag).
+      4. **"Invisible wires" ASCII diagram** — one per platform. Each shows config blocks as bordered regions (`┌─┐│└─┘`) with `▼ ►` arrows annotated with the Shared key value from the jobs table above, and the assembler block labelled `(THE ASSEMBLER)`. Wrapped in a fenced code block (no language tag).
 
       5. **Analogy mapping** — 4-6 bullet points mapping each job to its counterpart in the `### The Problem This Lab Solves` analogy above. Closes with a single bold sentence: `**[Assembler job description] — it is where the service comes alive.**`
 
