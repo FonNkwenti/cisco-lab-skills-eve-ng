@@ -675,6 +675,14 @@ generation context is still fresh.
 - [ ] Framing subsection contains: (1) problem statement ending in a bold "what mechanism closes the gap" sentence, (2) `Piece | Role in the overall goal` table, (3) `**Analogy — <name>.**` block with bulleted Piece↔analog mapping
 - [ ] At least 3 named theory subsections (`### <Topic>`) follow the framing block, with prose + IOS syntax blocks
 - [ ] Every feature subsection opens with a single-line italicized tie-back sentence that references the framing's roles table or analogy. Phrase it naturally — no fixed prefix required. No subsection is allowed to start with raw exposition.
+- [ ] `### Mental Model: [Topic] = [N Jobs]` subsection present after the last feature subsection and before the Skills table
+- [ ] Mental Model heading names both the technology and the job count; self-explanatory without surrounding context
+- [ ] Opening italicised sentence references a specific Task number ("Read this before Task N...")
+- [ ] Jobs table present with columns: #, The job, Question it answers, platform column(s), Shared key
+- [ ] "Question it answers" column describes functional role only — no IOS syntax in any cell
+- [ ] One "invisible wires" ASCII diagram per platform; assembler block labelled (THE ASSEMBLER) or equivalent; box-drawing characters used
+- [ ] Analogy mapping present (4-6 bullets); closes with a bold assembler sentence
+- [ ] Per-lab note closes the subsection
 - [ ] `**Skills this lab develops:**` table closes the section with Skill | Description columns
 
 **Checklist — Section 3 (Hardware & Environment Specifications):**
