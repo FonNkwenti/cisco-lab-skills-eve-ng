@@ -701,6 +701,7 @@ generation context is still fresh.
 - [ ] Every Section 5 H3 heading matches `### Task N:` (N = digit). Headings like `### Scenario A`, `### Objective N`, `### Step N` are a FAIL. Exception: capstone-ii troubleshooting tickets use `### Ticket N —`, but capstone-i implementation tasks still use `### Task N:`.
 - [ ] Each `### Task N:` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
 - [ ] No task bullet contains raw IOS command syntax
+- [ ] The task that configures the assembler block has a `>` blockquote cross-reference to the Mental Model immediately before its first bullet
 - [ ] No task is a troubleshooting or fault-diagnosis exercise — all Section 5 tasks are implementation/configuration only; troubleshooting belongs in Section 9
 - [ ] Capstone labs only: heading is `Full Protocol Mastery` (capstone_i) or `Comprehensive Troubleshooting` (capstone_ii)
 
