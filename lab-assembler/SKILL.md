@@ -146,7 +146,28 @@ Write a complete workbook with all required sections:
       - Minimum 3 subsections; depth mirrors labs 01/02 style
       - Explain the protocol concept, not just the commands
       - **Each subsection MUST open with a one-line italicized tie-back sentence** that references the framing subsection's roles table or analogy — e.g. `*The intent container from the analogy — <what this subsection covers>.*` or `*The fallback ladder from the analogy — <what this subsection covers>.*`. Phrase it naturally; do NOT use a fixed prefix like "Where this fits the goal:". Without the tie-back, the subsections read as disconnected feature pages and the framing's value is lost.
-   e. `**Skills this lab develops:**` table — Skill | Description (2 columns)
+   e. `### Mental Model: [Topic] = [N Jobs]` subsection (REQUIRED). Always present — every lab gets one. Placement: immediately after the last `### <Topic>` feature subsection and before the `**Skills this lab develops:**` table. It is the synthesis bridge between theory (items c–d) and the task implementations in Section 5.
+
+      The heading format is `### Mental Model: [Topic] = [N Jobs]` where *Topic* names the main technology ("One EVPN VPWS Endpoint", "One OSPF ABR") and *N* names the job count ("Four Jobs", "Three Pieces"). The heading must be self-explanatory to a student scanning the workbook without reading surrounding text.
+
+      Required parts in order:
+
+      1. **Opening sentence** (italicised): `*Read this before Task N if [the config] feels scattered.*` — N is the task number where assembly complexity peaks (the assembler task). `[the config]` names the specific config: "the IOS-XR config", "the four config blocks".
+
+      2. **Conceptual explanation** — 1-2 paragraphs. Names the structural principle: why the config is shaped this way and what the assembly point is. For multi-platform labs, names what each platform fuses vs. splits. No IOS syntax — conceptual only.
+
+      3. **Jobs table** — always required. Column schema:
+         - Single-platform: `| # | The job | Question it answers | [Platform] | Shared key |`
+         - Multi-platform: `| # | The job | Question it answers | [Platform A] | [Platform B] | Shared key |`
+         Rules: one row per major config block the student must write; *Question it answers* describes functional role only — never IOS syntax; *Shared key* names the identifier linking the block to the assembler (EVI number, interface name, VRF name) — use `—` if none; bold the assembler row's "The job" cell: `**Cross-connect (assembler)**` or equivalent.
+
+      4. **"Invisible wires" ASCII diagram** — one per platform. Each shows config blocks as bordered regions (`┌─┐│└─┘`) with `▼ ►` arrows annotated with the shared identifier, and the assembler block labelled `(THE ASSEMBLER)`. Wrapped in a fenced code block (no language tag).
+
+      5. **Analogy mapping** — 4-6 bullet points mapping each job to its counterpart in the `### The Problem This Lab Solves` analogy above. Closes with a single bold sentence: `**[Assembler job description] — it is where the service comes alive.**`
+
+      6. **Per-lab note** — exactly one sentence: `**Per-lab note.** [What is specific about this lab's implementation — platform combination, inherited config, scope constraints.]`
+
+   f. `**Skills this lab develops:**` table — Skill | Description (2 columns)
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — Device Inventory table, cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/` (see IS/NOT format below)
