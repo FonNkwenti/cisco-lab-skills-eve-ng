@@ -283,6 +283,21 @@ Rules for task bullet points:
   than following it), the context hint must tell students to run `?` **before** typing the
   argument, not after. Example: `next-address loose <IP>` — hint should say
   "use `next-address ?` before typing the address to see available keyword options."
+- When a task configures the **assembler block** (the block that references and ties together
+  all the other independent blocks — e.g., the XR `xconnect`, the E-LAN `bridge-domain` with
+  its `evi` binding, an MPLS TE tunnel's `path-option`), add a `>` blockquote **immediately
+  before the first bullet** of that task:
+
+  ```markdown
+  > **Lost in the [N] config blocks below?** Read *Mental Model: [full heading title]*
+  > in Section 1 first — it shows how [one-line description of what links the blocks].
+  ```
+
+  Rules: exactly one cross-reference per lab; if multiple tasks configure assembler blocks,
+  place it on the task whose assembly is least obvious (typically the platform with the most
+  structurally separated blocks); `[N]` matches the job count from the Mental Model heading;
+  the one-line description names the shared identifiers, not the commands; the full heading
+  title must match the `### Mental Model:` heading verbatim (excluding `###`).
 
 Examples:
 - ✅ "Create a key-chain named `OSPF_AUTH` with key ID 1 and a strong key-string."
