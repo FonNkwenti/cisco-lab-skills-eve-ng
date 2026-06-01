@@ -7,6 +7,7 @@
 | ospf | lab-00-single-area-ospfv2 | ✓ Complete | Approved |
 | ospf | lab-01-multiarea-ospfv2 | ✓ Complete | Review needed — Haiku test build |
 | evpn | lab-00-evpn-vpws | Review Needed | Opus 4.7 build; validation unverified (no EVE-NG host — best-effort EVPN syntax, `! TODO: verify` markers); baseline bumped v2.1 (PE-XR replaces PE2 as VPWS endpoint); promote via /validate-lab |
+| evpn | lab-01-evpn-native-elan | Review Needed | Opus 4.7 build; progressive (extends lab-00); validation unverified (no EVE-NG host — best-effort EVPN native E-LAN + ARP-suppression syntax, `! TODO: verify` markers on ARP-suppression/MAC-IP keywords); EVI 20 native E-LAN on PE1+PE-XR (VLAN 20, 192.168.120.0/24) coexists with inherited VPWS EVI 10; PE2 control-plane-only; required-node posture satisfied (Task 3 PE-XR config + Ticket 1 PE-XR fault); promote via /validate-lab |
 
 ---
 

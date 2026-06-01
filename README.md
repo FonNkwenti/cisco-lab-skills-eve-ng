@@ -29,6 +29,7 @@ One repo, shared across all exam series (ENARSI, SPCOR, ENCOR, etc.). Fix a skil
 | `eve-ng` | EVE-NG constraints and hardware selection reference (QEMU/IOL/Dynamips on Intel) |
 | `gns3` | **DEPRECATED** — Legacy GNS3/Apple Silicon archive (c7200/c3725, read-only) |
 | `cisco-troubleshooting-1` | Structured 4-phase network troubleshooting methodology |
+| `explainer` | Generates interactive HTML explainers with animated flows, tables, and CLI examples |
 
 ## Structure
 
@@ -60,6 +61,10 @@ cisco-lab-skills/              ← submodule root (mounted at .agent/skills/)
 │   └── SKILL.md
 ├── gns3/                   (deprecated — read-only archive)
 │   └── SKILL.md
+├── explainer/               (on-demand interactive HTML explainers)
+│   ├── SKILL.md
+│   └── assets/
+│       └── (no shared assets yet)
 ├── cisco-troubleshooting-1/
 │   ├── SKILL.md
 │   ├── evals/evals.json
