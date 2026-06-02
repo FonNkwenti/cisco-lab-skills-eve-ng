@@ -81,7 +81,21 @@ explainer_content = {
           style: "normal"|"info"|"warning"|"tip"
         },
         {
-          type: "ascii_topology",  # ASCII art diagram
+          type: "svg_topology",   # STATIC inline SVG topology (PREFERRED for any
+                                   # node-and-link diagram). Reuses the Animated Flow
+                                   # engine's nodes/links geometry WITHOUT the animation
+                                   # layer — boxes, straight link lines, on-link labels.
+                                   # See "Static Topology Diagrams" below.
+          heading: str,
+          nodes: {...},            # same shape as animated_flow nodes (x,y,w,h,color,label,sub)
+          links: [{a,b,label}],    # label = optional on-link text (e.g. "L1 .0/30")
+          legend: str              # optional colour-key legend
+        },
+        {
+          type: "ascii_topology",  # ASCII art — ONLY for NON-geometric art (decision
+                                   # trees, layered encapsulation stacks). NEVER for
+                                   # node-and-link topologies: box-drawing alignment
+                                   # drifts in browsers (see Static Topology Diagrams).
           heading: str,
           art: str,             # multi-line ASCII string
           legend: str           # optional legend
@@ -142,8 +156,9 @@ explainer_content = {
             }
           ]
           # NOTE: the legacy ASCII `art` per-step field is retired. Packet flows MUST use
-          # the SVG engine below. Static diagrams (topology, decision trees) still use
-          # ascii_topology.
+          # the SVG engine below. Node-and-link TOPOLOGY diagrams MUST use `svg_topology`
+          # (static inline SVG). `ascii_topology` is reserved for NON-geometric art only
+          # (decision trees, layered encapsulation stacks).
         },
         {
           type: "analogy",
@@ -208,8 +223,10 @@ When generating content in topic mode:
    across the topology.
 5. **Include at least one analogy** per major concept.
 6. **Include CLI examples** with realistic (but simplified) output.
-7. **If baseline.yaml exists with a topology**, generate an ascii_topology section
-   showing the lab topology.
+7. **If baseline.yaml exists with a topology**, generate an `svg_topology` section
+   (static inline SVG) showing the lab topology — never box-drawing ASCII (it drifts
+   in browsers). Reuse the same node coordinates as the animated flows so the static
+   diagram and the animations render the identical picture.
 8. **Add `mnemonic` sections wherever a list of facts must be memorised** (route types,
    message types, state machines, acronyms, ordered procedures). See Mnemonic Guidance.
 
@@ -297,8 +314,12 @@ fixed diagram role-palette is always legible. The HTML must have:
    Step-through with Prev/Next/Play (auto-advance every 3.6s). Pure JS + SVG, no external
    libraries. Use the engine in **Animated Flow Script** verbatim — do NOT hand-roll a
    per-explainer animation, and do NOT fall back to stepped ASCII art for packet flows.
+3. **Static SVG topology** — Node-and-link topologies are a hand-authored static inline
+   SVG (`svg_topology`), reusing the flow engine's node coordinates and `--dia-…`/`--dev-…`
+   tokens. See **Static Topology Diagrams**. NEVER box-drawing ASCII for topologies.
 3. **Color-coded ASCII art** — Span classes for green, teal, purple, amber, blue, red,
-   grey. Applied inline in the ASCII content.
+   grey. Applied inline in the ASCII content — for NON-geometric art only (decision trees,
+   encapsulation stacks), never node-and-link topologies.
 4. **Tables** — Route type tables (colored badges), comparison tables (grouped rows),
    grid cards (2-column responsive grid).
 5. **Packet diagrams** — Horizontal field-by-field breakdown with colored backgrounds.
@@ -713,6 +734,40 @@ Also build a single `activate(id, scroll)` helper that toggles the active tab + 
 when `scroll` is true, `window.scrollTo({top:0, behavior:'smooth'})`. Derive an `order`
 array from the `.tab` elements (id + text), wire it to both the top tabs and the
 auto-generated `.panelnav` bars (Required Feature 2), so tab order has one source of truth.
+
+### Static Topology Diagrams (svg_topology — use for ALL node-and-link diagrams)
+
+**Never draw a node-and-link topology with box-drawing ASCII.** ASCII art assumes every
+glyph is exactly one cell wide; that holds in a terminal but **drifts in browsers** (the
+system monospace fallback kerns, and fractional-pixel rounding shifts lines) — boxes skew
+and connectors detach. Reserve `ascii_topology` for art that does NOT depend on column
+alignment between rows: decision trees, layered encapsulation stacks (the OSI-vs-IP frame
+stack), bracket lists.
+
+For the topology, emit a **static inline SVG** — the Animated Flow engine's picture without
+the animation layer. This is hand-authored markup (no JS, renders even if scripts fail):
+
+- **Reuse the flow's `TOPO` node coordinates verbatim** so the static diagram and the
+  animations are the identical picture. Lay the nodes out **symmetrically** inside the
+  `0 0 814 432` viewBox — centre the design on the x-axis (e.g. mirror PE/CE pairs left and
+  right of x≈407, keep core routers centred). Straight lines between node centres are fine;
+  line *crossings* are acceptable, box *overlaps* are not.
+- Wrap it in the same `.svg-wrap` shell the flows use (dark canvas in both themes).
+- Draw, in order: link `<line>`s (so nodes paint on top) → on-link labels (a small
+  `<rect>` backing + `<text>`, e.g. `L1 .0/30`) → node `<g>`s (`<rect>` + `.dev-label` +
+  `.dev-sub`), exactly like `buildTopo()` emits them.
+- **Self-containment is identical to the flows:** every `fill`/`stroke` must resolve to a
+  theme-independent constant — `--dia-…` / `--dev-…` / `--lbl-…` — NEVER an editorial token
+  (`--bg`/`--surface`/`--card`/`--line`/`--text`/`--accent`), which flips with the theme and
+  computes to **black** in an SVG attribute. Grep-verify after writing (same check as the
+  flow engine).
+- Add `role="img"` + a descriptive `aria-label`. Keep `.dev-label`/`.dev-sub` x/y at
+  `cx, cy-1` and `cx, cy+13` (the `buildTopo` convention) so static and animated nodes match.
+- **Prose must not describe the diagram's geometry** (e.g. don't call a link "the diagonal"
+  unless it renders diagonal) — state durable facts, not pixel positions.
+
+**Verification (Step 4) is mandatory for svg_topology too:** render both themes and confirm
+no box overlaps, all nodes/labels legible, and no black (unresolved-token) shapes.
 
 --# Step 4: Write Output File
 
