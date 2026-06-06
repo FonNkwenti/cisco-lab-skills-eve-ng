@@ -999,7 +999,7 @@ commands:
     correct replacement for the non-existent 'show isis fast-reroute topology'
     command on IOS-XR. Append a prefix (e.g. 'detail 10.0.0.3/32') to filter
     to a single prefix.
-- command: | section <pattern>
+- command: "| section <pattern>"
   context: exec
   ios-classic: pass
   ios-xe: pass
@@ -1016,7 +1016,7 @@ commands:
         printing from the header to the next non-indented line
     (3) `| utility "awk '/<pattern>/{flag=1} flag; /^[^ ]/{if(NR>1 && flag)
         flag=0}'"` — awk-based section emulation with header reset
-- command: | begin <pattern>
+- command: "| begin <pattern>"
   context: exec
   ios-classic: pass
   ios-xe: pass
@@ -1027,7 +1027,7 @@ commands:
     NOT supported on IOS-XR. The `| begin <pattern>` pipe modifier (displays
     output starting from the first matching line) is rejected on IOS-XR.
     Alternative: `| utility "sed -n '/<pattern>/,$ p'"`
-- command: | utility
+- command: "| utility"
   context: exec
   ios-classic: unknown
   ios-xe: unknown
@@ -1043,7 +1043,7 @@ commands:
     - `| utility head -20` — first 20 lines
     - `| utility "grep -v '^$'"` — exclude blank lines
     - `| utility "sed -n '/Lo0/,/^[^ ]/p'"` — emulate | section
-- command: | section
+- command: "| section"
   context: exec
   ios-classic: pass
   ios-xe: pass
