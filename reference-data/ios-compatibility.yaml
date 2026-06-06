@@ -1,10 +1,155 @@
+# ios-compatibility.yaml
+# Platform metadata, syntax quirks, and cross-platform command compatibility.
+# Referenced by the eve-ng skill (Design Rule #2).
+# Canonical source — inherited by every exam repo via git submodule.
+#
+# Schema (platforms section):
+#   <platform-key>:
+#     ios: <version string>
+#     type: qemu | iol | dynamips
+#     group: ios-classic | ios-l2 | ios-xe | ios-xr | sdwan
+#     image: <filename on disk in EVE-NG>
+#     deprecated: true | false
+#     quirks:
+#       - what: human-readable description
+#         rejected_command: <what a lab author might try>
+#         accepted_command: <what the image actually accepts>
+#         severity: phantom | hard-break | informational
+#         verified: <YYYY-MM-DD>
+#
+# Schema (commands section):
+#   command: <IOS command text>
+#   context: global | interface | router-* | exec | ...
+#   ios-classic | ios-xe | ios-xr | xrv | xrv9k | c7200 | c3725: pass | fail | unknown
+#   notes: <explanation>
+
+revisions:
+  - date: "2026-06-06"
+    who: claude-sonnet-4-6
+    note: >-
+      Promoted platform quirks from ccnp-spvi-labs exam repo into canonical
+      submodule. Added image, quirks arrays to iosv/csr1000v/xrv/xrv9k.
+      Fixed xrv9k ram_gb: 10 → 16 (Cisco minimum per system requirements).
+  - date: "2026-06-02"
+    who: claude-sonnet-4-6
+    note: >-
+      Added xrv9k platform section with two quirks discovered during SPVI
+      lab-01 live testing: (1) VPLS bridge-domain not supported (hard-break);
+      (2) show evpn evi N bare-number syntax invalid — must use vpn-id N
+      (phantom).
+  - date: "2026-05-31"
+    who: claude-opus-4-8
+    note: >-
+      Added CSR1000v/xrv9k EVPN VPWS cross-platform data-plane interop
+      hard-break (behavioral observation; exact mechanism not yet isolated).
+  - date: "2026-05-22"
+    who: claude-sonnet-4-6
+    note: >-
+      Added EIGRP SoO quirk (verified on live router): both ip eigrp
+      route-map (classic-mode interface) and site-of-origin under af-interface
+      (named-mode) are rejected on IOSv. Correct attachment is ip vrf sitemap.
+  - date: "2026-05-17"
+    who: claude-sonnet-4-6
+    note: Initial quirks file created from SPVI lab triage.
+
 platforms:
   iosv:
     ios: 15.9(3)M6
     type: qemu
     group: ios-classic
+    image: vios-adventerprisek9-m.SPA.159-3.M6
     console_port: null
     deprecated: false
+    quirks:
+      - what: >-
+          IOSv 15.9 uses the new-style `vrf definition` command; the legacy
+          `ip vrf` command is rejected at global config level.
+        rejected_command: ip vrf <name>
+        accepted_command: vrf definition <name>
+        severity: hard-break
+        verified: "2026-05-17"
+
+      - what: >-
+          With `vrf definition`-based VRFs, the interface-level VRF assignment
+          uses `vrf forwarding`, not the legacy `ip vrf forwarding`.
+        rejected_command: ip vrf forwarding <name>
+        accepted_command: vrf forwarding <name>
+        severity: hard-break
+        verified: "2026-05-17"
+
+      - what: >-
+          Netmiko sends `terminal width 511` and `terminal length 0` during
+          session setup. When the device is left in config mode mid-session
+          these are rejected with `% Invalid input`. This is a Netmiko library
+          behaviour — not a config file issue — and does not affect solution
+          application.
+        rejected_command: terminal width 511 | terminal length 0
+        accepted_command: (N/A — emitted by Netmiko internal disable_paging)
+        severity: phantom
+        verified: "2026-05-17"
+
+      - what: >-
+          EIGRP SoO on a named-mode process: two expected commands are both
+          rejected on this IOSv image. (1) `ip eigrp <NAME> route-map <MAP>
+          in` under interface config returns `% Unrecognized command` — it is
+          classic-mode only. (2) `site-of-origin <ASN>:<val>` under
+          `af-interface <intf>` inside the named-mode address-family also
+          returns `% Unrecognized command` — the command is absent from this
+          image's AF-interface sub-mode. Correct attachment point: `ip vrf
+          sitemap <route-map>` on the VRF-bound CE-facing interface with a
+          route-map containing `set extcommunity soo <ASN>:<val>`.
+        rejected_command: |-
+          interface Gi0/0 → ip eigrp CUST-A route-map SET_SOO in
+          router eigrp CUST-A → af-interface Gi0/0 → site-of-origin 65000:100
+        accepted_command: >-
+          route-map SET_SOO permit 10 → set extcommunity soo 65000:100;
+          interface GigabitEthernet0/0 → ip vrf sitemap SET_SOO
+        severity: hard-break
+        verified: "2026-05-22"
+
+      - what: >-
+          EIGRP named-mode: `redistribute bgp <ASN> metric ...` placed
+          directly under `address-family ipv4 unicast vrf <VRF>
+          autonomous-system <ASN>` is rejected with `% Invalid input`. On
+          IOSv named-mode EIGRP, redistribution commands must be placed inside
+          the `topology base` sub-mode within the address-family. The `network`
+          command stays at the address-family level (outside topology).
+        rejected_command: |-
+          router eigrp CUST-A → address-family ipv4 unicast vrf CUST-A as 100 → redistribute bgp 65000 metric 100000 100 255 1 1500
+        accepted_command: |-
+          router eigrp CUST-A → address-family ipv4 unicast vrf CUST-A as 100 → topology base → redistribute bgp 65000 metric 100000 100 255 1 1500
+        severity: hard-break
+        verified: "2026-05-22"
+
+      - what: >-
+          BGP Additional-Paths under `address-family vpnv4` — IOSv does NOT
+          include the add-paths NLRI path-ID extension in VPNv4 updates, so
+          downstream XR peers see two paths but without the `add-path` or `b`
+          (backup) flag. PIC Edge requires the path-ID to pre-install a backup
+          in CEF — on vIOS it shows `0 backups` regardless of config. Migrate
+          RR nodes that require add-paths VPNv4 to CSR1000v.
+        rejected_command: |-
+          router bgp 65000 → address-family vpnv4 →
+            bgp additional-paths select group-best
+            bgp additional-paths send
+        accepted_command: >-
+          Migrate the RR node from iosv to csr1000v. On CSR1000v the same
+          commands work correctly under address-family vpnv4 and include the
+          path-ID in VPNv4 NLRI, enabling add-path / b (backup) flags on XR
+          peers.
+        severity: hard-break
+        verified: "2026-05-19"
+
+      - what: >-
+          Classic IOS / IOSv 15.x has no `address-family l2vpn evpn` under
+          `router bgp`. BGP L2VPN EVPN (AFI 25 / SAFI 70) is an IOS-XE 16.x+
+          / IOS-XR / NX-OS feature. An IOSv node cannot act as an EVPN route
+          reflector — any EVPN role (RR, PE with an EVI) requires IOS-XE 16.x+
+          or IOS-XR.
+        rejected_command: "router bgp <ASN> → address-family l2vpn evpn"
+        accepted_command: "Use CSR1000v (IOS-XE 16.x+) or XRv for any EVPN control-plane role."
+        severity: hard-break
+        verified: "2026-05-20"
   iosvl2:
     ios: 15.x (high_iron_20200929)
     type: qemu
@@ -15,8 +160,142 @@ platforms:
     ios: 17.03.05
     type: qemu
     group: ios-xe
+    image: csr1000vng-universalk9.17.03.05
     console_port: null
     deprecated: false
+    notes: >-
+      Recommended platform for BGP VPNv4 Additional-Paths RR roles.
+      IOSv does not support add-paths NLRI path-ID extension for VPNv4.
+      Interface naming: GigabitEthernet1, GigabitEthernet2, …
+      (not GigabitEthernet0/0). Netmiko device type: cisco_xe_telnet.
+    quirks:
+      - what: >-
+          EVPN VPWS does NOT interoperate across IOS-XE (CSR1000v 17.3.5)
+          and IOS-XR (xrv9k 7.x) at the data plane on this image set.
+          Same-platform pairs work (CSR↔CSR and xrv9k↔xrv9k forward
+          end-to-end), but a cross-platform pseudowire establishes
+          (xconnect UP, EAD routes and labels exchange) and AC/PW counters
+          increment, yet no customer frame is delivered end-to-end.
+          Keep every EVPN service circuit intra-platform.
+        rejected_command: "EVPN VPWS pseudowire between a CSR1000v PE and an xrv9k PE (data-plane)"
+        accepted_command: "keep EVPN VPWS endpoints on the same platform (CSR↔CSR or xrv9k↔xrv9k)"
+        severity: hard-break
+        verified: "2026-05-31"
+
+      - what: >-
+          CSR1000v 17.3.5 requires the `service instance N ethernet` block to
+          exist on the interface BEFORE `member GigabitEthernetX
+          service-instance N` can reference it under `l2vpn evpn instance …
+          vpws context …`. Reversing the order triggers `% Unsupported or
+          Invalid AC member`. The EFP must be created first, then the VPWS
+          context can claim it as a member.
+        rejected_command: |-
+          l2vpn evpn instance 10 point-to-point
+           vpws context VPWS-CE1-CE2
+            member GigabitEthernet3 service-instance 10
+          ! (interface + service instance defined AFTER)
+        accepted_command: |-
+          interface GigabitEthernet3
+           service instance 10 ethernet
+            encapsulation default
+          !
+          l2vpn evpn instance 10 point-to-point
+           vpws context VPWS-CE1-CE2
+            member GigabitEthernet3 service-instance 10
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          `show l2vpn evpn replication-type` does not exist on CSR1000v 17.3.5.
+          Available `show l2vpn evpn` subcommands: capabilities, checkpoint,
+          default-gateway, ethernet-segment, evi, mac, memory, peers,
+          route-target, summary, vpws. Use `show running-config | section
+          l2vpn evpn` or `show run | include replication-type` instead.
+        rejected_command: "show l2vpn evpn replication-type"
+        accepted_command: "show running-config | section l2vpn evpn"
+        severity: phantom
+        verified: "2026-06-02"
+
+      - what: >-
+          CSR1000v 17.3.5 uses the new config model: `bridge-domain N` is NOT
+          accepted under `service instance N ethernet` (the EFP submode).
+          Attempting it produces `% New configuration model is being used.
+          Please use member command under bridge-domain.`. Correct approach:
+          global `bridge-domain N` block with `member GigabitEthernetX
+          service-instance N`; EFP block contains only `encapsulation` and
+          `rewrite`.
+        rejected_command: |-
+          interface GigabitEthernet3
+           service instance 20 ethernet
+            encapsulation dot1q 20
+            rewrite ingress tag pop 1 symmetric
+            bridge-domain 20
+        accepted_command: |-
+          bridge-domain 20
+           member GigabitEthernet3 service-instance 20
+          !
+          interface GigabitEthernet3
+           service instance 20 ethernet
+            encapsulation dot1q 20
+            rewrite ingress tag pop 1 symmetric
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          CSR1000v 17.3.5 cannot bind an EVPN Ethernet Segment to an MPLS
+          attachment circuit — EVPN-MPLS ethernet-segment multihoming is
+          unsupported on this image. The global `l2vpn evpn ethernet-segment N`
+          block has no `member` subcommand; the EFP submode (`service instance
+          N ethernet`) has no `ethernet-segment` keyword; the physical
+          interface has no `evpn`/`ethernet-segment` keyword. There is no path
+          to attach an ESI to an AC. Build EVPN-MPLS multihoming labs on
+          IOS-XR PEs, not CSR1000v.
+        rejected_command: |-
+          l2vpn evpn ethernet-segment 1
+           identifier type 0 00.01.00.01.00.01.00.01.00
+           member GigabitEthernet3 service-instance 10   ! no such subcommand on 17.3.5
+        accepted_command: |-
+          ! On IOS-XR (xrv9k) instead:
+          evpn
+           interface GigabitEthernet0/0/0/1
+            ethernet-segment
+             identifier type 0 00.01.00.01.00.01.00.01.00
+             load-balancing-mode single-flow-active
+        severity: hard-break
+        verified: "2026-06-05"
+
+      - what: >-
+          `show l2vpn evpn vpws` (bare, no sub-keyword) is incomplete on
+          CSR1000v IOS-XE 17.x — returns `% Incomplete command.` The router
+          requires a sub-keyword: `evi <N>`, `summary`. (`vc` is rejected on
+          this image.)
+        rejected_command: "show l2vpn evpn vpws"
+        accepted_command: "show l2vpn evpn vpws evi <N>  OR  show l2vpn evpn vpws summary"
+        severity: phantom
+        verified: "2026-05-26"
+
+      - what: >-
+          The global `l2vpn evpn` block MUST include `router-id Loopback0`
+          (or equivalent loopback). Without it the EVPN control plane is not
+          fully initialized: routes are generated but not selected as best
+          (next-hop stays `::`) and are therefore never sent to BGP peers.
+        rejected_command: "l2vpn evpn  (without router-id)"
+        accepted_command: "l2vpn evpn\n router-id Loopback0"
+        severity: hard-break
+        verified: "2026-05-27"
+
+      - what: >-
+          `neighbor <peer-group> activate` inside `address-family l2vpn evpn`
+          is rejected with `% Activation failed: configure bgp listener range
+          before activating peergroup` even for static neighbors. IOS-XE
+          treats peer-group activation in l2vpn evpn as a dynamic-listen
+          registration. Activate each static neighbor individually instead;
+          peer-group attributes (send-community, route-reflector-client) still
+          apply via the group.
+        rejected_command: "neighbor RR-CLIENTS activate  (in address-family l2vpn evpn)"
+        accepted_command: "neighbor 1.1.1.1 activate  (per-neighbor, inside l2vpn evpn AF)"
+        severity: hard-break
+        verified: "2026-05-27"
   iol_l3:
     ios: 15.7(3)M
     type: iol
@@ -33,21 +312,208 @@ platforms:
     ios: 6.x (classic XRv)
     type: qemu
     group: ios-xr
+    image: xrv-k9-demo-6.3.1
     console_port: null
     deprecated: false
     ram_gb: 3
     notes: Default XR for control-plane CLI parity. Interfaces GigabitEthernet0/0/0/N.
       Boot ~3-5 min.
+    quirks:
+      - what: >-
+          `rd` under `vrf CUST-A` at global level enters `(config-rd)` mode
+          (a routing-policy rd-set object), not a VRF Route Distinguisher.
+          `exit` from it returns to `(config)`, NOT `(config-vrf)`, causing the
+          following address-family/route-target block to be parsed at the wrong
+          level and the pseudo-atomic commit to roll back the whole candidate.
+          The RD belongs ONLY under `router bgp <ASN> → vrf <name> → rd`.
+        rejected_command: "vrf CUST-A → rd 4:100 (in global vrf block, with or without trailing exit)"
+        accepted_command: "router bgp <ASN> → vrf CUST-A → rd 4:100  (no rd in the global vrf block)"
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          `import route-target` and `export route-target` on XRv must be
+          nested under `vrf CUST-A → address-family ipv4 unicast`. Placing
+          them directly under `vrf CUST-A` is rejected.
+        rejected_command: vrf CUST-A → import route-target <value>
+        accepted_command: vrf CUST-A → address-family ipv4 unicast → import route-target <value>
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          OSPF VRF domain-id on XRv must use the IP form `domain-id A.B.C.D`.
+          The `domain-id type 0005 value <dotted>` form feeds a strict parser
+          that expects a 6-octet (12-hex-digit) value and rejects a dotted
+          quad with `Invalid domain id value: Domain id value size is wrong`.
+          Because XR commits are pseudo-atomic, that one bad line reverts the
+          whole candidate config.
+        rejected_command: "router ospf <p> → vrf <v> → domain-id type 0005 value 0.0.0.100"
+        accepted_command: "router ospf <p> → vrf <v> → domain-id 0.0.0.100"
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          `setup_lab.py` and `apply_solution.py` call `send_config_set` after
+          stripping every line that starts with `!`. XR `.cfg` files that use
+          `!` as block terminators have those terminators silently removed,
+          leaving the device in whatever sub-mode it last entered. All XR
+          config files pushed by automation must use explicit `exit` commands
+          to navigate sub-modes — never `!`. For interactive console use,
+          `root` returns to global config from any depth.
+        rejected_command: "! (used as block terminator in .cfg pushed by send_config_set)"
+        accepted_command: exit (per sub-mode level) or root (interactive only)
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          XRv requires an explicit `route-policy PASS-ALL` applied to BGP
+          neighbors under each address-family. Without it the BGP session
+          stays Idle — there is no implicit accept. IOS implicit-accept
+          default does not carry over to XR.
+        rejected_command: "(neighbor with no inbound/outbound route-policy)"
+        accepted_command: "route-policy PASS-ALL / pass / end-policy; applied in/out on each neighbor AF"
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv `router isis` with `metric-style wide` only rejects
+          narrow-metric TLVs (TLV 2) sent by IOSv peers. IS-IS adjacencies
+          form but zero routes are installed. Fix: add `metric-style narrow`
+          alongside wide on all XR nodes in any mixed XR+IOSv IS-IS domain.
+        rejected_command: metric-style wide (alone, in mixed XR+IOSv environment)
+        accepted_command: metric-style narrow + metric-style wide
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv BGP process manager (bpm) takes 2-5 minutes to initialise on
+          cold boot. Committing `router bgp` config before bpm is ready fails
+          with `%ROUTING-BGP-3-INIT_GET_VALUE`. Automation scripts must poll
+          commit with retries (suggest 6 attempts × 20 s = 2 min window).
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv classic 6.3.1 (xrv-k9-demo-6.3.1) EVPN VPWS data plane is
+          non-functional. The control plane works correctly — xconnect shows
+          UP, BGP EAD routes exchange, labels negotiate — but the L2 switching
+          engine that moves frames between the AC and the MPLS pseudowire does
+          not execute on this demo image. Observable signature: `show
+          interfaces` input counter increments; `show l2vpn xconnect detail`
+          AC/PW statistics remain 0/0 regardless of traffic. Use xrv9k for
+          any lab requiring EVPN VPWS data-plane verification.
+        rejected_command: "interface GigabitEthernet0/0/0/X l2transport (for EVPN VPWS forwarding)"
+        accepted_command: "use xrv9k platform for EVPN VPWS data-plane"
+        severity: hard-break
+        verified: "2026-05-29"
+
+      - what: >-
+          XRv classic 6.3.1 EVPN VPWS EVI defaults to Control-Word: Enabled.
+          XRv9K 7.x defaults to Control-Word: Disabled. When mixing image
+          generations in a single pseudowire, both PEs must have the same CW
+          setting or frames are silently dropped. The EVI-level command on
+          XRv classic to disable CW is `control-word-disable` (hyphenated,
+          inside `evpn / evi N` config submode). The two-word form
+          `control-word disable` is rejected.
+        rejected_command: "evpn / evi N / control-word disable"
+        accepted_command: "evpn / evi N / control-word-disable"
+        severity: hard-break
+        verified: "2026-05-29"
+
+      - what: >-
+          In IOS-XR (both XRv classic 6.3.1 and XRv9k), configuring an
+          interface for l2transport does NOT auto-enable it. You MUST add
+          `no shutdown` to the parent interface and/or the l2transport
+          subinterface. Without it the xconnect AC shows as DN even though
+          the physical interface is up/up.
+        rejected_command: "(l2transport subinterface without no shutdown)"
+        accepted_command: "interface Gi0/0/0/1.11 l2transport\n no shutdown"
+        severity: hard-break
+        verified: "2026-05-27"
+
+      - what: >-
+          XR EVPN VPWS xconnect model (`l2vpn xconnect group / p2p / neighbor
+          evpn evi N target X source Y`) uses the EVI purely as a
+          control-plane signaling handle. `advertise-mac` puts the EVI into
+          ELAN mode and conflicts — rejected with `Cannot use EVI with
+          advertise-mac configuration`. Remove `advertise-mac` from any EVI
+          that feeds an xconnect VPWS endpoint.
+        rejected_command: "evpn / evi N / advertise-mac  (when evi also used for VPWS xconnect)"
+        accepted_command: "(remove advertise-mac from VPWS EVIs; use it only for ELAN EVIs)"
+        severity: hard-break
+        verified: "2026-05-26"
+
+      - what: >-
+          IOS-XR IS-IS interface defaults to point-to-point on routed
+          Ethernet. IOS classic/IOSv/CSR1000v defaults to broadcast Ethernet
+          IS-IS. Mixed types reject each other's hellos silently — no neighbor
+          in `show isis neighbors`, no log lines. IOS side must carry `isis
+          network point-to-point` on every interface facing an XR peer.
+        rejected_command: "(IOS interface toward XR without isis network point-to-point)"
+        accepted_command: "interface Gi0/0\n isis network point-to-point"
+        severity: hard-break
+        verified: "2026-05-26"
   xrv9k:
     ios: 24.3.1 (upgraded 2026-05-12; was 7.1.1)
     type: qemu
     group: ios-xr
+    image: xrv9k-fullk9-x.vrr-7.x (EVE-NG)
     console_port: null
     deprecated: false
     ram_gb: 16
-    notes: Cisco system minimum is 16 GB RAM (per XRv9000 official requirements).
-      Reserve for xrv9k-only behaviour discovered at lab build/validate time. Boot
-      ~10 min.
+    notes: >-
+      Cisco system minimum is 16 GB RAM (per XRv9000 official requirements).
+      Reserve for xrv9k-only behaviour discovered at lab build/validate time.
+      Boot ~10 min. Supports EVPN VPWS (xconnect model) and EVPN control
+      plane (BGP L2VPN EVPN AF, Type-1 AD / Type-2 MAC/IP routes). Does NOT
+      support VPLS bridge-domain data plane — EVPN Native E-LAN is
+      control-plane-only on this image.
+    quirks:
+      - what: >-
+          XRv9k in EVE-NG does not support VPLS bridge-domain L2 switching.
+          Binding a l2transport subinterface as a bridge-domain member fails
+          with `!!% Invalid argument: VPLS Bridge domains not supported on
+          this platform`. A secondary error `Maximum EVI BD configuration
+          reached` follows because the bridge-domain is in an invalid state.
+          EVPN EVI config itself commits cleanly — the bridge-domain binding
+          is the failure point. There is no alternative XR syntax for E-LAN;
+          bridge-domain IS the XR E-LAN model. EVPN VPWS (xconnect model) is
+          unaffected and works correctly.
+        rejected_command: |-
+          l2vpn
+           bridge group EVPN-ELAN
+            bridge-domain ELAN-21
+             interface GigabitEthernet0/0/0/1.21
+             evi 21
+        accepted_command: >-
+          No data-plane workaround on this image. EVI + BGP config can be
+          applied for control-plane study but L2 forwarding will not occur.
+          For XR-side E-LAN data-plane, a higher-tier XRv9k image or physical
+          platform with VPLS support is required.
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          `show evpn evi <N>` (bare EVI number as filter) is invalid on this
+          XRv9k image. The `?` help for `show evpn evi` lists `vpn-id` as the
+          keyword to filter by EVI number. Attempting `show evpn evi 21` or
+          `show evpn evi 21 detail` produces `% Invalid input detected at '^'
+          marker.`. Use `show evpn evi vpn-id <N>` or `show evpn evi vpn-id
+          <N> detail`.
+        rejected_command: "show evpn evi 21 | show evpn evi 21 detail"
+        accepted_command: "show evpn evi vpn-id 21 | show evpn evi vpn-id 21 detail"
+        severity: phantom
+        verified: "2026-06-02"
+
+      - what: >-
+          EVPN VPWS does NOT interoperate across IOS-XE (CSR1000v 17.3.5)
+          and IOS-XR (xrv9k) at the data plane on this image set — see
+          csr1000v quirk for full detail. Keep every EVPN VPWS circuit
+          intra-platform.
+        rejected_command: "EVPN VPWS between xrv9k PE and CSR1000v PE (data-plane forwarding)"
+        accepted_command: "both VPWS endpoints on xrv9k  OR  both on CSR1000v"
+        severity: hard-break
+        verified: "2026-05-31"
   vmanage:
     ios: 20.6.2
     type: qemu
