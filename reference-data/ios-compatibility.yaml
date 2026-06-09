@@ -242,27 +242,46 @@ platforms:
         verified: "2026-06-02"
 
       - what: >-
-          CSR1000v 17.3.5 cannot bind an EVPN Ethernet Segment to an MPLS
-          attachment circuit — EVPN-MPLS ethernet-segment multihoming is
-          unsupported on this image. The global `l2vpn evpn ethernet-segment N`
-          block has no `member` subcommand; the EFP submode (`service instance
-          N ethernet`) has no `ethernet-segment` keyword; the physical
-          interface has no `evpn`/`ethernet-segment` keyword. There is no path
-          to attach an ESI to an AC. Build EVPN-MPLS multihoming labs on
-          IOS-XR PEs, not CSR1000v.
+          CSR1000v 17.3.5 EVPN-MPLS ethernet-segment multihoming uses a
+          two-step model — corrects the 2026-06-05 finding that wrongly
+          concluded ES binding is entirely unsupported. The correct model:
+          (1) Global block `l2vpn evpn ethernet-segment N` holds `identifier
+          type 0 <9-octet>` and `redundancy all-active` — no `member`
+          subcommand exists here; (2) `interface Port-channel1` accepts
+          `evpn ethernet-segment N` to bind the ES to the AC; (3) physical
+          member interface adds `channel-group N mode on` to join the
+          Port-channel. Physical interfaces (e.g. GigabitEthernet3) do NOT
+          accept `evpn ethernet-segment` directly. The 2026-06-05 probe tested
+          only the physical interface and incorrectly concluded no binding path
+          existed. Only `all-active` redundancy is available on 17.3.5
+          (`redundancy single-active` is absent from `redundancy ?` output).
         rejected_command: |-
+          ! Physical interface — rejected:
+          interface GigabitEthernet3
+           evpn ethernet-segment 1   ! no such keyword on physical iface
+          !
+          ! Global block member — rejected:
+          l2vpn evpn ethernet-segment 1
+           member GigabitEthernet3 service-instance 10   ! no such subcommand
+          !
+          ! Single-active — rejected:
+          l2vpn evpn ethernet-segment 1
+           redundancy single-active   ! not in 'redundancy ?' on 17.3.5
+        accepted_command: |-
+          ! Step 1 — physical AC joins Port-channel:
+          interface GigabitEthernet3
+           channel-group 1 mode on
+          !
+          ! Step 2 — Port-channel binds ES:
+          interface Port-channel1
+           evpn ethernet-segment 1
+          !
+          ! Step 3 — global block holds ES parameters:
           l2vpn evpn ethernet-segment 1
            identifier type 0 00.01.00.01.00.01.00.01.00
-           member GigabitEthernet3 service-instance 10   ! no such subcommand on 17.3.5
-        accepted_command: |-
-          ! On IOS-XR (xrv9k) instead:
-          evpn
-           interface GigabitEthernet0/0/0/1
-            ethernet-segment
-             identifier type 0 00.01.00.01.00.01.00.01.00
-             load-balancing-mode single-flow-active
+           redundancy all-active
         severity: hard-break
-        verified: "2026-06-05"
+        verified: "2026-06-06"
 
       - what: >-
           `show l2vpn evpn vpws` (bare, no sub-keyword) is incomplete on
@@ -2083,6 +2102,41 @@ commands:
   context: config
   notes: ''
   ios-xe: pass
+- command: "interface Port-channel1\n evpn ethernet-segment 1"
+  context: config
+  notes: >-
+    CSR1000v 17.3.5 two-step ES model: 'evpn ethernet-segment N' is accepted
+    under interface Port-channel1 (binds the AC to the global ES block). It is
+    NOT accepted under physical interfaces (GigabitEthernet). Verified live on
+    PE1 and PE3 (IOS-XE 17.3.5) 2026-06-06.
+  ios-xe: pass
+- command: "interface GigabitEthernet3\n evpn ethernet-segment 1"
+  context: config
+  notes: >-
+    CSR1000v 17.3.5: 'evpn ethernet-segment' is NOT accepted under physical
+    interfaces. Use Port-channel1 instead (see two-step model above).
+  ios-xe: fail
+- command: "interface Port-channel1\n ! ESI-bound AC bundle for EVPN multihoming"
+  context: interface-evpn-mh
+  notes: >-
+    csr1000v cannot host the PE-side EVPN-MH port-channel. Cisco IOS-XE EVPN
+    multihoming (RFC 7432) REQUIRES the ESI-bound port-channel in ON mode and
+    does NOT support ether-channel signaling (LACP/PAgP); only type-3 ESIs are
+    used between the two PEs. But csr1000v-17.03.05 does not offer
+    'channel-group N mode on' on the interface — 'channel-group 1 mode ?' returns
+    only 'active'/'passive' (LACP). Net: csr1000v can neither enter the ON mode
+    EVPN-MH mandates nor legally use the LACP modes it offers, so the PE-side ESI
+    bundle cannot be brought up. Use IOS-XR PEs (bundle interfaces support both
+    the ESI and 'lacp system mac') for hardware-validatable EVPN multihoming.
+    VERIFIED LIVE 2026-06-09: on PE3's fresh routed Gi4 (in no channel-group),
+    'channel-group 1 mode ?' returns only active|passive — a genuine CLI gap, not
+    an already-LACP-pinned group hiding 'on'. On PE1, where 'channel-group 1 mode on'
+    is pre-loaded, it is silently rejected: 'show run int Gi4' has no channel-group
+    line and 'show etherchannel summary' shows Po1(RD) down with zero members — so
+    the PE-side AC never forms and CE5's multihomed EVI 10/20 services do not forward.
+    NOTE: the switchport row 'channel-group 1 mode on' (context interface-switch,
+    ios-l2: pass) is unaffected — IOSvL2 CEs accept mode on and bundle unconditionally.
+  ios-xe: fail
 - command: "interface Loopback0\n prefix-sid index 1"
   context: config
   notes: CSR1000v 17.3.5 SR prefix-SID is configured globally under 'segment-routing
