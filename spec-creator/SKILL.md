@@ -251,6 +251,29 @@ labs:
 See `MODEL-POLICY.md` at the skills submodule root for the allowed-model mapping
 per tier.
 
+--# Step 5b: Emit platform-probe.yaml (Phase 2b candidate commands)
+
+After `baseline.yaml` is written, also produce `labs/<topic>/platform-probe.yaml`.
+For each technology in the topic, list the candidate **config** and **verify**
+commands a student would run, one entry per platform that exercises it. This is
+the input to `/validate-spec-platform`, which probes these commands on a minimal
+lab before any lab is built.
+
+```yaml
+topic: <slug>
+platforms: [<platform keys used by this topic>]
+candidates:
+  - tech: <technology-label>
+    platform: <iosv|xrv|csr1000v|...>
+    context: <exec|global|router-bgp|vrf-af|interface|...>
+    command: <command string>
+    role: <config|verify>
+```
+
+Keep commands platform-correct where already known (consult
+`.agent/skills/reference-data/ios-compatibility.yaml`); where unsure, write the
+most likely form — `/validate-spec-platform` will confirm or correct it live.
+
 --# Step 6: Create Lab Folder Structure
 
 Create empty lab subdirectories under `labs/<topic>/`:

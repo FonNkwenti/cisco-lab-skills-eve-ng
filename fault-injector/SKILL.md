@@ -14,6 +14,37 @@ Generates Python scripts that inject the troubleshooting scenarios defined in la
 Read from the lab directory:
 1. `workbook.md` — extract troubleshooting scenarios from Section 9
 2. From each scenario extract: **Scenario Number**, **Target Device**, **Fault Type**, **Commands to inject**
+3. `baseline.yaml` (two directories up from the lab, at `labs/<topic>/baseline.yaml`) — read
+   the `core_topology.links` and `labs[N].devices` to understand the topology for the
+   redundancy sanity check below.
+
+**Redundancy sanity check (before generating any script):**
+
+For each extracted scenario, perform a quick redundancy check to catch faults that would
+be silently bypassed by alternate network paths. This is a lightweight version of the
+full Fault Efficacy Gate in the lab-assembler skill — it catches obvious failures early.
+
+1. **Identify the fault** from the Fix block — the inverse of the solution commands.
+2. **Identify the symptom** from the ticket heading and scenario context.
+3. **Find alternate paths** in the topology for the affected traffic/control-plane:
+   - If the fault targets an interface (disable MPLS, shut, wrong IP): are there parallel
+     links through other P-routers that carry the same protocol?
+   - If the fault targets a BGP session/attribute (remove neighbor, wrong AS, missing
+     `route-reflector-client`): does the route arrive via another iBGP neighbor or a
+     second route reflector?
+   - If the fault targets a VRF attribute (wrong RT, wrong RD): does another PE import
+     the same RT and can the observing CE reach that PE?
+   - If the fault targets an IGP adjacency: does the router have other adjacencies that
+     advertise the same loopback?
+4. **If ANY alternate path survives the fault**, the scenario is broken. Do NOT generate
+   a script for it as-is. Instead:
+   - Flag the ticket in your Output Confirmation with the exact redundancy path found.
+   - Propose a redesigned fault (compound fault that breaks the bypass too, or a new
+     target with no redundancy).
+   - Wait for the caller (lab-assembler) to decide — do not silently fix or silently
+     generate a broken script.
+5. If all alternate paths are broken by the fault, the scenario passes. Generate the
+   script normally.
 
 **Port discovery at runtime:** Console ports are NOT hardcoded in the scripts. Each script calls
 `find_open_lab(host, node_names=[DEVICE_NAME])` to auto-discover which lab is currently running,
@@ -56,7 +87,13 @@ Exit codes: `0` success, `3` EVE-NG error, `4` pre-flight check failed.
 --# Step 3: Generate apply_solution.py
 
 Use `assets/apply_solution_template.py` as the base template. Customise:
-- `RESTORE_TARGETS` — list of all device names affected by any of the scenarios
+- `RESTORE_TARGETS` — **EVERY device that has a `solutions/<Device>.cfg` file.**
+  This is NON-NEGOTIABLE. During `validate-lab --verify`, the solution configs
+  must be pushed to ALL nodes so every device has the correct running config
+  for validation checks. A lab with 7 solution configs but only 3 devices in
+  `RESTORE_TARGETS` will leave 4 nodes unconfigured, causing false validation
+  failures and phantom Command Errors. Do NOT limit `RESTORE_TARGETS` to only
+  the devices targeted by fault-injection scenarios.
 
 The script reads solution configs from `solutions/[Device].cfg` (two directory levels above
 `scripts/fault-injection/`, i.e. the lab root). It calls `find_open_lab(host, node_names=RESTORE_TARGETS)`
@@ -81,8 +118,9 @@ Use `assets/README_template.md` as the base. Fill in:
 - [ ] NO `DEFAULT_LAB_PATH` constant in any script — auto-discovery via `find_open_lab()` is used
 - [ ] `find_open_lab` is imported from `eve_ng` in all scripts
 - [ ] `--lab-path` defaults to `None` and is treated as optional override only
-- [ ] `RESTORE_TARGETS` in `apply_solution.py` covers every device touched by any scenario
+- [ ] **HARD RULE — `RESTORE_TARGETS` must match every `solutions/<Device>.cfg` file on disk.** Count the .cfg files in `solutions/` and verify the same names appear in `RESTORE_TARGETS`. If there are 7 solution configs, `RESTORE_TARGETS` must list exactly those 7 device names. Failure here means `validate-lab --verify` will leave nodes unconfigured.
 - [ ] `PREFLIGHT_SOLUTION_MARKER` and `PREFLIGHT_FAULT_MARKER` are distinct, unambiguous strings
+- [ ] **Redundancy sanity check passed** — for every injected fault, all alternate paths for the affected traffic/control-plane are also broken by the fault (or no alternate paths exist). If an alternate path survives, the fault is invisible and the script is useless.
 - [ ] **No script docstring, banner, print, or preflight error message reveals the fault type, affected device/interface, or expected symptom** — students must discover these through troubleshooting, not by reading the script
 - [ ] **Capstone labs only** (`capstone-troubleshooting` in lab slug): no inject script print statement references a router or device name — verify the `_capstone_template.py` variants were used, not the regular ones
 - [ ] Syntax-check every generated `.py` file WITHOUT creating cache files. Use one of:

@@ -1,6 +1,6 @@
 ---
 name: eve-ng
-description: EVE-NG hardware constraints and platform reference for Intel/Windows (QEMU, IOL, Dynamips). Use when generating lab configs, creating baseline.yaml topology definitions, selecting node platforms, assigning interfaces, or any time EVE-NG platform constraints (IOSv, IOSvL2, CSR1000v, IOL, XRv 9000, NX-OSv, ASAv) must be verified for compatibility. Replaces the deprecated gns3 skill.
+description: EVE-NG hardware constraints and platform reference for Intel/Windows (QEMU, IOL, Dynamips). Use when generating lab configs, creating baseline.yaml topology definitions, selecting node platforms, assigning interfaces, or any time EVE-NG platform constraints (IOSv, IOSvL2, CSR1000v, Cisco 8000v, IOL, XRv 9000, NX-OSv, ASAv) must be verified for compatibility. Replaces the deprecated gns3 skill.
 ---
 
 # EVE-NG Lab Skill (Intel / Windows)
@@ -157,6 +157,22 @@ Same interface naming as IOL L3 (`Ethernet0/0` through `Ethernet1/3`), but ports
 - **ASA Version:** 9.6.1
 - **EVE-NG node type:** `asav`
 
+### Cisco 8000v (c8000v-17.06.03)
+
+| Interface | Type | Notes |
+|-----------|------|-------|
+| GigabitEthernet1 | GigE | First data interface (NOT Gi0/0) |
+| GigabitEthernet2 | GigE | Second data interface |
+| GigabitEthernet3 | GigE | Third data interface |
+
+> **Note:** c8000v uses the same IOS-XE 1-based interface naming as CSR1000v (`GigabitEthernet1/2/3`). Configs are largely interchangeable between CSR1000v and c8000v at 17.x.
+
+- **RAM:** 4096 MB minimum (4096 MB recommended; higher than CSR1000v's 3072 MB floor)
+- **IOS-XE Version:** 17.06.03
+- **EVE-NG node type:** `c8000v`
+- **Supported features:** Full IOS-XE 17.x feature set — NETCONF/YANG, RESTCONF, gNMI telemetry, SD-WAN (vEdge mode), SRv6, EVPN, programmability APIs
+- **Verified:** 2026-06-05 — node added to EVE-NG platform
+
 --# 4. VPC Nodes (End-Host Simulation)
 
 EVE-NG includes a built-in **VPC** node (Virtual PC) — equivalent to GNS3's VPCS.
@@ -292,6 +308,7 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
    | IOSvL2 | 768 MB | 15 |
    | IOL L3/L2 | 256 MB | 40 |
    | CSR1000v | 3072 MB | 8 |
+   | Cisco 8000v | 4096 MB | 6 |
    | XRv 9000 | 16384 MB | 3 |
    | NX-OSv 9000 | 4096 MB | 6 |
 7. **Image permissions:** After uploading any image to EVE-NG, always run:
@@ -309,6 +326,22 @@ When automating with `setup_lab.py`, pass `--host <eve-ng-ip>` and the script wi
 10. **Ship the EVE-NG `.unl` file.** Every lab MUST include a `topology/` directory
    containing the exported `.unl` file alongside `topology.drawio` and a
    `README.md` explaining the import process. See Section 7 for the standard.
+11. **Traceroute commands in validation specs MUST be time-boxed.** Unbound
+   `traceroute` (default: 30 hops × 3 probes × 1-3 s) blocks the console for
+   90+ seconds and returns all-star output that cannot be aborted by Netmiko.
+   Always append ` ttl 1 5 timeout 1 probe 1` unless the command already
+   specifies those options:
+   ```
+   # BAD — blocks up to 90 s, no useful output if ICMP filtered
+   traceroute 172.16.2.1 source Loopback0
+
+   # GOOD — max 5 hops × 1 probe × 1 s = 5 seconds
+   traceroute 172.16.2.1 source Loopback0 ttl 1 5 timeout 1 probe 1
+   ```
+   `validate_lab.py` enforces this automatically via `_timebox_command()` —
+   any traceroute in `validation-spec.yaml` without `timeout`/`ttl`/`probe`
+   is rewritten before sending. Spec authors should write the time-boxed form
+   directly so the spec is accurate on disk.
 
 --# 7. Shipping EVE-NG Lab Files (`.unl`)
 
@@ -374,7 +407,7 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
 
 --# 8. Installed Image Inventory
 
-> **Last verified:** 2026-04-10. This table reflects images confirmed on disk at
+> **Last verified:** 2026-06-05. This table reflects images confirmed on disk at
 > `C:\Users\Nkwenti\Documents\EVE-NG\eve images\Cisco`. Add a row when you upload a new image.
 
 ### Installed — Confirmed on Disk
@@ -425,7 +458,7 @@ discover_ports(host, "switching/lab-00-vlans-and-trunking.unl")
 --# Interface name mismatch in configs
 
 - **Cause:** Config references `FastEthernet0/0` but IOSv only has `GigabitEthernet0/0`.
-- **Solution:** Check Section 3 hardware templates. IOSv/IOSvL2 = `Gi0/0`. CSR1000v = `Gi1`. IOL = `Et0/0`. XRv 9000 = `Gi0/0/0/0`.
+- **Solution:** Check Section 3 hardware templates. IOSv/IOSvL2 = `Gi0/0`. CSR1000v/c8000v = `Gi1`. IOL = `Et0/0`. XRv 9000 = `Gi0/0/0/0`.
 
 --# Console connection refused
 

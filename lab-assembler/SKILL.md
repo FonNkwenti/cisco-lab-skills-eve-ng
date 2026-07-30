@@ -146,7 +146,28 @@ Write a complete workbook with all required sections:
       - Minimum 3 subsections; depth mirrors labs 01/02 style
       - Explain the protocol concept, not just the commands
       - **Each subsection MUST open with a one-line italicized tie-back sentence** that references the framing subsection's roles table or analogy — e.g. `*The intent container from the analogy — <what this subsection covers>.*` or `*The fallback ladder from the analogy — <what this subsection covers>.*`. Phrase it naturally; do NOT use a fixed prefix like "Where this fits the goal:". Without the tie-back, the subsections read as disconnected feature pages and the framing's value is lost.
-   e. `**Skills this lab develops:**` table — Skill | Description (2 columns)
+   e. `### Mental Model: [Topic] = [N Jobs]` subsection (REQUIRED). Always present — every lab gets one. Placement: immediately after the last `### <Topic>` feature subsection and before the `**Skills this lab develops:**` table. It is the synthesis bridge between theory (items c–d) and the task implementations in Section 5.
+
+      The heading format is `### Mental Model: [Topic] = [N Jobs]` where *Topic* names the main technology ("One EVPN VPWS Endpoint", "One OSPF ABR") and *N* names the job count ("Four Jobs", "Three Pieces"). The heading must be self-explanatory to a student scanning the workbook without reading surrounding text.
+
+      Required parts in order:
+
+      1. **Opening sentence** (italicised): `*Read this before Task N if [the config] feels scattered.*` — N is the task number where assembly complexity peaks; identify it as the task where the student assembles all independent config blocks for the first time (typically the highest-numbered configuration task in Section 5). `[the config]` names the specific config: "the IOS-XR config", "the four config blocks".
+
+      2. **Conceptual explanation** — 1-2 paragraphs. Names the structural principle: why the config is shaped this way and what the assembly point is. For multi-platform labs, names what each platform fuses vs. splits. No IOS syntax — conceptual only.
+
+      3. **Jobs table** — always required. Column schema:
+         - Single-platform: `| # | The job | Question it answers | [Platform] | Shared key |`
+         - Multi-platform: `| # | The job | Question it answers | [Platform A] | [Platform B] | Shared key |`
+         Rules: one row per major config block the student must write; *Question it answers* describes functional role only — never IOS syntax; *Shared key* names the identifier linking the block to the assembler (EVI number, interface name, VRF name) — use `—` if none; bold the assembler row's "The job" cell: `**Cross-connect (assembler)**` or equivalent.
+
+      4. **"Invisible wires" ASCII diagram** — one per platform. Each shows config blocks as bordered regions (`┌─┐│└─┘`) with `▼ ►` arrows annotated with the Shared key value from the jobs table above, and the assembler block labelled `(THE ASSEMBLER)`. Wrapped in a fenced code block (no language tag).
+
+      5. **Analogy mapping** — 4-6 bullet points mapping each job to its counterpart in the `### The Problem This Lab Solves` analogy above. Closes with a single bold sentence: `**[Assembler job description] — it is where the service comes alive.**`
+
+      6. **Per-lab note** — exactly one sentence: `**Per-lab note.** [What is specific about this lab's implementation — platform combination, inherited config, scope constraints.]`
+
+   f. `**Skills this lab develops:**` table — Skill | Description (2 columns)
 2. **Topology & Scenario** — enterprise narrative framing the lab challenge
 3. **Hardware & Environment Specifications** — Device Inventory table, cabling table, Console Access Table
 4. **Base Configuration** — what is pre-configured in `initial-configs/` (see IS/NOT format below)
@@ -262,6 +283,21 @@ Rules for task bullet points:
   than following it), the context hint must tell students to run `?` **before** typing the
   argument, not after. Example: `next-address loose <IP>` — hint should say
   "use `next-address ?` before typing the address to see available keyword options."
+- When a task configures the **assembler block** (the block that references and ties together
+  all the other independent blocks — e.g., the XR `xconnect`, the E-LAN `bridge-domain` with
+  its `evi` binding, an MPLS TE tunnel's `path-option`), add a `>` blockquote **immediately
+  before the first bullet** of that task:
+
+  ```markdown
+  > **Lost in the [N] config blocks below?** Read *Mental Model: [full heading title]*
+  > in Section 1 first — it shows how [one-line description of what links the blocks].
+  ```
+
+  Rules: exactly one cross-reference per lab; if multiple tasks configure assembler blocks,
+  place it on the task whose assembly is least obvious (typically the platform with the most
+  structurally separated blocks); `[N]` matches the job count from the Mental Model heading;
+  the one-line description names the shared identifiers, not the commands; the full heading
+  title must match the `### Mental Model:` heading verbatim (excluding `###`).
 
 Examples:
 - ✅ "Create a key-chain named `OSPF_AUTH` with key ID 1 and a strong key-string."
@@ -378,7 +414,7 @@ show ip route eigrp
 </details>
 ```
 
-**Troubleshooting ticket format (required for each scenario in Section 8):**
+**Troubleshooting ticket format (required for each scenario in Section 9):**
 
 Ticket headings MUST describe the **symptom** the student observes — never the fault type or target device. The fault identity is the answer and must only appear inside `<details>` spoiler blocks.
 
@@ -387,18 +423,63 @@ Ticket headings MUST describe the **symptom** the student observes — never the
 
 [1-2 sentence scenario context — what the student has been told]
 
-**Success criteria:** [What must be true when fixed]
+**Inject:** `python3 scripts/fault-injection/inject_scenario_0N.py`
+
+**Success criteria:** [What must be true when fixed — specific verifiable state]
 
 <details>
 <summary>Click to view Diagnosis Steps</summary>
-...
+
+**Step 1 — [What this step checks]:**
+```
+[Device]# show [command]
+```
+[Explain what to look for in the output. If X, conclude Y. If Z, proceed to Step 2.]
+
+**Step 2 — [Narrower check]:**
+```
+[Device]# show [command]
+```
+[Explain the expected output vs. broken output. What does each result mean?]
+
+**Step N — [Final narrowing step that isolates the fault]:**
+```
+[Device]# show [command]
+```
+[Pinpoint the exact omission or misconfiguration.]
+
 </details>
 
 <details>
 <summary>Click to view Fix</summary>
-...
+
+The expected fault is [one-line description].
+
+```
+[Device](config)# [fix command 1]
+[Device](config-sub)# [fix command 2]
+[Device](config-sub)# end
+
+[Device]# show [verification command]    ! [what to confirm]
+```
+
+[If applicable, add alternative fault + fix here with a separate prose lead-in.]
 </details>
 ```
+
+**Diagnosis Steps rules:**
+- Number each step (`Step 1 —`, `Step 2 —`, etc.) with a title describing what it checks
+- Each step must contain at least one `show` command in a code block with the device prompt
+- After every code block, explain what the student should see, what each outcome means, and which step to go to next if the fault isn't found here
+- Steps must progressively narrow: start broad ("confirm the symptom exists"), then isolate ("check this specific component"), then pinpoint ("here is the exact missing config line")
+- Never reveal the fault in the step titles — the fault is only named in the Fix section
+- Each diagnosis code block must include explanatory comments (`! ←`) marking the critical output lines (Section 6 format for `show` output)
+
+**Fix rules:**
+- Always include actual IOS/XR config commands in a code block — never prose-only "add X"
+- Include verification commands that confirm the fix worked
+- If multiple faults could cause the same symptom, include alternative fixes with clear labels (e.g., "Alternative fault: ...")
+- Use the correct device prompt: `Device#` for IOSv exec, `Device(config)#` for global config, `RP/0/0/CPU0:Device#` for XR exec, `RP/0/0/CPU0:Device(config)#` for XR config
 
 Examples of correct vs. incorrect headings:
 - ❌ `Ticket 1: AS Number Mismatch (Target: R2)` — reveals fault and device
@@ -408,7 +489,7 @@ Examples of correct vs. incorrect headings:
 
 **Section 9 format (required):**
 
-Section 9 opens with the inject/restore workflow, then lists each ticket. Each ticket includes its inject command inline so the student knows exactly which script to run without leaving the workbook.
+Section 9 opens with the inject/restore workflow, then lists each ticket using the detailed Diagnosis + Fix template defined above. Each ticket includes its inject command inline so the student knows exactly which script to run without leaving the workbook.
 
 ```markdown
 ## 9. Troubleshooting Scenarios
@@ -426,23 +507,7 @@ python3 scripts/fault-injection/apply_solution.py      # restore
 
 ---
 
-### Ticket N — [Observable Symptom]
-
-[1-2 sentence scenario context]
-
-**Inject:** `python3 scripts/fault-injection/inject_scenario_0N.py`
-
-**Success criteria:** [What must be true when fixed]
-
-<details>
-<summary>Click to view Diagnosis Steps</summary>
-...
-</details>
-
-<details>
-<summary>Click to view Fix</summary>
-...
-</details>
+[Each ticket follows the detailed format above: heading, context, Inject, Success criteria, Diagnosis Steps with numbered walkthrough, Fix with commands]
 ```
 
 **`scripts/fault-injection/README.md` format (ops-only — no challenge descriptions):**
@@ -610,6 +675,14 @@ generation context is still fresh.
 - [ ] Framing subsection contains: (1) problem statement ending in a bold "what mechanism closes the gap" sentence, (2) `Piece | Role in the overall goal` table, (3) `**Analogy — <name>.**` block with bulleted Piece↔analog mapping
 - [ ] At least 3 named theory subsections (`### <Topic>`) follow the framing block, with prose + IOS syntax blocks
 - [ ] Every feature subsection opens with a single-line italicized tie-back sentence that references the framing's roles table or analogy. Phrase it naturally — no fixed prefix required. No subsection is allowed to start with raw exposition.
+- [ ] `### Mental Model: [Topic] = [N Jobs]` subsection present after the last feature subsection and before the Skills table
+- [ ] Mental Model heading names both the technology and the job count; self-explanatory without surrounding context
+- [ ] Opening italicised sentence references a specific Task number ("Read this before Task N...")
+- [ ] Jobs table present with columns: #, The job, Question it answers, platform column(s), Shared key
+- [ ] "Question it answers" column describes functional role only — no IOS syntax in any cell
+- [ ] One "invisible wires" ASCII diagram per platform; assembler block labelled (THE ASSEMBLER) or equivalent; box-drawing characters used
+- [ ] Analogy mapping present (4-6 bullets); closes with a bold assembler sentence
+- [ ] Per-lab note closes the subsection
 - [ ] `**Skills this lab develops:**` table closes the section with Skill | Description columns
 
 **Checklist — Section 3 (Hardware & Environment Specifications):**
@@ -628,6 +701,7 @@ generation context is still fresh.
 - [ ] Every Section 5 H3 heading matches `### Task N:` (N = digit). Headings like `### Scenario A`, `### Objective N`, `### Step N` are a FAIL. Exception: capstone-ii troubleshooting tickets use `### Ticket N —`, but capstone-i implementation tasks still use `### Task N:`.
 - [ ] Each `### Task N:` block has bullet steps plus a closing `**Verification:**` line with `show` command(s)
 - [ ] No task bullet contains raw IOS command syntax
+- [ ] The task that configures the assembler block has a `>` blockquote cross-reference to the Mental Model immediately before its first bullet
 - [ ] No task is a troubleshooting or fault-diagnosis exercise — all Section 5 tasks are implementation/configuration only; troubleshooting belongs in Section 9
 - [ ] Capstone labs only: heading is `Full Protocol Mastery` (capstone_i) or `Comprehensive Troubleshooting` (capstone_ii)
 
@@ -651,7 +725,9 @@ generation context is still fresh.
 - [ ] Workflow code block at the top showing `setup_lab.py` + an `inject_scenario_0N.py` + `apply_solution.py` sequence
 - [ ] At least 3 `### Ticket N — <Symptom>` blocks
 - [ ] No ticket heading reveals the fault type, target device, or root cause (symptom-only)
-- [ ] Each ticket has: 1-2 sentence scenario context, `**Inject:**` command line, `**Success criteria:**` line, Diagnosis Steps `<details>`, Fix `<details>`
+- [ ] Each ticket has: 1-2 sentence scenario context, `**Inject:**` command line, `**Success criteria:**` line, Diagnosis Steps `<details>` with numbered walkthrough, Fix `<details>` with actual config commands
+- [ ] Diagnosis Steps: each step numbered, each step contains at least one `show` command in a code block with explanatory prose, steps progressively narrow from symptom→isolation→pinpoint
+- [ ] Fix section: contains actual IOS/XR commands in a code block (never prose-only), includes verification commands
 
 **Checklist — Section 10 (Lab Completion Checklist):**
 - [ ] Exactly two groups: Core Implementation and Troubleshooting
@@ -676,6 +752,120 @@ After the gate passes, append to `labs/<topic>/lab-NN-<slug>/decisions.md`:
 
 If `decisions.md` does not exist (i.e. the model gate did not record one), create it
 with the model gate entry first (per `/build-lab` Section 1) and this gate entry second.
+
+--# Step 3c: Fault Efficacy Gate (BLOCKING)
+
+After Step 3b passes but before Step 4, validate that every troubleshooting
+ticket in Section 9 of the workbook will actually cause the symptom it claims —
+not get silently bypassed by network redundancy.
+
+**Background:** Injected faults fail ~30% of the time because they target an
+element (an interface, a BGP session, an IGP adjacency) that has a redundant
+backup path. If an alternate path exists and remains functional after the fault,
+the student types `show` commands and sees a working network — the fault is
+invisible, the troubleshooting exercise is broken, and the lab loses all
+educational value.
+
+**Procedure:**
+1. Re-read `workbook.md` Section 9. Extract each `### Ticket N — <Symptom>`
+   block in full.
+2. Read `labs/<topic>/baseline.yaml` — the full `core_topology.links` and
+   `labs[N].devices` to understand the physical topology.
+3. For each ticket, run a **redundancy bypass analysis**:
+
+   a. **Identify the fault** — derive the injected config change from the
+      ticket's Fix `<details>` block (the inverse of the fix commands is the
+      fault — e.g., if the fix adds `route-reflector-client`, the fault
+      removes or omits it).
+
+   b. **Identify the expected symptom** — from the ticket heading and scenario
+      context. What exactly does the student observe? A missing route? A
+      down BGP session? A failed ping? Be specific.
+
+   c. **Enumerate all paths** for the affected traffic or control-plane
+      information. For each:
+      - **Physical paths:** Every link sequence between source and destination
+        that carries the affected protocol (MPLS, IGP, etc.).
+      - **BGP paths:** Every iBGP/eBGP session that could deliver the affected
+        NLRI to the observing device. Consider route reflection rules
+        (client→client, non-client→client, etc.).
+      - **VRF import paths:** Every PE whose VRF imports the affected RT.
+      - **IGP paths:** Every IGP adjacency that gives the observing device a
+        route to the BGP next-hop.
+
+   d. **Test each path post-fault:** For each path identified in (c), ask:
+      "After the fault is injected, is this path still functional?" If YES
+      for ANY path, the fault is **ineffective** — the symptom won't manifest.
+
+   e. **Verdict:**
+      - ✅ PASS — no alternate path survives the fault. The symptom is
+        guaranteed to appear.
+      - ❌ FAIL — at least one alternate path bypasses the fault. The symptom
+        may not appear. **The ticket must be redesigned.**
+
+4. **Resolution on FAIL — redesign the fault.** Options:
+   - **Target a single point of failure:** Pick an element with zero redundancy
+     (e.g., the route reflector itself when there's only one RR; a single-homed
+     CE-PE link; the only VRF import RT for a prefix).
+   - **Compound fault:** Inject enough faults to eliminate all bypass paths.
+     Example: if disabling MPLS on one P1↔PE1 link still leaves the path via
+     P2↔PE1, also disable MPLS on P2↔PE1. But compound faults must stay
+     realistic — 2 related breaks, not 5.
+   - **Change the expected symptom:** If the network will still converge but
+     with worse metrics/convergence time, make the symptom about those instead.
+     But prefer absolute breaks (route gone, session down) over degraded-state
+     symptoms (higher metric) — degraded symptoms are harder to observe
+     unequivocally. A student should be able to confirm the fault with one or
+     two `show` commands.
+   - **Remove and replace:** If no redesign works, remove the ticket and replace
+     it with one that targets a non-redundant element. Never leave an ineffective
+     ticket in the workbook.
+
+5. **After redesign, re-run the full analysis** on the modified ticket. Iterate
+   until all tickets pass.
+
+6. Only proceed to Step 4 once EVERY ticket passes its redundancy analysis.
+
+**Redundancy analysis framework (reference table):**
+
+| Fault Category | Redundancy Question | Common Bypass |
+|---------------|-------------------|---------------|
+| Interface-level: `no mpls ip`, shutdown, wrong IP | Does the LSP have a second MPLS-enabled path to the same PE loopback? | Dual-homed PEs with redundant P-routers let LDP build the LSP via the other P |
+| Interface-level: `no ip router isis/ospf` | Does the router have another IGP adjacency that advertises the same loopback? | Multiple P-router adjacencies keep the loopback reachable |
+| BGP session: remove `neighbor`, wrong AS | Does the route arrive via another iBGP neighbor (e.g., a second RR, or direct PE-PE session)? | Dual RRs, residual full-mesh sessions, non-clients receiving reflection |
+| BGP policy: missing `route-reflector-client` | Will the route still reach the PE via reflection to non-clients? | Routes from non-clients → reflected to clients; if the observing PE is a client, it might still get the route via another client that re-advertised it |
+| BGP policy: missing `send-community extended` | Is this the ONLY neighbor a PE has? Does the NLRI exist with correct RT via another path? | PE has multiple iBGP sessions and another carries the prefix with RT intact |
+| VRF: wrong RD, wrong RT, missing import | Is the prefix imported by another PE's VRF that the observing CE can reach? | Multiple PEs import the same RT; the CE can learn the route from another PE |
+| IGP: missing `network` statement | Does the same loopback/interface get advertised via another IGP process or static route? | Multiple IGP adjacencies on different interfaces advertise the same prefix |
+| MPLS LDP: missing `mpls ip` on core interfaces | Can the LSP be built using a different label protocol (RSVP-TE) or via an alternate P-router? | Redundant P-routers provide an alternate LSP; RSVP-TE tunnels bypass broken LDP links |
+
+**Documentation requirement:** After each ticket passes, append an HTML comment
+**Efficacy Note** inside the ticket's `<details>Diagnosis` block in the workbook:
+
+```html
+<!-- Efficacy: <one-line explanation of why the fault is guaranteed to
+     cause the symptom — cite the specific lack of redundancy. E.g.,
+     "PE3's only BGP neighbor is P1 (2.2.2.2). Removing route-reflector-client
+     on P1 for 5.5.5.5 guarantees zero VPNv4 routes on PE3 — no alternate
+     neighbor exists." -->
+```
+
+This note serves as documentation for anyone reviewing the lab (and for the LLM
+if the lab is later regenerated). It is invisible to the student inside the
+`<details>` block.
+
+**Outcome logging:**
+After all tickets pass, append to `labs/<topic>/lab-NN-<slug>/decisions.md`:
+
+```markdown
+## Fault efficacy gate — <YYYY-MM-DD>
+- Outcome: <PASS-CLEAN | PASS-AFTER-FIXES>
+- Tickets checked: <N>
+- Tickets redesigned: <count>
+- Notes: <e.g., "Ticket 3 redesign: targeted P1 route-reflector-client for 5.5.5.5
+  (single point of failure — PE3's only BGP neighbor is P1). Ticket 1 and 2 passed
+  as-is (no redundancy bypass exists).">
+```
 
 --# Step 4: Generate initial-configs/
 

@@ -1,10 +1,155 @@
+# ios-compatibility.yaml
+# Platform metadata, syntax quirks, and cross-platform command compatibility.
+# Referenced by the eve-ng skill (Design Rule #2).
+# Canonical source — inherited by every exam repo via git submodule.
+#
+# Schema (platforms section):
+#   <platform-key>:
+#     ios: <version string>
+#     type: qemu | iol | dynamips
+#     group: ios-classic | ios-l2 | ios-xe | ios-xr | sdwan
+#     image: <filename on disk in EVE-NG>
+#     deprecated: true | false
+#     quirks:
+#       - what: human-readable description
+#         rejected_command: <what a lab author might try>
+#         accepted_command: <what the image actually accepts>
+#         severity: phantom | hard-break | informational
+#         verified: <YYYY-MM-DD>
+#
+# Schema (commands section):
+#   command: <IOS command text>
+#   context: global | interface | router-* | exec | ...
+#   ios-classic | ios-xe | ios-xr | xrv | xrv9k | c7200 | c3725: pass | fail | unknown
+#   notes: <explanation>
+
+revisions:
+  - date: "2026-06-06"
+    who: claude-sonnet-4-6
+    note: >-
+      Promoted platform quirks from ccnp-spvi-labs exam repo into canonical
+      submodule. Added image, quirks arrays to iosv/csr1000v/xrv/xrv9k.
+      Fixed xrv9k ram_gb: 10 → 16 (Cisco minimum per system requirements).
+  - date: "2026-06-02"
+    who: claude-sonnet-4-6
+    note: >-
+      Added xrv9k platform section with two quirks discovered during SPVI
+      lab-01 live testing: (1) VPLS bridge-domain not supported (hard-break);
+      (2) show evpn evi N bare-number syntax invalid — must use vpn-id N
+      (phantom).
+  - date: "2026-05-31"
+    who: claude-opus-4-8
+    note: >-
+      Added CSR1000v/xrv9k EVPN VPWS cross-platform data-plane interop
+      hard-break (behavioral observation; exact mechanism not yet isolated).
+  - date: "2026-05-22"
+    who: claude-sonnet-4-6
+    note: >-
+      Added EIGRP SoO quirk (verified on live router): both ip eigrp
+      route-map (classic-mode interface) and site-of-origin under af-interface
+      (named-mode) are rejected on IOSv. Correct attachment is ip vrf sitemap.
+  - date: "2026-05-17"
+    who: claude-sonnet-4-6
+    note: Initial quirks file created from SPVI lab triage.
+
 platforms:
   iosv:
     ios: 15.9(3)M6
     type: qemu
     group: ios-classic
+    image: vios-adventerprisek9-m.SPA.159-3.M6
     console_port: null
     deprecated: false
+    quirks:
+      - what: >-
+          IOSv 15.9 uses the new-style `vrf definition` command; the legacy
+          `ip vrf` command is rejected at global config level.
+        rejected_command: ip vrf <name>
+        accepted_command: vrf definition <name>
+        severity: hard-break
+        verified: "2026-05-17"
+
+      - what: >-
+          With `vrf definition`-based VRFs, the interface-level VRF assignment
+          uses `vrf forwarding`, not the legacy `ip vrf forwarding`.
+        rejected_command: ip vrf forwarding <name>
+        accepted_command: vrf forwarding <name>
+        severity: hard-break
+        verified: "2026-05-17"
+
+      - what: >-
+          Netmiko sends `terminal width 511` and `terminal length 0` during
+          session setup. When the device is left in config mode mid-session
+          these are rejected with `% Invalid input`. This is a Netmiko library
+          behaviour — not a config file issue — and does not affect solution
+          application.
+        rejected_command: terminal width 511 | terminal length 0
+        accepted_command: (N/A — emitted by Netmiko internal disable_paging)
+        severity: phantom
+        verified: "2026-05-17"
+
+      - what: >-
+          EIGRP SoO on a named-mode process: two expected commands are both
+          rejected on this IOSv image. (1) `ip eigrp <NAME> route-map <MAP>
+          in` under interface config returns `% Unrecognized command` — it is
+          classic-mode only. (2) `site-of-origin <ASN>:<val>` under
+          `af-interface <intf>` inside the named-mode address-family also
+          returns `% Unrecognized command` — the command is absent from this
+          image's AF-interface sub-mode. Correct attachment point: `ip vrf
+          sitemap <route-map>` on the VRF-bound CE-facing interface with a
+          route-map containing `set extcommunity soo <ASN>:<val>`.
+        rejected_command: |-
+          interface Gi0/0 → ip eigrp CUST-A route-map SET_SOO in
+          router eigrp CUST-A → af-interface Gi0/0 → site-of-origin 65000:100
+        accepted_command: >-
+          route-map SET_SOO permit 10 → set extcommunity soo 65000:100;
+          interface GigabitEthernet0/0 → ip vrf sitemap SET_SOO
+        severity: hard-break
+        verified: "2026-05-22"
+
+      - what: >-
+          EIGRP named-mode: `redistribute bgp <ASN> metric ...` placed
+          directly under `address-family ipv4 unicast vrf <VRF>
+          autonomous-system <ASN>` is rejected with `% Invalid input`. On
+          IOSv named-mode EIGRP, redistribution commands must be placed inside
+          the `topology base` sub-mode within the address-family. The `network`
+          command stays at the address-family level (outside topology).
+        rejected_command: |-
+          router eigrp CUST-A → address-family ipv4 unicast vrf CUST-A as 100 → redistribute bgp 65000 metric 100000 100 255 1 1500
+        accepted_command: |-
+          router eigrp CUST-A → address-family ipv4 unicast vrf CUST-A as 100 → topology base → redistribute bgp 65000 metric 100000 100 255 1 1500
+        severity: hard-break
+        verified: "2026-05-22"
+
+      - what: >-
+          BGP Additional-Paths under `address-family vpnv4` — IOSv does NOT
+          include the add-paths NLRI path-ID extension in VPNv4 updates, so
+          downstream XR peers see two paths but without the `add-path` or `b`
+          (backup) flag. PIC Edge requires the path-ID to pre-install a backup
+          in CEF — on vIOS it shows `0 backups` regardless of config. Migrate
+          RR nodes that require add-paths VPNv4 to CSR1000v.
+        rejected_command: |-
+          router bgp 65000 → address-family vpnv4 →
+            bgp additional-paths select group-best
+            bgp additional-paths send
+        accepted_command: >-
+          Migrate the RR node from iosv to csr1000v. On CSR1000v the same
+          commands work correctly under address-family vpnv4 and include the
+          path-ID in VPNv4 NLRI, enabling add-path / b (backup) flags on XR
+          peers.
+        severity: hard-break
+        verified: "2026-05-19"
+
+      - what: >-
+          Classic IOS / IOSv 15.x has no `address-family l2vpn evpn` under
+          `router bgp`. BGP L2VPN EVPN (AFI 25 / SAFI 70) is an IOS-XE 16.x+
+          / IOS-XR / NX-OS feature. An IOSv node cannot act as an EVPN route
+          reflector — any EVPN role (RR, PE with an EVI) requires IOS-XE 16.x+
+          or IOS-XR.
+        rejected_command: "router bgp <ASN> → address-family l2vpn evpn"
+        accepted_command: "Use CSR1000v (IOS-XE 16.x+) or XRv for any EVPN control-plane role."
+        severity: hard-break
+        verified: "2026-05-20"
   iosvl2:
     ios: 15.x (high_iron_20200929)
     type: qemu
@@ -15,8 +160,161 @@ platforms:
     ios: 17.03.05
     type: qemu
     group: ios-xe
+    image: csr1000vng-universalk9.17.03.05
     console_port: null
     deprecated: false
+    notes: >-
+      Recommended platform for BGP VPNv4 Additional-Paths RR roles.
+      IOSv does not support add-paths NLRI path-ID extension for VPNv4.
+      Interface naming: GigabitEthernet1, GigabitEthernet2, …
+      (not GigabitEthernet0/0). Netmiko device type: cisco_xe_telnet.
+    quirks:
+      - what: >-
+          EVPN VPWS does NOT interoperate across IOS-XE (CSR1000v 17.3.5)
+          and IOS-XR (xrv9k 7.x) at the data plane on this image set.
+          Same-platform pairs work (CSR↔CSR and xrv9k↔xrv9k forward
+          end-to-end), but a cross-platform pseudowire establishes
+          (xconnect UP, EAD routes and labels exchange) and AC/PW counters
+          increment, yet no customer frame is delivered end-to-end.
+          Keep every EVPN service circuit intra-platform.
+        rejected_command: "EVPN VPWS pseudowire between a CSR1000v PE and an xrv9k PE (data-plane)"
+        accepted_command: "keep EVPN VPWS endpoints on the same platform (CSR↔CSR or xrv9k↔xrv9k)"
+        severity: hard-break
+        verified: "2026-05-31"
+
+      - what: >-
+          CSR1000v 17.3.5 requires the `service instance N ethernet` block to
+          exist on the interface BEFORE `member GigabitEthernetX
+          service-instance N` can reference it under `l2vpn evpn instance …
+          vpws context …`. Reversing the order triggers `% Unsupported or
+          Invalid AC member`. The EFP must be created first, then the VPWS
+          context can claim it as a member.
+        rejected_command: |-
+          l2vpn evpn instance 10 point-to-point
+           vpws context VPWS-CE1-CE2
+            member GigabitEthernet3 service-instance 10
+          ! (interface + service instance defined AFTER)
+        accepted_command: |-
+          interface GigabitEthernet3
+           service instance 10 ethernet
+            encapsulation default
+          !
+          l2vpn evpn instance 10 point-to-point
+           vpws context VPWS-CE1-CE2
+            member GigabitEthernet3 service-instance 10
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          `show l2vpn evpn replication-type` does not exist on CSR1000v 17.3.5.
+          Available `show l2vpn evpn` subcommands: capabilities, checkpoint,
+          default-gateway, ethernet-segment, evi, mac, memory, peers,
+          route-target, summary, vpws. Use `show running-config | section
+          l2vpn evpn` or `show run | include replication-type` instead.
+        rejected_command: "show l2vpn evpn replication-type"
+        accepted_command: "show running-config | section l2vpn evpn"
+        severity: phantom
+        verified: "2026-06-02"
+
+      - what: >-
+          CSR1000v 17.3.5 uses the new config model: `bridge-domain N` is NOT
+          accepted under `service instance N ethernet` (the EFP submode).
+          Attempting it produces `% New configuration model is being used.
+          Please use member command under bridge-domain.`. Correct approach:
+          global `bridge-domain N` block with `member GigabitEthernetX
+          service-instance N`; EFP block contains only `encapsulation` and
+          `rewrite`.
+        rejected_command: |-
+          interface GigabitEthernet3
+           service instance 20 ethernet
+            encapsulation dot1q 20
+            rewrite ingress tag pop 1 symmetric
+            bridge-domain 20
+        accepted_command: |-
+          bridge-domain 20
+           member GigabitEthernet3 service-instance 20
+          !
+          interface GigabitEthernet3
+           service instance 20 ethernet
+            encapsulation dot1q 20
+            rewrite ingress tag pop 1 symmetric
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          CSR1000v 17.3.5 EVPN-MPLS ethernet-segment multihoming uses a
+          two-step model — corrects the 2026-06-05 finding that wrongly
+          concluded ES binding is entirely unsupported. The correct model:
+          (1) Global block `l2vpn evpn ethernet-segment N` holds `identifier
+          type 0 <9-octet>` and `redundancy all-active` — no `member`
+          subcommand exists here; (2) `interface Port-channel1` accepts
+          `evpn ethernet-segment N` to bind the ES to the AC; (3) physical
+          member interface adds `channel-group N mode on` to join the
+          Port-channel. Physical interfaces (e.g. GigabitEthernet3) do NOT
+          accept `evpn ethernet-segment` directly. The 2026-06-05 probe tested
+          only the physical interface and incorrectly concluded no binding path
+          existed. Only `all-active` redundancy is available on 17.3.5
+          (`redundancy single-active` is absent from `redundancy ?` output).
+        rejected_command: |-
+          ! Physical interface — rejected:
+          interface GigabitEthernet3
+           evpn ethernet-segment 1   ! no such keyword on physical iface
+          !
+          ! Global block member — rejected:
+          l2vpn evpn ethernet-segment 1
+           member GigabitEthernet3 service-instance 10   ! no such subcommand
+          !
+          ! Single-active — rejected:
+          l2vpn evpn ethernet-segment 1
+           redundancy single-active   ! not in 'redundancy ?' on 17.3.5
+        accepted_command: |-
+          ! Step 1 — physical AC joins Port-channel:
+          interface GigabitEthernet3
+           channel-group 1 mode on
+          !
+          ! Step 2 — Port-channel binds ES:
+          interface Port-channel1
+           evpn ethernet-segment 1
+          !
+          ! Step 3 — global block holds ES parameters:
+          l2vpn evpn ethernet-segment 1
+           identifier type 0 00.01.00.01.00.01.00.01.00
+           redundancy all-active
+        severity: hard-break
+        verified: "2026-06-06"
+
+      - what: >-
+          `show l2vpn evpn vpws` (bare, no sub-keyword) is incomplete on
+          CSR1000v IOS-XE 17.x — returns `% Incomplete command.` The router
+          requires a sub-keyword: `evi <N>`, `summary`. (`vc` is rejected on
+          this image.)
+        rejected_command: "show l2vpn evpn vpws"
+        accepted_command: "show l2vpn evpn vpws evi <N>  OR  show l2vpn evpn vpws summary"
+        severity: phantom
+        verified: "2026-05-26"
+
+      - what: >-
+          The global `l2vpn evpn` block MUST include `router-id Loopback0`
+          (or equivalent loopback). Without it the EVPN control plane is not
+          fully initialized: routes are generated but not selected as best
+          (next-hop stays `::`) and are therefore never sent to BGP peers.
+        rejected_command: "l2vpn evpn  (without router-id)"
+        accepted_command: "l2vpn evpn\n router-id Loopback0"
+        severity: hard-break
+        verified: "2026-05-27"
+
+      - what: >-
+          `neighbor <peer-group> activate` inside `address-family l2vpn evpn`
+          is rejected with `% Activation failed: configure bgp listener range
+          before activating peergroup` even for static neighbors. IOS-XE
+          treats peer-group activation in l2vpn evpn as a dynamic-listen
+          registration. Activate each static neighbor individually instead;
+          peer-group attributes (send-community, route-reflector-client) still
+          apply via the group.
+        rejected_command: "neighbor RR-CLIENTS activate  (in address-family l2vpn evpn)"
+        accepted_command: "neighbor 1.1.1.1 activate  (per-neighbor, inside l2vpn evpn AF)"
+        severity: hard-break
+        verified: "2026-05-27"
   iol_l3:
     ios: 15.7(3)M
     type: iol
@@ -30,21 +328,211 @@ platforms:
     console_port: null
     deprecated: false
   xrv:
-    ios: "6.x (classic XRv)"
+    ios: 6.x (classic XRv)
     type: qemu
     group: ios-xr
+    image: xrv-k9-demo-6.3.1
     console_port: null
     deprecated: false
     ram_gb: 3
-    notes: "Default XR for control-plane CLI parity. Interfaces GigabitEthernet0/0/0/N. Boot ~3-5 min."
+    notes: Default XR for control-plane CLI parity. Interfaces GigabitEthernet0/0/0/N.
+      Boot ~3-5 min.
+    quirks:
+      - what: >-
+          `rd` under `vrf CUST-A` at global level enters `(config-rd)` mode
+          (a routing-policy rd-set object), not a VRF Route Distinguisher.
+          `exit` from it returns to `(config)`, NOT `(config-vrf)`, causing the
+          following address-family/route-target block to be parsed at the wrong
+          level and the pseudo-atomic commit to roll back the whole candidate.
+          The RD belongs ONLY under `router bgp <ASN> → vrf <name> → rd`.
+        rejected_command: "vrf CUST-A → rd 4:100 (in global vrf block, with or without trailing exit)"
+        accepted_command: "router bgp <ASN> → vrf CUST-A → rd 4:100  (no rd in the global vrf block)"
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          `import route-target` and `export route-target` on XRv must be
+          nested under `vrf CUST-A → address-family ipv4 unicast`. Placing
+          them directly under `vrf CUST-A` is rejected.
+        rejected_command: vrf CUST-A → import route-target <value>
+        accepted_command: vrf CUST-A → address-family ipv4 unicast → import route-target <value>
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          OSPF VRF domain-id on XRv must use the IP form `domain-id A.B.C.D`.
+          The `domain-id type 0005 value <dotted>` form feeds a strict parser
+          that expects a 6-octet (12-hex-digit) value and rejects a dotted
+          quad with `Invalid domain id value: Domain id value size is wrong`.
+          Because XR commits are pseudo-atomic, that one bad line reverts the
+          whole candidate config.
+        rejected_command: "router ospf <p> → vrf <v> → domain-id type 0005 value 0.0.0.100"
+        accepted_command: "router ospf <p> → vrf <v> → domain-id 0.0.0.100"
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          `setup_lab.py` and `apply_solution.py` call `send_config_set` after
+          stripping every line that starts with `!`. XR `.cfg` files that use
+          `!` as block terminators have those terminators silently removed,
+          leaving the device in whatever sub-mode it last entered. All XR
+          config files pushed by automation must use explicit `exit` commands
+          to navigate sub-modes — never `!`. For interactive console use,
+          `root` returns to global config from any depth.
+        rejected_command: "! (used as block terminator in .cfg pushed by send_config_set)"
+        accepted_command: exit (per sub-mode level) or root (interactive only)
+        severity: hard-break
+        verified: "2026-05-21"
+
+      - what: >-
+          XRv requires an explicit `route-policy PASS-ALL` applied to BGP
+          neighbors under each address-family. Without it the BGP session
+          stays Idle — there is no implicit accept. IOS implicit-accept
+          default does not carry over to XR.
+        rejected_command: "(neighbor with no inbound/outbound route-policy)"
+        accepted_command: "route-policy PASS-ALL / pass / end-policy; applied in/out on each neighbor AF"
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv `router isis` with `metric-style wide` only rejects
+          narrow-metric TLVs (TLV 2) sent by IOSv peers. IS-IS adjacencies
+          form but zero routes are installed. Fix: add `metric-style narrow`
+          alongside wide on all XR nodes in any mixed XR+IOSv IS-IS domain.
+        rejected_command: metric-style wide (alone, in mixed XR+IOSv environment)
+        accepted_command: metric-style narrow + metric-style wide
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv BGP process manager (bpm) takes 2-5 minutes to initialise on
+          cold boot. Committing `router bgp` config before bpm is ready fails
+          with `%ROUTING-BGP-3-INIT_GET_VALUE`. Automation scripts must poll
+          commit with retries (suggest 6 attempts × 20 s = 2 min window).
+        severity: hard-break
+        verified: "2026-05-16"
+
+      - what: >-
+          XRv classic 6.3.1 (xrv-k9-demo-6.3.1) EVPN VPWS data plane is
+          non-functional. The control plane works correctly — xconnect shows
+          UP, BGP EAD routes exchange, labels negotiate — but the L2 switching
+          engine that moves frames between the AC and the MPLS pseudowire does
+          not execute on this demo image. Observable signature: `show
+          interfaces` input counter increments; `show l2vpn xconnect detail`
+          AC/PW statistics remain 0/0 regardless of traffic. Use xrv9k for
+          any lab requiring EVPN VPWS data-plane verification.
+        rejected_command: "interface GigabitEthernet0/0/0/X l2transport (for EVPN VPWS forwarding)"
+        accepted_command: "use xrv9k platform for EVPN VPWS data-plane"
+        severity: hard-break
+        verified: "2026-05-29"
+
+      - what: >-
+          XRv classic 6.3.1 EVPN VPWS EVI defaults to Control-Word: Enabled.
+          XRv9K 7.x defaults to Control-Word: Disabled. When mixing image
+          generations in a single pseudowire, both PEs must have the same CW
+          setting or frames are silently dropped. The EVI-level command on
+          XRv classic to disable CW is `control-word-disable` (hyphenated,
+          inside `evpn / evi N` config submode). The two-word form
+          `control-word disable` is rejected.
+        rejected_command: "evpn / evi N / control-word disable"
+        accepted_command: "evpn / evi N / control-word-disable"
+        severity: hard-break
+        verified: "2026-05-29"
+
+      - what: >-
+          In IOS-XR (both XRv classic 6.3.1 and XRv9k), configuring an
+          interface for l2transport does NOT auto-enable it. You MUST add
+          `no shutdown` to the parent interface and/or the l2transport
+          subinterface. Without it the xconnect AC shows as DN even though
+          the physical interface is up/up.
+        rejected_command: "(l2transport subinterface without no shutdown)"
+        accepted_command: "interface Gi0/0/0/1.11 l2transport\n no shutdown"
+        severity: hard-break
+        verified: "2026-05-27"
+
+      - what: >-
+          XR EVPN VPWS xconnect model (`l2vpn xconnect group / p2p / neighbor
+          evpn evi N target X source Y`) uses the EVI purely as a
+          control-plane signaling handle. `advertise-mac` puts the EVI into
+          ELAN mode and conflicts — rejected with `Cannot use EVI with
+          advertise-mac configuration`. Remove `advertise-mac` from any EVI
+          that feeds an xconnect VPWS endpoint.
+        rejected_command: "evpn / evi N / advertise-mac  (when evi also used for VPWS xconnect)"
+        accepted_command: "(remove advertise-mac from VPWS EVIs; use it only for ELAN EVIs)"
+        severity: hard-break
+        verified: "2026-05-26"
+
+      - what: >-
+          IOS-XR IS-IS interface defaults to point-to-point on routed
+          Ethernet. IOS classic/IOSv/CSR1000v defaults to broadcast Ethernet
+          IS-IS. Mixed types reject each other's hellos silently — no neighbor
+          in `show isis neighbors`, no log lines. IOS side must carry `isis
+          network point-to-point` on every interface facing an XR peer.
+        rejected_command: "(IOS interface toward XR without isis network point-to-point)"
+        accepted_command: "interface Gi0/0\n isis network point-to-point"
+        severity: hard-break
+        verified: "2026-05-26"
   xrv9k:
-    ios: "24.3.1 (upgraded 2026-05-12; was 7.1.1)"
+    ios: 24.3.1 (upgraded 2026-05-12; was 7.1.1)
     type: qemu
     group: ios-xr
+    image: xrv9k-fullk9-x.vrr-7.x (EVE-NG)
     console_port: null
     deprecated: false
     ram_gb: 16
-    notes: "Cisco system minimum is 16 GB RAM (per XRv9000 official requirements). Reserve for xrv9k-only behaviour discovered at lab build/validate time. Boot ~10 min."
+    notes: >-
+      Cisco system minimum is 16 GB RAM (per XRv9000 official requirements).
+      Reserve for xrv9k-only behaviour discovered at lab build/validate time.
+      Boot ~10 min. Supports EVPN VPWS (xconnect model) and EVPN control
+      plane (BGP L2VPN EVPN AF, Type-1 AD / Type-2 MAC/IP routes). Does NOT
+      support VPLS bridge-domain data plane — EVPN Native E-LAN is
+      control-plane-only on this image.
+    quirks:
+      - what: >-
+          XRv9k in EVE-NG does not support VPLS bridge-domain L2 switching.
+          Binding a l2transport subinterface as a bridge-domain member fails
+          with `!!% Invalid argument: VPLS Bridge domains not supported on
+          this platform`. A secondary error `Maximum EVI BD configuration
+          reached` follows because the bridge-domain is in an invalid state.
+          EVPN EVI config itself commits cleanly — the bridge-domain binding
+          is the failure point. There is no alternative XR syntax for E-LAN;
+          bridge-domain IS the XR E-LAN model. EVPN VPWS (xconnect model) is
+          unaffected and works correctly.
+        rejected_command: |-
+          l2vpn
+           bridge group EVPN-ELAN
+            bridge-domain ELAN-21
+             interface GigabitEthernet0/0/0/1.21
+             evi 21
+        accepted_command: >-
+          No data-plane workaround on this image. EVI + BGP config can be
+          applied for control-plane study but L2 forwarding will not occur.
+          For XR-side E-LAN data-plane, a higher-tier XRv9k image or physical
+          platform with VPLS support is required.
+        severity: hard-break
+        verified: "2026-06-02"
+
+      - what: >-
+          `show evpn evi <N>` (bare EVI number as filter) is invalid on this
+          XRv9k image. The `?` help for `show evpn evi` lists `vpn-id` as the
+          keyword to filter by EVI number. Attempting `show evpn evi 21` or
+          `show evpn evi 21 detail` produces `% Invalid input detected at '^'
+          marker.`. Use `show evpn evi vpn-id <N>` or `show evpn evi vpn-id
+          <N> detail`.
+        rejected_command: "show evpn evi 21 | show evpn evi 21 detail"
+        accepted_command: "show evpn evi vpn-id 21 | show evpn evi vpn-id 21 detail"
+        severity: phantom
+        verified: "2026-06-02"
+
+      - what: >-
+          EVPN VPWS does NOT interoperate across IOS-XE (CSR1000v 17.3.5)
+          and IOS-XR (xrv9k) at the data plane on this image set — see
+          csr1000v quirk for full detail. Keep every EVPN VPWS circuit
+          intra-platform.
+        rejected_command: "EVPN VPWS between xrv9k PE and CSR1000v PE (data-plane forwarding)"
+        accepted_command: "both VPWS endpoints on xrv9k  OR  both on CSR1000v"
+        severity: hard-break
+        verified: "2026-05-31"
   vmanage:
     ios: 20.6.2
     type: qemu
@@ -89,14 +577,6 @@ platforms:
     group: ios-classic
     console_port: 5002
     deprecated: true
-# Per-command compatibility rows.
-# Per-platform-group flag values: pass | fail | unknown
-# Recognised flags: ios-classic | ios-l2 | ios-xe | ios-xr | sdwan
-# Add a flag column only when that group has been empirically probed for the
-# command. Omit the flag (rather than writing 'unknown' on every row) when no
-# probe has been done; absence means "not yet verified".
-# XR rows are typically added by probing on PROBE-XRv first, then PROBE-XRv9k
-# only if behaviour diverges between classic XRv and XRv9k.
 commands:
 - command: router eigrp ENARSI
   context: global
@@ -411,13 +891,14 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    Peer-group TEMPLATE activation in address-family ipv4. Fails on IOSv (confirmed
+  notes: 'Peer-group TEMPLATE activation in address-family ipv4. Fails on IOSv (confirmed
     15.6(2)T, likely all IOSv) with "Activation failed: configure bgp listener range
     before activating peergroup" — IOS interprets this as Dynamic Neighbors and requires
-    bgp listen range first. Workaround: activate each member individually
-    (neighbor 10.0.0.X activate); members still inherit all peer-group attributes
-    (remote-as, update-source, next-hop-self). Passes on IOS-XE (CSR1000v 17.03.05).
+    bgp listen range first. Workaround: activate each member individually (neighbor
+    10.0.0.X activate); members still inherit all peer-group attributes (remote-as,
+    update-source, next-hop-self). Passes on IOS-XE (CSR1000v 17.03.05).
+
+    '
 - command: neighbor 10.0.0.1 update-source Loopback0
   context: router-bgp
   ios-classic: pass
@@ -466,11 +947,12 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    Seq-only deletion rejected on IOSv with "% Incomplete command." — the full entry
-    text is required, or use "no ip prefix-list NAME" to drop the entire list then
-    re-add. IOS-XE (CSR1000v 17.03.05) accepts seq-only deletion. Workaround applies
-    to all ios-classic targets; confirmed on IOSv 15.6(2)T.
+  notes: 'Seq-only deletion rejected on IOSv with "% Incomplete command." — the full
+    entry text is required, or use "no ip prefix-list NAME" to drop the entire list
+    then re-add. IOS-XE (CSR1000v 17.03.05) accepts seq-only deletion. Workaround
+    applies to all ios-classic targets; confirmed on IOSv 15.6(2)T.
+
+    '
 - command: match ip address prefix-list PFX-NAME
   context: route-map
   ios-classic: pass
@@ -740,11 +1222,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    Reserves RSVP bandwidth on the interface and advertises it in the TED. Format:
-    "ip rsvp bandwidth <global-kbps> <per-flow-kbps>". CSPF prunes links where
-    available < requested; setting too low (e.g. 10 10) causes CSPF to fail for
-    any tunnel > 10 kbps. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+  notes: 'Reserves RSVP bandwidth on the interface and advertises it in the TED. Format:
+    "ip rsvp bandwidth <global-kbps> <per-flow-kbps>". CSPF prunes links where available
+    < requested; setting too low (e.g. 10 10) causes CSPF to fail for any tunnel >
+    10 kbps. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+
+    '
   c7200: unknown
   c3725: unknown
 - command: tunnel mode mpls traffic-eng
@@ -761,11 +1244,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    Standard tunnel destination command — NOT "tunnel mpls traffic-eng destination".
-    The mpls traffic-eng prefix does NOT apply to destination. Use plain
-    "tunnel destination <ip>" for RSVP-TE tunnels, same as GRE tunnels.
-    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+  notes: 'Standard tunnel destination command — NOT "tunnel mpls traffic-eng destination".
+    The mpls traffic-eng prefix does NOT apply to destination. Use plain "tunnel destination
+    <ip>" for RSVP-TE tunnels, same as GRE tunnels. Verified on IOSv 15.9(3)M6 (SPRI
+    MPLS lab-03).
+
+    '
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng path-option 10 dynamic
@@ -782,11 +1266,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    Global config command — NOT interface context. Defines a named explicit path
-    for CSPF to follow. Sub-commands: "next-address loose <ip>" (loose hop = CSPF
-    routes to the waypoint) or "next-address strict <ip>" (must be directly connected).
+  notes: 'Global config command — NOT interface context. Defines a named explicit
+    path for CSPF to follow. Sub-commands: "next-address loose <ip>" (loose hop =
+    CSPF routes to the waypoint) or "next-address strict <ip>" (must be directly connected).
     Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+
+    '
   c7200: unknown
   c3725: unknown
 - command: next-address loose 10.0.0.3
@@ -794,11 +1279,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    The "loose" keyword PRECEDES the IP address: "next-address loose <ip>", NOT
-    "next-address <ip> loose". Typing "next-address <ip> ?" shows only <cr> — the
-    loose keyword must come before the address. Verified on IOSv 15.9(3)M6.
-    Non-loose form "next-address <ip>" (strict hop) also passes.
+  notes: 'The "loose" keyword PRECEDES the IP address: "next-address loose <ip>",
+    NOT "next-address <ip> loose". Typing "next-address <ip> ?" shows only <cr> —
+    the loose keyword must come before the address. Verified on IOSv 15.9(3)M6. Non-loose
+    form "next-address <ip>" (strict hop) also passes.
+
+    '
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng autoroute announce
@@ -806,9 +1292,9 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: Installs the tunnel destination in the IGP routing table via the tunnel
-    interface (autoroute). "show ip route <dest>" shows via Tunnel interface.
-    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+  notes: Installs the tunnel destination in the IGP routing table via the tunnel interface
+    (autoroute). "show ip route <dest>" shows via Tunnel interface. Verified on IOSv
+    15.9(3)M6 (SPRI MPLS lab-03).
   c7200: unknown
   c3725: unknown
 - command: tunnel mpls traffic-eng path-option 20 dynamic lockdown
@@ -834,10 +1320,11 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    Setup priority / hold priority. Range 0–7; lower = higher priority. Default 7/7.
-    Priority 1/1 allows this tunnel to preempt most other tunnels during RSVP
+  notes: 'Setup priority / hold priority. Range 0–7; lower = higher priority. Default
+    7/7. Priority 1/1 allows this tunnel to preempt most other tunnels during RSVP
     admission. Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03).
+
+    '
   c7200: unknown
   c3725: unknown
 - command: mpls ldp sync
@@ -854,11 +1341,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    IOSv requires the "override" keyword: "mpls mtu override <size>". The bare
+  notes: 'IOSv requires the "override" keyword: "mpls mtu override <size>". The bare
     "mpls mtu <size>" form used on physical IOS is rejected with "Invalid input".
-    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03). Always use override form in
-    configs targeting ios-classic EVE-NG images.
+    Verified on IOSv 15.9(3)M6 (SPRI MPLS lab-03). Always use override form in configs
+    targeting ios-classic EVE-NG images.
+
+    '
   c7200: unknown
   c3725: unknown
 - command: mpls mtu 1508
@@ -875,12 +1363,13 @@ commands:
   ios-classic: fail
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    The "detail" keyword is rejected on IOSv 15.9(3)M6 when a specific tunnel name
-    is given — "Invalid input" at "detail". Use "show mpls traffic-eng tunnels Tunnel10"
-    (no detail) — specifying a single tunnel already returns full verbose output.
-    The "detail" keyword IS valid when listing all tunnels:
-    "show mpls traffic-eng tunnels detail" (no tunnel name) passes.
+  notes: 'The "detail" keyword is rejected on IOSv 15.9(3)M6 when a specific tunnel
+    name is given — "Invalid input" at "detail". Use "show mpls traffic-eng tunnels
+    Tunnel10" (no detail) — specifying a single tunnel already returns full verbose
+    output. The "detail" keyword IS valid when listing all tunnels: "show mpls traffic-eng
+    tunnels detail" (no tunnel name) passes.
+
+    '
   c7200: unknown
   c3725: unknown
 - command: show mpls interfaces detail
@@ -888,11 +1377,12 @@ commands:
   ios-classic: pass
   ios-l2: unknown
   ios-xe: unknown
-  notes: >
-    IOSv 15.9(3)M6 reports "LSP Tunnel labeling enabled" / "LSP Tunnel labeling
+  notes: 'IOSv 15.9(3)M6 reports "LSP Tunnel labeling enabled" / "LSP Tunnel labeling
     not enabled" — NOT "Traffic Engineering: enabled" as shown in Cisco documentation
     and physical IOS. Use "LSP Tunnel labeling enabled" as the expected string in
     workbook verification steps and preflight checks targeting IOSv.
+
+    '
   c7200: unknown
   c3725: unknown
 - command: nsf ietf
@@ -902,13 +1392,13 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    IS-IS Graceful Restart per RFC 5306. REJECTED on IOSv 15.6(2)T and
-    15.9(3)M6 — the nsf command does not exist under router isis on these builds.
-    IS-IS GR requires hardware-plane separation (CEF on a separate line card from
-    the RP), which does not exist in a fully virtualised router. Available on
-    IOS-XE, physical IOS 15.4+, IOS-XR, ASR 9000. Both sides must configure
-    nsf ietf for full GR operation.
+  notes: 'IS-IS Graceful Restart per RFC 5306. REJECTED on IOSv 15.6(2)T and 15.9(3)M6
+    — the nsf command does not exist under router isis on these builds. IS-IS GR requires
+    hardware-plane separation (CEF on a separate line card from the RP), which does
+    not exist in a fully virtualised router. Available on IOS-XE, physical IOS 15.4+,
+    IOS-XR, ASR 9000. Both sides must configure nsf ietf for full GR operation.
+
+    '
 - command: nsr
   context: router-isis
   ios-classic: fail
@@ -916,12 +1406,13 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    IS-IS Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 —
-    the nsr command is not present in the IOSv command set under router isis.
-    NSR requires a dual-RP platform (standby RP maintains protocol state for
-    seamless switchover). Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS.
-    Single-RP virtualised platforms (IOSv) cannot support NSR.
+  notes: 'IS-IS Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 — the nsr
+    command is not present in the IOSv command set under router isis. NSR requires
+    a dual-RP platform (standby RP maintains protocol state for seamless switchover).
+    Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS. Single-RP virtualised platforms
+    (IOSv) cannot support NSR.
+
+    '
 - command: bgp graceful-restart
   context: router-bgp
   ios-classic: pass
@@ -929,10 +1420,11 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    BGP Graceful Restart per RFC 4724. Available on IOSv 15.9(3)M6.
-    Enables GR capability advertisement to BGP peers. Both sides must advertise
-    GR capability for full restart protection. Works for both iBGP and eBGP sessions.
+  notes: 'BGP Graceful Restart per RFC 4724. Available on IOSv 15.9(3)M6. Enables
+    GR capability advertisement to BGP peers. Both sides must advertise GR capability
+    for full restart protection. Works for both iBGP and eBGP sessions.
+
+    '
 - command: bgp nsr
   context: router-bgp
   ios-classic: fail
@@ -940,56 +1432,61 @@ commands:
   ios-xe: pass
   c7200: unknown
   c3725: unknown
-  notes: >
-    BGP Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 —
-    the bgp nsr command is not present in the IOSv command set under router bgp.
-    NSR maintains all BGP state on a standby RP for seamless switchover.
-    Available on IOS-XE, IOS-XR, ASR 9000, NCS, CRS. Single-RP virtualised
-    platforms (IOSv) cannot support NSR.
+  notes: 'BGP Nonstop Routing. REJECTED on IOSv 15.6(2)T and 15.9(3)M6 — the bgp nsr
+    command is not present in the IOSv command set under router bgp. NSR maintains
+    all BGP state on a standby RP for seamless switchover. Available on IOS-XE, IOS-XR,
+    ASR 9000, NCS, CRS. Single-RP virtualised platforms (IOSv) cannot support NSR.
+
+    '
 - command: bfd fast-detect
   context: router-isis-interface-af-ipv4-unicast
   xrv: fail
   xrv9k: fail
-  notes: >
-    REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside the IS-IS interface
-    address-family context. Error: % Invalid input detected at '^' marker.
-    BFD is activated under IS-IS by setting bfd minimum-interval and
-    bfd multiplier at the interface level only — no separate enable command
-    is needed. Remove this line from any config targeting ios-xr platforms.
+  notes: 'REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside the IS-IS interface address-family
+    context. Error: % Invalid input detected at ''^'' marker. BFD is activated under
+    IS-IS by setting bfd minimum-interval and bfd multiplier at the interface level
+    only — no separate enable command is needed. Remove this line from any config
+    targeting ios-xr platforms.
+
+    '
 - command: index N address ipv4 X.X.X.X
   context: segment-routing-traffic-eng-segment-list
   xrv: fail
   xrv9k: fail
-  notes: >
-    REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside segment-list entries.
-    Error: % Invalid input detected at '^' marker. The address ipv4 form for
-    node-SID addressing was removed in IOS-XR 7.x+. Use mpls label form instead:
-    'index N mpls label XXXXX' where label = SRGB-base + prefix-SID-index.
-    With SRGB 16000-23999: R1=16001, R2=16002, R3=16003, R4=16004.
+  notes: 'REJECTED on both XRv 6.3.1 and XRv9k 24.3.1 inside segment-list entries.
+    Error: % Invalid input detected at ''^'' marker. The address ipv4 form for node-SID
+    addressing was removed in IOS-XR 7.x+. Use mpls label form instead: ''index N
+    mpls label XXXXX'' where label = SRGB-base + prefix-SID-index. With SRGB 16000-23999:
+    R1=16001, R2=16002, R3=16003, R4=16004.
+
+    '
 - command: index N mpls label XXXXX
   context: segment-routing-traffic-eng-segment-list
   xrv: fail
   xrv9k: pass
-  notes: >
-    PASS on XRv9k 24.3.1. FAIL on XRv 6.3.1 — the segment-list command itself
-    does not exist in the 6.3.1 traffic-eng context (named segment-lists were
-    introduced in IOS-XR 7.x). Use mpls label form for all XRv9k segment-list
-    configs. Label = SRGB-base (16000) + prefix-SID-index.
+  notes: 'PASS on XRv9k 24.3.1. FAIL on XRv 6.3.1 — the segment-list command itself
+    does not exist in the 6.3.1 traffic-eng context (named segment-lists were introduced
+    in IOS-XR 7.x). Use mpls label form for all XRv9k segment-list configs. Label
+    = SRGB-base (16000) + prefix-SID-index.
+
+    '
 - command: show isis fast-reroute topology ipv4 unicast
   context: exec
   xrv9k: fail
-  notes: >
-    REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
-    at '^' marker. The 'topology' subcommand does not exist in the XR isis
-    fast-reroute show tree. Use 'show isis fast-reroute detail' instead for
-    per-prefix FRR backup visibility.
+  notes: 'REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
+    at ''^'' marker. The ''topology'' subcommand does not exist in the XR isis fast-reroute
+    show tree. Use ''show isis fast-reroute detail'' instead for per-prefix FRR backup
+    visibility.
+
+    '
 - command: show isis fast-reroute ipv4 <prefix>
   context: exec
   xrv9k: fail
-  notes: >
-    REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
-    at '^' marker. Use 'show isis fast-reroute detail <prefix>' for per-prefix
+  notes: 'REJECTED on XRv9k (tested 7.1.1 and 24.3.1). Error: % Invalid input detected
+    at ''^'' marker. Use ''show isis fast-reroute detail <prefix>'' for per-prefix
     FRR detail on IOS-XR platforms.
+
+    '
 - command: show isis fast-reroute detail
   context: exec
   xrv9k: pass
@@ -1050,22 +1547,22 @@ commands:
   ios-xr: fail
   xrv: fail
   xrv9k: fail
-  notes: >
-    Alias for `| section` — see the `| section` entry above. Same IOS-XR
-    limitation. The unquoted pipe modifier must be written with the space:
-    `sh isis fast-reroute | section No FRR backup` fails on XR.
+  notes: 'Alias for `| section` — see the `| section` entry above. Same IOS-XR limitation.
+    The unquoted pipe modifier must be written with the space: `sh isis fast-reroute
+    | section No FRR backup` fails on XR.
 
+    '
 - command: bfd minimum-interval 50
   context: router-isis-interface
   xrv: pass
   xrv9k: pass
-  notes: >
-    Config is accepted on both XRv 6.3.1 and XRv9k. However on classic XRv 6.3.1
-    (software forwarding), IS-IS BFD sessions do NOT form even with both sides
-    configured. 'show bfd session' returns empty; 'show isis adjacency detail'
-    shows BFD IPv4: None. Use 'show isis adjacency detail' on XRv 6.3.1 to confirm
-    TI-LFA protection via Adjacency SID '(protected)' status instead.
+  notes: 'Config is accepted on both XRv 6.3.1 and XRv9k. However on classic XRv 6.3.1
+    (software forwarding), IS-IS BFD sessions do NOT form even with both sides configured.
+    ''show bfd session'' returns empty; ''show isis adjacency detail'' shows BFD IPv4:
+    None. Use ''show isis adjacency detail'' on XRv 6.3.1 to confirm TI-LFA protection
+    via Adjacency SID ''(protected)'' status instead.
 
+    '
 - command: show mpls forwarding <prefix/len>
   context: exec
   ios-classic: unknown
@@ -1073,194 +1570,634 @@ commands:
   ios-xr: fail
   xrv: fail
   xrv9k: fail
-  notes: >
-    On IOS-XR, filtering the MPLS forwarding table by prefix REQUIRES the
-    'prefix' keyword: 'show mpls forwarding prefix <ip>/<len>'.
-    Without it, the IP address is rejected with '% Invalid input detected at
-    '^' marker.' The correct forms are:
-    - 'show mpls forwarding prefix 10.0.0.3/32'
-    - 'show mpls forwarding prefix 10.0.0.3/32 detail'
-    On IOS-XE/IOSv the prefix can follow 'forwarding' directly without 'prefix'.
+  notes: 'On IOS-XR, filtering the MPLS forwarding table by prefix REQUIRES the ''prefix''
+    keyword: ''show mpls forwarding prefix <ip>/<len>''. Without it, the IP address
+    is rejected with ''% Invalid input detected at ''^'' marker.'' The correct forms
+    are: - ''show mpls forwarding prefix 10.0.0.3/32'' - ''show mpls forwarding prefix
+    10.0.0.3/32 detail'' On IOS-XE/IOSv the prefix can follow ''forwarding'' directly
+    without ''prefix''.
 
+    '
 - command: show segment-routing mapping-server prefix-sid-map ipv4 summary
   context: exec
   ios-xr: fail
   xrv: fail
   xrv9k: fail
-  notes: >
-    'summary' is not a valid keyword after 'prefix-sid-map ipv4'. Rejected with
-    '% Invalid input detected at '^' marker.' The correct form is simply:
-    'show segment-routing mapping-server prefix-sid-map ipv4' (bare, shows table)
-    or 'show segment-routing mapping-server prefix-sid-map ipv4 detail'.
-    To see mapping entries received from the MS on a peer router, use:
-    'show isis segment-routing prefix-sid-map active-policy'
+  notes: '''summary'' is not a valid keyword after ''prefix-sid-map ipv4''. Rejected
+    with ''% Invalid input detected at ''^'' marker.'' The correct form is simply:
+    ''show segment-routing mapping-server prefix-sid-map ipv4'' (bare, shows table)
+    or ''show segment-routing mapping-server prefix-sid-map ipv4 detail''. To see
+    mapping entries received from the MS on a peer router, use: ''show isis segment-routing
+    prefix-sid-map active-policy''
 
+    '
 - command: show segment-routing mapping-server prefix-sid-map ipv4
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Valid bare form — shows all locally configured SR mapping-server entries in
-    table form (Prefix, SID Index, Range, Flags). Add 'detail' for extended info
+  notes: 'Valid bare form — shows all locally configured SR mapping-server entries
+    in table form (Prefix, SID Index, Range, Flags). Add ''detail'' for extended info
     (Last Prefix, Last SID Index per entry).
 
+    '
 - command: show isis segment-routing prefix-sid-map active-policy
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Valid on receiving routers — shows SR mapping entries received via IS-IS
-    from the mapping server. Complementary to the mapping-server-local command:
-    use on peers (not on the mapping server itself) to confirm distribution.
+  notes: 'Valid on receiving routers — shows SR mapping entries received via IS-IS
+    from the mapping server. Complementary to the mapping-server-local command: use
+    on peers (not on the mapping server itself) to confirm distribution.
 
+    '
 - command: show mpls forwarding prefix <prefix/len>
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Correct IOS-XR form for filtering the MPLS forwarding table by destination
-    prefix. The 'prefix' keyword is mandatory on XR between 'forwarding' and
-    the IP prefix. Without 'detail', shows the summary line (local label,
-    outgoing label, interface, next-hop). With 'detail', adds Label Stack,
-    path flags, backup path info, and '(!) FRR pure backup' entries.
+  notes: 'Correct IOS-XR form for filtering the MPLS forwarding table by destination
+    prefix. The ''prefix'' keyword is mandatory on XR between ''forwarding'' and the
+    IP prefix. Without ''detail'', shows the summary line (local label, outgoing label,
+    interface, next-hop). With ''detail'', adds Label Stack, path flags, backup path
+    info, and ''(!) FRR pure backup'' entries.
 
+    '
 - command: no segment-routing mpls sr-prefer (under isis af)
   context: config-isis-af
   ios-xr: fail
   xrv: fail
   xrv9k: unknown
-  notes: >
-    Accepted at input (no 'Invalid input' error) but fails at commit time on XRv
-    Classic 6.3.1 with 'Failed to commit one or more configuration items during a
-    pseudo-atomic operation.' The platform does not allow sr-prefer to be negated
-    independently while 'segment-routing mpls' is still active in the same IS-IS
-    address-family. To make LDP win over SR for mapping-server prefixes, use a
-    different fault mechanism: remove 'segment-routing prefix-sid-map advertise-local'
-    from the mapping server's IS-IS address-family instead. This stops IS-IS from
-    flooding the SID Binding TLV, so peers have no SR binding to install.
+  notes: 'Accepted at input (no ''Invalid input'' error) but fails at commit time
+    on XRv Classic 6.3.1 with ''Failed to commit one or more configuration items during
+    a pseudo-atomic operation.'' The platform does not allow sr-prefer to be negated
+    independently while ''segment-routing mpls'' is still active in the same IS-IS
+    address-family. To make LDP win over SR for mapping-server prefixes, use a different
+    fault mechanism: remove ''segment-routing prefix-sid-map advertise-local'' from
+    the mapping server''s IS-IS address-family instead. This stops IS-IS from flooding
+    the SID Binding TLV, so peers have no SR binding to install.
 
+    '
 - command: show segment-routing mpls connected-prefix-sid-map ipv4
   context: exec
   ios-xr: fail
   xrv: fail
   xrv9k: fail
-  notes: >
-    INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand tree;
-    valid 'show segment-routing' subcommands are: local-block (SRLB only),
-    mapping-server, traffic-eng. To check the configured SRGB range, use
-    'show running-config segment-routing' (look at global-block start/end).
-    To check label allocations and ownership (SR vs LDP), use 'show mpls label table'.
-    For IS-IS SR prefix mappings, use 'show isis segment-routing prefix-sid-map active-policy'.
-    For OSPF SR prefix-SID state, use 'show ospf segment-routing'.
+  notes: 'INVALID on IOS-XR. ''show segment-routing mpls'' is not a valid subcommand
+    tree; valid ''show segment-routing'' subcommands are: local-block (SRLB only),
+    mapping-server, traffic-eng. To check the configured SRGB range, use ''show running-config
+    segment-routing'' (look at global-block start/end). To check label allocations
+    and ownership (SR vs LDP), use ''show mpls label table''. For IS-IS SR prefix
+    mappings, use ''show isis segment-routing prefix-sid-map active-policy''. For
+    OSPF SR prefix-SID state, use ''show ospf segment-routing''.
 
+    '
 - command: show segment-routing mpls state
   context: exec
   ios-xr: fail
   xrv: fail
   xrv9k: fail
-  notes: >
-    INVALID on IOS-XR. 'show segment-routing mpls' is not a valid subcommand; there is
-    no 'state' keyword in the 'show segment-routing' tree. To check label allocation
-    conflicts or the contents of the label table, use 'show mpls label table'. To check
-    the configured SRGB, use 'show running-config segment-routing'.
+  notes: 'INVALID on IOS-XR. ''show segment-routing mpls'' is not a valid subcommand;
+    there is no ''state'' keyword in the ''show segment-routing'' tree. To check label
+    allocation conflicts or the contents of the label table, use ''show mpls label
+    table''. To check the configured SRGB, use ''show running-config segment-routing''.
 
+    '
 - command: show segment-routing local-block
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Shows SRLB (Segment Routing LOCAL Block) inconsistencies — NOT the SRGB (global block).
-    Only accepts the 'inconsistencies' keyword; output shows 'SRLB inconsistencies range:
-    Start/End: 0/0' when no conflict exists. This command is NOT useful for SRGB
-    verification. To check the SRGB (global-block), use 'show running-config segment-routing'.
-    Do not use this as a replacement for SRGB-related queries.
+  notes: 'Shows SRLB (Segment Routing LOCAL Block) inconsistencies — NOT the SRGB
+    (global block). Only accepts the ''inconsistencies'' keyword; output shows ''SRLB
+    inconsistencies range: Start/End: 0/0'' when no conflict exists. This command
+    is NOT useful for SRGB verification. To check the SRGB (global-block), use ''show
+    running-config segment-routing''. Do not use this as a replacement for SRGB-related
+    queries.
 
+    '
 - command: show mpls label table
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Shows all MPLS label allocations on the router with owner (IS-IS SR, LDP, static).
-    Useful for verifying that a specific SR label (e.g. 16050) is allocated and to check
-    for label conflicts between SR and LDP. Use after confirming the SRGB with
-    'show running-config segment-routing' when a label is still not in the forwarding table.
+  notes: 'Shows all MPLS label allocations on the router with owner (IS-IS SR, LDP,
+    static). Useful for verifying that a specific SR label (e.g. 16050) is allocated
+    and to check for label conflicts between SR and LDP. Use after confirming the
+    SRGB with ''show running-config segment-routing'' when a label is still not in
+    the forwarding table.
 
+    '
 - command: show ospf segment-routing
   context: exec
   ios-xr: pass
   xrv: pass
   xrv9k: pass
-  notes: >
-    Shows OSPF SR state and prefix-SID bindings from the local OSPF SR database.
-    Displays SR capability, SRGB range, and per-area prefix-SID entries. Valid
-    replacement for the invalid 'show segment-routing mpls connected-prefix-sid-map ipv4'
-    in OSPF SR labs. Complement with 'show ospf database opaque-area detail' for
-    raw LSA-level SID TLV inspection.
+  notes: 'Shows OSPF SR state and prefix-SID bindings from the local OSPF SR database.
+    Displays SR capability, SRGB range, and per-area prefix-SID entries. Valid replacement
+    for the invalid ''show segment-routing mpls connected-prefix-sid-map ipv4'' in
+    OSPF SR labs. Complement with ''show ospf database opaque-area detail'' for raw
+    LSA-level SID TLV inspection.
 
-# === XR platform behaviour (2026-05-16) ===
-
+    '
 - command: metric-style narrow
   context: router-isis-af-ipv4-unicast
   xrv: pass
   xrv9k: pass
-  notes: >
-    REQUIRED on XR nodes that peer with IOSv IS-IS neighbors. XR with
-    'metric-style wide' only rejects narrow-metric TLVs (TLV 2) from IOSv,
-    causing zero IS-IS routes despite adjacencies being up. Add
-    'metric-style narrow' alongside 'metric-style wide' on XR nodes in any
-    mixed XR+IOSv environment. In all-XR environments, wide-only is fine.
+  notes: 'REQUIRED on XR nodes that peer with IOSv IS-IS neighbors. XR with ''metric-style
+    wide'' only rejects narrow-metric TLVs (TLV 2) from IOSv, causing zero IS-IS routes
+    despite adjacencies being up. Add ''metric-style narrow'' alongside ''metric-style
+    wide'' on XR nodes in any mixed XR+IOSv environment. In all-XR environments, wide-only
+    is fine.
 
+    '
 - command: import route-target (under vrf address-family)
   context: config-vrf-af
   xrv: pass
   xrv9k: pass
-  notes: >
-    On XR, 'import route-target' and 'export route-target' go under
-    'vrf NAME → address-family ipv4 unicast'. Do NOT put 'rd' under the
-    VRF definition — 'rd 4:100' under 'vrf CUST-A' enters 'config-rd'
-    (route-distinguisher set mode), not a VRF attribute. RD belongs only
-    under BGP 'vrf CUST-A'.
+  notes: 'On XR, ''import route-target'' and ''export route-target'' go under ''vrf
+    NAME → address-family ipv4 unicast''. Do NOT put ''rd'' under the VRF definition
+    — ''rd 4:100'' under ''vrf CUST-A'' enters ''config-rd'' (route-distinguisher
+    set mode), not a VRF attribute. RD belongs only under BGP ''vrf CUST-A''.
 
+    '
 - command: root (XR config mode)
   context: any-config-submode
   xrv: pass
   xrv9k: pass
-  notes: >
-    Returns to global config mode from any sub-mode. REQUIRED between major
-    config sections in XR solution files because '!' does NOT exit sub-modes
-    on XR (unlike IOS). Without 'root', 'vrf CUST-A' entered from
-    'config-ldp-if-af' nests under LDP instead of becoming a global VRF.
+  notes: 'Returns to global config mode from any sub-mode. REQUIRED between major
+    config sections in XR solution files because ''!'' does NOT exit sub-modes on
+    XR (unlike IOS). Without ''root'', ''vrf CUST-A'' entered from ''config-ldp-if-af''
+    nests under LDP instead of becoming a global VRF.
 
+    '
 - command: show vrf CUST-A
   context: exec
   xrv: table-format
   xrv9k: table-format
-  notes: >
-    Outputs a table (VRF/RD/RT/AFI/SAFI) without interface information.
-    To verify interface VRF assignment, use 'show run interface Gi0/0/0/N'
-    or equivalent. Validation specs must split VRF existence verification
-    from interface assignment verification on XR.
+  notes: 'Outputs a table (VRF/RD/RT/AFI/SAFI) without interface information. To verify
+    interface VRF assignment, use ''show run interface Gi0/0/0/N'' or equivalent.
+    Validation specs must split VRF existence verification from interface assignment
+    verification on XR.
 
+    '
 - command: show ip vrf detail CUST-A
   context: exec
   ios-classic: abbreviates
-  notes: >
-    IOS abbreviates interface names in output:
-    'GigabitEthernet0/0' → 'Gi0/0'. Validation specs using must_contain
-    patterns must use the abbreviated form.
+  notes: 'IOS abbreviates interface names in output: ''GigabitEthernet0/0'' → ''Gi0/0''.
+    Validation specs using must_contain patterns must use the abbreviated form.
 
+    '
 - command: router bgp (XR cold boot commit)
   context: global
   xrv: lag-2-5min
   xrv9k: lag-2-5min
-  notes: >
-    XR BGP process manager (bpm) takes 2-5 min to initialize on cold boot.
-    Committing BGP config before bpm is ready fails with
-    '%ROUTING-BGP-3-INIT_GET_VALUE'. Automation scripts must poll commit
-    with retries (suggest 6 attempts × 20s = 2 min window). After bpm is
-    ready, subsequent commits succeed normally.
+  notes: 'XR BGP process manager (bpm) takes 2-5 min to initialize on cold boot. Committing
+    BGP config before bpm is ready fails with ''%ROUTING-BGP-3-INIT_GET_VALUE''. Automation
+    scripts must poll commit with retries (suggest 6 attempts × 20s = 2 min window).
+    After bpm is ready, subsequent commits succeed normally.
+
+    '
+- command: "router bgp 65000\n address-family l2vpn evpn\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+  ios-xr: pass
+- command: show bgp l2vpn evpn summary
+  context: exec
+  notes: ''
+  ios-xe: pass
+  ios-xr: pass
+- command: show bgp l2vpn evpn route-type 2
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show bgp l2vpn evpn route-type 3
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: 'l2vpn evpn instance 10 point-to-point
+
+    '
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "interface GigabitEthernet3\n service instance 10 ethernet\n  encapsulation\
+    \ default\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "evpn\n evi 10\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "interface GigabitEthernet0/0/0/1.10 l2transport\n encapsulation dot1q\
+    \ 10\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "l2vpn\n xconnect group EVPN-VPWS\n  p2p VPWS-10\n   interface GigabitEthernet0/0/0/1.10\n\
+    \   neighbor evpn evi 10 target 2 source 1\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: show l2vpn service all
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show l2vpn xconnect
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: "l2vpn evpn instance 20 vlan-based\n encapsulation mpls\n replication-type\
+    \ ingress\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: 'bridge-domain 20
+
+    '
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "bridge-domain 20\n member evpn-instance 20\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "interface GigabitEthernet3\n service instance 20 ethernet\n  encapsulation\
+    \ dot1q 20\n  rewrite ingress tag pop 1 symmetric\n  bridge-domain 20\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "evpn\n evi 20\n  advertise-mac\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "l2vpn\n bridge group EVPN-ELAN\n  bridge-domain ELAN-20\n   interface\
+    \ GigabitEthernet0/0/0/1.20\n   evi 20\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: show l2vpn evpn evi 20 detail
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show bridge-domain 20
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show evpn evi vpn-id 20 detail
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: show l2vpn bridge-domain group EVPN-ELAN
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: show bgp l2vpn evpn route-type 1
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show evpn ethernet-segment
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: ip local-learning enable (under l2vpn evpn instance vlan-based)
+  context: config
+  notes: 'CSR1000v 17.3.5: ''ip local-learning'' not present in any sub-mode. Closest
+    supported: ''l2vpn evpn / ip duplication'' (Type-2 MAC duplication detection).
+    Feature may exist on ASR9K/NCS/Cat9k or higher XE versions; not on EVE-NG CSR1000v
+    17.3.5.'
+  ios-xe: fail
+- command: arp-suppression (under l2vpn evpn instance vlan-based)
+  context: config
+  notes: 'CSR1000v 17.3.5: EVPN ARP suppression not available in any tested sub-mode
+    (l2vpn evpn instance, l2vpn evpn global, bridge-domain, service instance). EVE-NG
+    image lacks this feature; production hardware (ASR9K/NCS/Cat9k) supports it. Lab-01
+    ARP-suppression objective requires image upgrade or scope change.'
+  ios-xe: fail
+- command: arp suppression (under l2vpn bridge-group bridge-domain)
+  context: config
+  notes: 'XRv classic 6.3.1: EVPN ARP suppression not available in l2vpn bridge-domain
+    OR evpn evi sub-modes. ''suppress-arp'' also rejected. XRv9k 7.x+ supports the
+    feature; XRv classic does not.'
+  ios-xr: fail
+- command: ethernet-segment (under service instance N ethernet)
+  context: config
+  notes: 'CSR1000v 17.3.5: ''ethernet-segment'' keyword not present in service-instance
+    EFP sub-mode. Lab-02 ESI multihoming requires Cat9k/ASR9K-class image or newer
+    XE; not configurable on EVE-NG CSR1000v.'
+  ios-xe: fail
+- command: identifier type 0 00.01.00.01.00.01.00.01.00.01 (under evpn interface ethernet-segment)
+  context: config
+  notes: Original probe used 10 octets; XR 'identifier type 0' takes the 9-octet system-ID
+    (type byte is separate). 9-octet form parsed cleanly. Lab-02 ESI identifier should
+    be authored as 9 dotted octets, e.g. 01.01.01.01.01.01.01.01.01.
+  ios-xr: fail
+- command: identifier type 0 01.01.01.01.01.01.01.01.01
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "l2vpn evpn instance 20 vlan-based\n arp-suppression"
+  context: config
+  notes: 'CSR1000v 17.3.5: EVPN ARP suppression not available in any tested sub-mode
+    on this image. Genuine feature gap — not a syntax error.; CSR1000v 17.3.5: ''arp-suppression''
+    rejected in EVPN-EVI sub-mode — feature absent in this IOS-XE image. Confirmed
+    2026-05-25 re-validation; same gap on xrv & xrv9k.'
+  ios-xe: fail
+- command: "router isis SP-CORE\n segment-routing mpls\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "segment-routing mpls\n global-block 16000 23999\n"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: show isis segment-routing prefix-sid
+  context: exec
+  notes: ''
+  ios-xe: pass
+  ios-xr: pass
+- command: show mpls forwarding-table
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: "router isis SP-CORE\n address-family ipv4 unicast\n  segment-routing mpls\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "router isis SP-CORE\n interface Loopback0\n  address-family ipv4 unicast\n\
+    \   prefix-sid index 6\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "segment-routing\n global-block 16000 23999\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: show mpls forwarding
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: show l2vpn evpn evi 30 detail
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: show bridge-domain 30
+  context: exec
+  notes: ''
+  ios-xe: pass
+- command: "evpn\n evi 30\n  bgp\n   rd 192.168.1.6:30\n   route-target import 65000:30\n\
+    \   route-target export 65000:30\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "l2vpn\n bridge group EVPN-IRB\n  bridge-domain IRB-30\n   interface GigabitEthernet0/0/0/1.30\n\
+    \   evi 30\n   routed interface BVI30\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "interface BVI30\n ipv4 address 172.16.10.6 255.255.255.0\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: show evpn evi vpn-id 30 detail
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: show l2vpn bridge-domain group EVPN-IRB
+  context: exec
+  notes: ''
+  ios-xr: pass
+- command: show segment-routing traffic-eng policy
+  context: exec
+  notes: ''
+  ios-xe: pass
+  ios-xr: pass
+- command: "segment-routing\n traffic-eng\n  policy SR-POLICY-PE-XR-TO-PE1\n   color\
+    \ 100 end-point ipv4 192.168.1.1\n    candidate-paths\n     preference 100\n \
+    \     explicit segment-list SR-PATH-PE-XR-TO-PE1\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "segment-routing\n traffic-eng\n  segment-list SR-PATH-PE-XR-TO-PE1\n \
+    \  index 1 mpls label 16002\n   index 2 mpls label 16001"
+  context: config
+  notes: 'XRv 6.3.1: ''segment-list'' requires ''name'' keyword before the list name.
+    Correct: ''segment-list name SR-PATH'', not ''segment-list SR-PATH''.; XRv classic
+    6.3.1 rejects the ''segment-routing / traffic-eng / segment-list'' block (no SR-TE
+    feature in this image). Same shape PASSES on xrv9k (newer XR image). Image limitation
+    — there is no equivalent older-syntax correction; the only fix is to do SR-TE
+    on xrv9k instead of XR classic.'
+  ios-xr: fail
+- command: "segment-routing\n traffic-eng\n  segment-list name SR-PATH-PE-XR-TO-PE1\n\
+    \   index 1 mpls label 16002\n   index 2 mpls label 16001"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: explicit-path name SR-PATH-PE1-TO-PE-XR
+  context: config
+  notes: 'XE: explicit-path requires ip prefix (ip explicit-path name ...)'
+  ios-xe: fail
+- command: ip explicit-path name SR-PATH-PE1-TO-PE-XR
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: interface Loopback0 prefix-sid index 1
+  context: config
+  notes: 'CSR1000v 17.3.5: prefix-sid not available under interface config or router
+    isis. IS-IS segment routing prefix-SID assignment not supported on this image'
+  ios-xe: fail
+- command: evpn interface GigabitEthernet0/0/0/1 ethernet-segment identifier type
+    0 0001.0001.0001.0001.0001
+  context: config
+  notes: 'XRv9K: ESI identifier type 0 rejected for all format variants (dotted, hex,
+    mac). ESI multihoming may not be supported on this XRv9K image version'
+  ios-xr: fail
+- command: segment-routing traffic-eng policy POL color 100 end-point ipv4 A.B.C.D
+    candidate-paths
+  context: config
+  notes: 'XRv9K: SR-TE policy with color, end-point, candidate-paths, preference,
+    explicit segment-list fully supported'
+  ios-xr: pass
+- command: interface BVI30
+  context: config
+  notes: 'XRv9K: BVI interface fully supported with ipv4/ipv6/arp/proxy-arp sub-commands'
+  ios-xr: pass
+- command: "router isis SP-CORE\n interface Loopback0\n  address-family ipv4 unicast\n\
+    \   prefix-sid index 7\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "evpn\n evi 30\n  bgp\n   rd 192.168.1.7:30\n   route-target import 65000:30\n\
+    \   route-target export 65000:30\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "interface BVI30\n ipv4 address 172.16.10.7 255.255.255.0\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "segment-routing\n traffic-eng\n  segment-list SR-PATH-PE-XR9K-TO-PE1\n\
+    \   index 1 mpls label 16002\n   index 2 mpls label 16001\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "segment-routing\n traffic-eng\n  policy SR-POLICY-PE-XR9K-TO-PE1\n   color\
+    \ 100 end-point ipv4 192.168.1.1\n    candidate-paths\n     preference 100\n \
+    \     explicit segment-list SR-PATH-PE-XR9K-TO-PE1\n"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "interface BVI30\n ip address 172.16.10.1 255.255.255.0"
+  context: config
+  notes: CSR1000v 17.3.5 uses BDI (Bridge-Domain Interface) not BVI; BDI<N> implicitly
+    binds to bridge-domain <N>.
+  ios-xe: fail
+- command: "interface BDI30\n ip address 172.16.10.1 255.255.255.0"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "bridge-domain 30\n member evpn-instance 30\n member BVI30 interface"
+  context: config
+  notes: 'CSR1000v 17.3.5: BDI<N> auto-joins bridge-domain <N>; no ''member BDI<N>
+    interface'' line required (and ''member BVI<N>'' is rejected anyway since BVI
+    is not the XE interface type).'
+  ios-xe: fail
+- command: "bridge-domain 30\n member evpn-instance 30"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "l2vpn evpn instance 30 vlan-based\n encapsulation mpls\n replication-type\
+    \ ingress\n ip\n  rd 192.168.1.1:30\n  route-target both 65000:30"
+  context: config
+  notes: 'CSR1000v 17.3.5 EVPN EVI sub-mode supports only: auto-route-target, encapsulation,
+    rd, replication-type, route-target. There is no ''ip'' sub-block; rd/route-target
+    sit flat under the EVI. L3 IRB on this image is via the BDI interface separately.'
+  ios-xe: fail
+- command: "l2vpn evpn instance 30 vlan-based\n rd 192.168.1.1:30\n route-target both\
+    \ 65000:30"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "evpn\n interface GigabitEthernet0/0/0/1\n  ethernet-segment\n   identifier\
+    \ type 0 00.01.00.01.00.01.00.01.00.01"
+  context: config
+  notes: 'XR ESI Type-0 takes 9 octets (the type byte is implicit). RFC 7432: ESI
+    is 10 bytes total, type=1 + value=9. Baseline ce1_esi value must be supplied as
+    exactly 9 hex pairs after ''type 0''.; Same shape on xrv9k as XR classic: ESI
+    Type-0 takes 9 octets (RFC 7432).'
+  ios-xr: fail
+- command: "evpn\n interface GigabitEthernet0/0/0/1\n  ethernet-segment\n   identifier\
+    \ type 0 00.01.00.01.00.01.00.01.00"
+  context: config
+  notes: ''
+  ios-xr: pass
+- command: "interface GigabitEthernet3\n service instance 20 ethernet\n  ethernet-segment\n\
+    \   identifier type 0 00.01.00.01.00.01.00.01.00.01"
+  context: config
+  notes: CSR1000v 17.3.5 places ESI in a GLOBAL 'l2vpn evpn ethernet-segment <local-discriminator>'
+    block (1-65535), not under interface service-instance. Identifier value is 9 octets
+    after 'type 0'. The interface still attaches via 'service instance N ethernet'
+    bridge-domain binding, separately.
+  ios-xe: fail
+- command: "l2vpn evpn ethernet-segment 1\n identifier type 0 00.01.00.01.00.01.00.01.00"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "interface Port-channel1\n evpn ethernet-segment 1"
+  context: config
+  notes: >-
+    CSR1000v 17.3.5 two-step ES model: 'evpn ethernet-segment N' is accepted
+    under interface Port-channel1 (binds the AC to the global ES block). It is
+    NOT accepted under physical interfaces (GigabitEthernet). Verified live on
+    PE1 and PE3 (IOS-XE 17.3.5) 2026-06-06.
+  ios-xe: pass
+- command: "interface GigabitEthernet3\n evpn ethernet-segment 1"
+  context: config
+  notes: >-
+    CSR1000v 17.3.5: 'evpn ethernet-segment' is NOT accepted under physical
+    interfaces. Use Port-channel1 instead (see two-step model above).
+  ios-xe: fail
+- command: "interface Port-channel1\n ! ESI-bound AC bundle for EVPN multihoming"
+  context: interface-evpn-mh
+  notes: >-
+    csr1000v cannot host the PE-side EVPN-MH port-channel. Cisco IOS-XE EVPN
+    multihoming (RFC 7432) REQUIRES the ESI-bound port-channel in ON mode and
+    does NOT support ether-channel signaling (LACP/PAgP); only type-3 ESIs are
+    used between the two PEs. But csr1000v-17.03.05 does not offer
+    'channel-group N mode on' on the interface — 'channel-group 1 mode ?' returns
+    only 'active'/'passive' (LACP). Net: csr1000v can neither enter the ON mode
+    EVPN-MH mandates nor legally use the LACP modes it offers, so the PE-side ESI
+    bundle cannot be brought up. Use IOS-XR PEs (bundle interfaces support both
+    the ESI and 'lacp system mac') for hardware-validatable EVPN multihoming.
+    VERIFIED LIVE 2026-06-09: on PE3's fresh routed Gi4 (in no channel-group),
+    'channel-group 1 mode ?' returns only active|passive — a genuine CLI gap, not
+    an already-LACP-pinned group hiding 'on'. On PE1, where 'channel-group 1 mode on'
+    is pre-loaded, it is silently rejected: 'show run int Gi4' has no channel-group
+    line and 'show etherchannel summary' shows Po1(RD) down with zero members — so
+    the PE-side AC never forms and CE5's multihomed EVI 10/20 services do not forward.
+    NOTE: the switchport row 'channel-group 1 mode on' (context interface-switch,
+    ios-l2: pass) is unaffected — IOSvL2 CEs accept mode on and bundle unconditionally.
+  ios-xe: fail
+- command: "interface Loopback0\n prefix-sid index 1"
+  context: config
+  notes: CSR1000v 17.3.5 SR prefix-SID is configured globally under 'segment-routing
+    mpls / connected-prefix-sid-map / address-family ipv4 / <loopback-prefix> index
+    <sid-index> range 1', not on the loopback interface itself. The loopback IP must
+    already exist; the global map binds it to an SR-MPLS label index.
+  ios-xe: fail
+- command: "segment-routing mpls\n connected-prefix-sid-map\n  address-family ipv4\n\
+    \   1.1.1.1/32 index 1 range 1"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "explicit-path name SR-PATH-PE1-TO-PE-XR\n index 1 next-label 16002\n index\
+    \ 2 next-label 16006"
+  context: config
+  notes: 'CSR1000v 17.3.5: ''explicit-path'' is the RSVP-TE legacy CLI; modern SR-TE
+    uses ''segment-routing traffic-eng / segment-list name <NAME> / index N mpls label
+    <LABEL>''. The ''next-label'' keyword is replaced by ''mpls label''.'
+  ios-xe: fail
+- command: "segment-routing traffic-eng\n segment-list name SR-PATH-PE1-TO-PE-XR\n\
+    \  index 1 mpls label 16002\n  index 2 mpls label 16006"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "segment-routing traffic-eng\n policy SR-POLICY-PE1-TO-PE-XR\n  color 100\
+    \ end-point ipv4 192.168.1.6\n   candidate-paths\n    preference 100\n     explicit\
+    \ segment-list SR-PATH-PE1-TO-PE-XR"
+  context: config
+  notes: 'CSR1000v 17.3.5 SR-TE policy: drop the ''ipv4'' keyword from ''end-point''
+    (use ''end-point <ip>'' directly). Endpoint should be the PE-XR loopback (6.6.6.6),
+    not the management 192.168.1.6 spec drafted earlier. candidate-paths is indented
+    one level deeper than the policy body, NOT under color.'
+  ios-xe: fail
+- command: "segment-routing traffic-eng\n policy SR-POLICY-PE1-TO-PE-XR\n  color 100\
+    \ end-point 6.6.6.6\n  candidate-paths\n   preference 100\n    explicit segment-list\
+    \ SR-PATH-PE1-TO-PE-XR"
+  context: config
+  notes: ''
+  ios-xe: pass
+- command: "l2vpn evpn instance 20 vlan-based\n ip local-learning enable"
+  context: config
+  notes: 'CSR1000v 17.3.5: ''ip local-learning'' is not in EVPN-EVI sub-mode (available
+    subcommands: auto-route-target / encapsulation / rd / replication-type / route-target).
+    Image-feature gap; documented as deferred in lab-01 (baseline meta 2026-05-25).'
+  ios-xe: fail
+- command: "l2vpn\n bridge group EVPN-ELAN\n  bridge-domain ELAN-20\n   arp suppression"
+  context: config
+  notes: 'XRv classic 6.3.1: ''arp suppression'' not available under l2vpn bridge-domain
+    — feature absent.; xrv9k also rejects ''arp suppression'' under l2vpn bridge-domain
+    on this image. ARP suppression is image-unavailable on every XR variant we have.'
+  ios-xr: fail
+- command: show l2vpn evpn vpws
+  context: exec
+  notes: 'Bare ''show l2vpn evpn vpws'' is incomplete on CSR1000v IOS-XE 17.x — requires
+    sub-keyword: evi <N>, summary, or vc. ''vc'' is rejected; ''evi <N>'' and ''summary''
+    both exist.'
+  ios-xe: fail
+- command: show l2vpn evpn vpws evi <N>
+  context: exec
+  notes: ''
+  ios-xe: pass
